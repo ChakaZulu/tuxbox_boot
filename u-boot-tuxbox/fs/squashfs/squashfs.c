@@ -46,8 +46,6 @@
 #include <malloc.h>
 #include <cmd_fs.h>
 
-#define  SQUASHFS_TRACE 1
-
 #ifdef SQUASHFS_TRACE
 #define TRACE(s, args...)				printf("SQUASHFS: "s, ## args)
 #else
