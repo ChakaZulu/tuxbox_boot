@@ -31,7 +31,7 @@ LIB	= lib$(BOARD).a
 OBJS	= $(BOARD).o devices.o flash.o lcd.o avia.o avs.o fb.o mpgstill.o saa7126.o
 
 $(LIB):	.depend $(OBJS)
-	$(AR) crv $@ $^
+	$(AR) crv $@ $(OBJS)
 
 #########################################################################
 
