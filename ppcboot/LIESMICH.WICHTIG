@@ -1,7 +1,7 @@
-Diese ppcboot-Version hat ein paar nette Patches, die es ermöglich,
-endlich eine universelle Version für alle zu verwenden, und eine
-problemlose Koexistenz von cdk, tiab und möglichen anderen Tests
-erlaubt.
+Diese ppcboot-Version hat ein paar nette Patches, die es ermöglichen,
+endlich eine universelle Version für alle zu verwenden (weil die IP-Adresse
+nicht mehr angepasst werden muß!), und eine problemlose Koexistenz von cdk, 
+tiab und zwei Test-Systemen erlaubt.
 
 Dazu sind aber ein paar Änderungen im Dateisystem notwendig!
 
