@@ -67,12 +67,14 @@ const uint sdram_table_upmb_nokia[] =
  * Check Board Identity
  */
 
-const char *id2name[] = { "EMPTY", "Nokia", "Phillips", "Sagem" };
+const char *id2name[] = { "EMPTY", "Nokia", "Philips", "Sagem" };
 static unsigned char *hwi = (unsigned char *) (CFG_FLASH_BASE + CFG_HWINFO_OFFSET);
 unsigned char mid = 0;
 
 int checkboard (void)
 {
+	const char *bmon_version = "unknown";
+	const char *ptr;
 	mid = hwi[0];
 
 	if (mid < 1 && mid > 3)
@@ -81,8 +83,20 @@ int checkboard (void)
 		return -1;
 	}
 
+	ptr = (char *)(CFG_FLASH_BASE + 0x14000);
+
+	while (ptr < (char *)(CFG_FLASH_BASE + 0x16000)) {
+		if (!memcmp(ptr, "dbox2:", 6)) {
+			bmon_version = &ptr[8];
+			break;
+		}
+		ptr += 4;
+	}
+
 	puts ("Board: DBOX2, ");
 	puts (id2name[mid]);
+	puts (", BMon V");
+	puts (bmon_version);
 	puts ("\n");
 
 	return 0;
