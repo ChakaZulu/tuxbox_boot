@@ -21,6 +21,9 @@
  *
  *
  *   $Log: lcd-ks0713.c,v $
+ *   Revision 1.7  2001/08/31 00:12:07  ge0rg
+ *   bootlogo code rewrite
+ *
  *   Revision 1.6  2001/08/28 10:52:38  derget
  *
  *   implemented logo over tftp if logo flash failes ..
@@ -63,7 +66,7 @@
  *   Revision 1.5  2001/01/06 10:06:35  gillem
  *   cvs check
  *
- *   $Revision: 1.6 $
+ *   $Revision: 1.7 $
  *
  */
 
@@ -408,9 +411,13 @@ int lcd_init(void)
 {
     immap_t	*immap;
     int i;
-    lcd_pixel p;
+    //lcd_pixel p;
     unsigned char *lcd_logo;
     unsigned int size, offset = 0;
+
+    int have_logo = 0;
+    unsigned char lcd_logo_packed[LCD_ROWS][LCD_COLS];
+    int x, y, y2, pix;
 
 
    printf("  LCD driver (KS0713) initialized\n");
@@ -424,21 +431,37 @@ int lcd_init(void)
 //    lcd_reset();
 
 	   
+    have_logo = 0;
     idxfs_file_info((unsigned char*)IDXFS_OFFSET, 0, "logo-lcd", &offset, &size);
     
-    if (!offset)
-         {
-      printf("  No LCD Logo in Flash , trying tftp\n");
-      NetLoop(33161152, "TFTP","%(bootpath)/tftpboot/logo-lcd", 0x130000);
-      lcd_logo = (unsigned char*)(0x130000);
-      printf("  LCD logo at: 0x130000 (0x%X bytes)\n", size);
-         }
+    if (!offset) {
+        printf("  No LCD Logo in Flash , trying tftp\n");
+        if (1==NetLoop(33161152, "TFTP","%(bootpath)/tftpboot/logo-lcd", 0x130000)) {
+            have_logo = 1;
+            lcd_logo = (unsigned char*)(0x130000);
+            printf("  LCD logo at: 0x130000 (0x%X bytes)\n", size);
+        } else printf("  LCD logo not found\n");
+    }
     else { 
-		lcd_logo = (unsigned char*)(IDXFS_OFFSET + offset); 
-		printf("  LCD logo at: 0x%X (0x%X bytes)\n", offset, size);
-    	 }
+        have_logo = 1;
 
-    p.x = 0;
+        lcd_logo = (unsigned char*)(IDXFS_OFFSET + offset); 
+        printf("  LCD logo at: 0x%X (0x%X bytes)\n", offset, size);
+    }
+
+    if (have_logo)
+        for (y=0; y<8; y++) {
+            lcd_set_pos(y, 0);
+            for (x=0; x<120; x++) {
+                pix = 0;
+                for (y2=7; y2>=0; y2--) {
+                    pix = pix<<1;
+                    if (lcd_logo[(y*8+y2)*LCD_COLS + x]) pix++;
+                }
+                lcd_write_byte(pix);
+            }
+        }
+    /*p.x = 0;
     p.y = 0;
 
     for (i=0; i<7200; i++) {
@@ -452,7 +475,7 @@ int lcd_init(void)
        p.y++;
       }
 
-    }
+    }*/
 
 
    return 0;

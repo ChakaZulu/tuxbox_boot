@@ -1,7 +1,7 @@
 Formate der Logos:  (misc/ppcboot/dbox/logo)
 
 FB Logo	  : 1 Frame MPEG1 720*576  
-LCD Logo  : RAW 120*60 , grösse 7200 Bytes 1Kanal 8bit
+LCD Logo  : RAW 120*64 , grösse 7680 Bytes 1Kanal 8bit
 
 ppcboot unterstützt Logos aus dem Flash und über tftp
 
