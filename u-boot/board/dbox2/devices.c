@@ -68,13 +68,13 @@ int drv_dbox2_init (void)
 #ifdef CONFIG_LAST_STAGE_INIT
 int last_stage_init (void)
 {
-#ifdef CONFIG_DBOX2_FB_LOGO
-	fb_load ();
-#endif /* CONFIG_DBOX2_FB_LOGO */
-
 #ifdef CONFIG_DBOX2_LCD_LOGO
 	lcd_load ();
 #endif /* CONFIG_DBOX2_LCD_LOGO */
+
+#ifdef CONFIG_DBOX2_FB_LOGO
+	fb_load ();
+#endif /* CONFIG_DBOX2_FB_LOGO */
 
 	return 1;
 }
