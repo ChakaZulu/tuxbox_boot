@@ -75,7 +75,7 @@ void main_loop(bd_t *bd)
 #if (CONFIG_BOOTDELAY >= 0)      
 
 		if (autoboot)
-		  printf("Select image (1-4), other keys to stop autoboot: %2d ", bootdelay);
+		  printf("Select image (1-5), other keys to stop autoboot: %2d ", bootdelay);
 
 		while (bootdelay > 0) {
 			int i;
@@ -85,7 +85,7 @@ void main_loop(bd_t *bd)
 			for (i=0; i<100; ++i) {
 				if (tstc()) {	/* we got a key press	*/
                                         imageselect = getc();
-                                        if ( imageselect<'1' || imageselect>'4' )
+                                        if ( imageselect<'1' || imageselect>'5' )
                                           autoboot = 0;
 					bootdelay = 0;	/* no more delays	*/
 					break;
