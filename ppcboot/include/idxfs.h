@@ -4,6 +4,7 @@
 #define IDXFS_MAGIC 0x19780526
 #define IDXFS_VERSION 0x01000100
 #define IDXFS_MAX_NAME_LEN 32
+#define IDXFS_OFFSET 0x100c0000   //offset vom idxfs im Flash 
 
 typedef struct {
 
