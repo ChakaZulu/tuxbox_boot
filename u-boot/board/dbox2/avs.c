@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *
- * $Id: avs.c,v 1.1 2002/12/22 17:38:55 bastian Exp $
+ * $Id: avs.c,v 1.2 2003/02/16 22:23:03 alexw Exp $
  */
 
 #include <common.h>
@@ -30,15 +30,16 @@ void avs_init (int mid)
 	switch (mid)
 	{
 		case 1:
-			i2c_write (0x48, 0, 0, "\x0d\x29\xc9\xa9\x00", 5);
+			i2c_write (0x48, 0, 0, "\x00\x29\x09\x01\x00", 5);
 			break;
 		case 2:
-			i2c_write (0x4c, 0, 0, "\x00\x04\x19\x11\xa5\x00\x30\x88", 8);
+			i2c_write (0x4a, 0, 0, "\x00\x00\x19\x11\xa5\x00\x30\x88", 8);
 			break;
 		case 3:
 			i2c_write (0x48, 0, 0, "\x00\x00\x00\x00\x04\x3F\x00", 7);
 			break;
 		default:
+			;
 	}
 }
 
