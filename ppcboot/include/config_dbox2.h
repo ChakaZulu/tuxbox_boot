@@ -73,7 +73,7 @@
 // schickt, waere %(bootpath) /home/user/dbox.
 // Damit ist kein absoluter Pfad mehr fuer die Images bzw. das nfsroot noetig.
 
-#define CONFIG_BOOTCOMMAND      "bootp 100000 %(bootpath)/tftpboot/kernel-$(img);bootm 100000"
+#define CONFIG_BOOTCOMMAND      "debugmode;bootp 100000 %(bootpath)/tftpboot/kernel-$(img);bootm 100000"
 
 //#define CONFIG_BOOTCOMMAND      "bootp 100000 %(bootpath)/images/kernel-$(img);bootm 100000"
 //#define CONFIG_BOOTCOMMAND      "bootp 100000 /%(rootpath)%(hostname)/images/kernel-$(img);bootm 100000
@@ -91,7 +91,7 @@
 
 #define CONFIG_BOOTP_MASK	CONFIG_BOOTP_ALL
 
-#define CONFIG_COMMANDS  (CONFIG_CMD_DFL | CFG_CMD_BOOTIDXFS | CFG_CMD_INFOIDXFS)
+#define CONFIG_COMMANDS  (CONFIG_CMD_DFL | CFG_CMD_BOOTIDXFS | CFG_CMD_INFOIDXFS | CFG_CMD_DEBUGMODE)
 
 /* this must be included AFTER the definition of CONFIG_COMMANDS (if any) */
 #include <cmd_confdefs.h>

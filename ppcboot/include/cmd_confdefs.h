@@ -48,13 +48,14 @@
 #define CFG_CMD_CONSOLE		0x00004000	/* coninfo			*/
 #define CFG_CMD_BOOTIDXFS	0x00008000	/* bootidxfs			*/
 #define CFG_CMD_INFOIDXFS	0x00010000	/* infoidxfs			*/
+#define CFG_CMD_DEBUGMODE	0x00020000	/* dbox2 debugmode              */
 
 #define CFG_CMD_ALL	0xFFFFFFFF	/* ALL commands			*/
 
 /* Commands that are considered "non-standard" for some reason
  * (memory hogs, requires special hardware, not fully tested, etc.)
  */
-#define CFG_CMD_NONSTD	(CFG_CMD_KGDB | CFG_CMD_IDE | CFG_CMD_PCI | CFG_CMD_IRQ | CFG_CMD_BOOTIDXFS | CFG_CMD_INFOIDXFS)
+#define CFG_CMD_NONSTD	(CFG_CMD_KGDB | CFG_CMD_IDE | CFG_CMD_PCI | CFG_CMD_IRQ | CFG_CMD_BOOTIDXFS | CFG_CMD_INFOIDXFS | CFG_CMD_DEBUGMODE)
 
 /* Default configuration
  */

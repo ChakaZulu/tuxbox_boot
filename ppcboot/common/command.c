@@ -39,6 +39,7 @@
 #include <cmd_ide.h>
 #include <cmd_disk.h>
 #include <cmd_console.h>
+#include <cmd_debugmode.h>
 
 /*
  * HELP command
@@ -133,6 +134,7 @@ cmd_tbl_t cmd_tbl[] = {
 	CMD_TBL_BOOTM
 	CMD_TBL_BOOTP
 	CMD_TBL_BOOTIDXFS
+	CMD_TBL_DEBUGMODE
 	CMD_TBL_INFOIDXFS
 	CMD_TBL_TFTPB
 	CMD_TBL_RARPB
