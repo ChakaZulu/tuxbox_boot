@@ -73,7 +73,7 @@
 //#define CONFIG_BOOTCOMMAND      "bootp 100000 %(bootpath)/images/kernel-$(img);bootm 100000"
 //#define CONFIG_BOOTCOMMAND      "bootp 100000 /%(rootpath)%(hostname)/images/kernel-$(img);bootm 100000
 //#define CONFIG_BOOTCOMMAND      "bootp 100000 /dbox2/images/kernel-$(img);bootm 100000" 
-#define CONFIG_BOOTARGS         "console=ttyS0 root=/dev/nfs rw nfsroot=$(serverip):$(bootpath)/$(img)root/"
+#define CONFIG_BOOTARGS         "console=ttyS0 ip=bootp root=/dev/nfs rw nfsroot=$(serverip):$(bootpath)/$(img)root/"
 //#define CONFIG_BOOTARGS         "console=ttyS0 root=/dev/nfs rw nfsroot=$(serverip):$(bootpath)/$(img)/"
 //#define CONFIG_BOOTARGS         "console=ttyS0 root=/dev/nfs rw nfsroot=$(serverip):/$(rootpath)$(hostname)/$(img)/"
 //#define CONFIG_BOOTARGS         "console=ttyS0 root=/dev/nfs rw nfsroot=$(serverip):/dbox2/$(img)/"
