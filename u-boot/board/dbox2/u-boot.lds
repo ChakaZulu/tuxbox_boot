@@ -123,9 +123,9 @@ SECTIONS
   __bss_start = .;
   .bss       :
   {
+   *(.bss)
    *(.sbss) *(.scommon)
    *(.dynbss)
-   *(.bss)
    *(COMMON)
   }
   _end = . ;
