@@ -53,21 +53,6 @@ ifndef CROSS_COMPILE
 ifeq ($(HOSTARCH),ppc)
 CROSS_COMPILE =
 else
-##  #ifeq ($(CPU),mpc8xx)
-##  CROSS_COMPILE = ppc_8xx-
-##  #endif
-##  #ifeq ($(CPU),ppc4xx)
-##  #CROSS_COMPILE = ppc_4xx-
-##  #endif
-##  #ifeq ($(CPU),mpc824x)
-##  #CROSS_COMPILE = ppc_82xx-
-##  #endif
-##  #ifeq ($(CPU),mpc8260)
-##  #CROSS_COMPILE = ppc_82xx-
-##  #endif
-##  #ifeq ($(CPU),74xx_7xx)
-##  #CROSS_COMPILE = ppc_74xx-)
-##  #endif
 ifeq ($(ARCH),ppc)
 CROSS_COMPILE = ppc_8xx-
 endif
@@ -76,6 +61,9 @@ CROSS_COMPILE = arm_920TDI-
 endif
 ifeq ($(ARCH),i386)
 #CROSS_COMPILE = i386-elf-
+endif
+ifeq ($(ARCH),mips)
+CROSS_COMPILE = mips_4KC-
 endif
 endif
 endif
@@ -129,8 +117,8 @@ LIBS += lib_generic/libgeneric.a
 all:		u-boot.srec u-boot.bin System.map
 
 install:	all
-		cp u-boot.bin /tftpboot/u-boot.bin
-		cp u-boot.bin /net/sam/tftpboot/u-boot.bin
+		-cp u-boot.bin /tftpboot/u-boot.bin
+		-cp u-boot.bin /net/denx/tftpboot/u-boot.bin
 
 u-boot.srec:	u-boot
 		$(OBJCOPY) ${OBJCFLAGS} -O srec $< $@
@@ -201,6 +189,9 @@ cogent_mpc8xx_config:	unconfig
 
 dbox2_config:		unconfig
 	@./mkconfig $(@:_config=) ppc mpc8xx dbox2
+
+ELPT860_config:		unconfig
+	@./mkconfig $(@:_config=) ppc mpc8xx elpt860 LEOX
 
 ESTEEM192E_config:	unconfig
 	@./mkconfig $(@:_config=) ppc mpc8xx esteem192e
@@ -329,6 +320,10 @@ SPD823TS_config:	unconfig
 SXNI855T_config:	unconfig
 	@./mkconfig $(@:_config=) ppc mpc8xx sixnet
 
+# EMK MPC8xx based modules
+TOP860_config:		unconfig
+	@./mkconfig $(@:_config=) ppc mpc8xx top860 emk
+
 # Play some tricks for configuration selection
 # All boards can come with 50 MHz (default), 66MHz or 80MHz clock,
 # but only 855 and 860 boards may come with FEC
@@ -382,6 +377,11 @@ TTTech_config:	unconfig
 	@echo "#define CONFIG_LCD" >include/config.h
 	@echo "#define CONFIG_SHARP_LQ104V7DS01" >>include/config.h
 	@./mkconfig -a TQM823L ppc mpc8xx tqm8xx
+
+v37_config:	unconfig
+	@echo "#define CONFIG_LCD" >include/config.h
+	@echo "#define CONFIG_SHARP_LQ084V1DG21" >>include/config.h
+	@./mkconfig $(@:_config=) ppc mpc8xx v37
 
 #########################################################################
 ## PPC4xx Systems
@@ -448,8 +448,23 @@ WALNUT405_config:unconfig
 #########################################################################
 ## MPC824x Systems
 #########################################################################
+xtract_82xx = $(subst _ROMBOOT,,$(subst _L2,,$(subst _266MHz,,$(subst _300MHz,,$(subst _config,,$1)))))
+
 BMW_config: unconfig
 	@./mkconfig $(@:_config=) ppc mpc824x bmw
+
+CPC45_config	\
+CPC45_ROMBOOT_config:	unconfig
+	@./mkconfig $(call xtract_82xx,$@) ppc mpc824x cpc45
+	@cd ./include ;				\
+	if [ "$(findstring _ROMBOOT_,$@)" ] ; then \
+		echo "CONFIG_BOOT_ROM = y" >> config.mk ; \
+		echo "... booting from 8-bit flash" ; \
+	else \
+		echo "CONFIG_BOOT_ROM = n" >> config.mk ; \
+		echo "... booting from 64-bit flash" ; \
+	fi; \
+	echo "export CONFIG_BOOT_ROM" >> config.mk;
 
 CU824_config: unconfig
 	@./mkconfig $(@:_config=) ppc mpc824x cu824
@@ -478,7 +493,6 @@ utx8245_config: unconfig
 #########################################################################
 ## MPC8260 Systems
 #########################################################################
-xtract_82xx = $(subst _ROMBOOT,,$(subst _L2,,$(subst _266MHz,,$(subst _300MHz,,$(subst _config,,$1)))))
 
 cogent_mpc8260_config:	unconfig
 	@./mkconfig $(@:_config=) ppc mpc8260 cogent
@@ -510,6 +524,9 @@ IPHASE4539_config:	unconfig
 
 MPC8260ADS_config:	unconfig
 	@./mkconfig $(@:_config=) ppc mpc8260 mpc8260ads
+
+MPC8266ADS_config:	unconfig
+	@./mkconfig $(@:_config=) ppc mpc8260 mpc8266ads
 
 PM826_config	\
 PM826_ROMBOOT_config: unconfig
@@ -609,14 +626,25 @@ shannon_config	:	unconfig
 ## ARM920T Systems
 #########################################################################
 
+xtract_trab = $(subst _big_flash,,$(subst _config,,$1))
+
 smdk2400_config	:	unconfig
 	@./mkconfig $(@:_config=) arm arm920t smdk2400
 
 smdk2410_config	:	unconfig
 	@./mkconfig $(@:_config=) arm arm920t smdk2410
 
-trab_config :		unconfig
-	@./mkconfig $(@:_config=) arm arm920t trab
+trab_config \
+trab_big_flash_config:	unconfig
+	@ >include/config.h
+	@[ -z "$(findstring _big_flash,$@)" ] || \
+		{ echo "#define CONFIG_BIG_FLASH" >>include/config.h ; \
+		  echo "... with big flash support" ; \
+		}
+	@./mkconfig -a $(call xtract_trab,$@) arm arm920t trab
+
+VCMA9_config	:	unconfig
+	@./mkconfig $(@:_config=) arm arm920t vcma9 mpl
 
 #########################################################################
 ## ARM720T Systems
@@ -629,11 +657,8 @@ ep7312_config	:	unconfig
 	@./mkconfig $(@:_config=) arm arm720t ep7312
 
 #########################################################################
-## Xscale Systems
+## XScale Systems
 #########################################################################
-
-lubbock_config	:	unconfig
-	@./mkconfig $(@:_config=) arm xscale lubbock
 
 cradle_config	:	unconfig
 	@./mkconfig $(@:_config=) arm xscale cradle
@@ -641,16 +666,32 @@ cradle_config	:	unconfig
 csb226_config	:	unconfig
 	@./mkconfig $(@:_config=) arm xscale csb226
 
+innokom_config	:	unconfig
+	@./mkconfig $(@:_config=) arm xscale innokom
+
+lubbock_config	:	unconfig
+	@./mkconfig $(@:_config=) arm xscale lubbock
+
 #========================================================================
 # i386
 #========================================================================
 #########################################################################
-## AMD SC520 CDP 
+## AMD SC520 CDP
 #########################################################################
 sc520_cdp_config	:	unconfig
 	@./mkconfig $(@:_config=) i386 i386 sc520_cdp
 
+#========================================================================
+# MIPS
+#========================================================================
 #########################################################################
+## MIPS32 4Kc
+#########################################################################
+
+incaip_config :		unconfig
+	@./mkconfig $(@:_config=) mips mips incaip
+
+
 
 clean:
 	find . -type f \
@@ -672,6 +713,7 @@ clobber:	clean
 	rm -fr *.*~
 	rm -f u-boot u-boot.bin u-boot.elf u-boot.srec u-boot.map System.map
 	rm -f tools/crc32.c tools/environment.c tools/env/crc32.c
+	rm -f cpu/mpc824x/bedbug_603e.c
 	rm -f include/asm/arch include/asm
 
 mrproper \

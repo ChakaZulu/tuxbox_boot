@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2000-2002
+ * (C) Copyright 2000-2003
  * Wolfgang Denk, DENX Software Engineering, wd@denx.de.
  *
  * See file CREDITS for list of people who contributed to this
@@ -24,7 +24,7 @@
 #ifndef	__VERSION_H__
 #define	__VERSION_H__
 
-#define	U_BOOT_VERSION		"U-Boot 0.2.1 (TuxBox)"
-#define	U_BOOT_VERSION_SHORT	"U-Boot 0.2.1"
+#define	U_BOOT_VERSION		"U-Boot 0.2.3 (TuxBox)"
+#define	U_BOOT_VERSION_SHORT	"U-Boot 0.2.3"
 
 #endif	/* __VERSION_H__ */
