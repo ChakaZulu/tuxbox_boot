@@ -20,6 +20,10 @@
  *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *   
  *  $Log: fb-avia.c,v $
+ *  Revision 1.8  2001/08/31 02:34:03  derget
+ *
+ *  fixxed logo over tftp detection of no tftp logo
+ *
  *  Revision 1.7  2001/08/28 10:52:38  derget
  *
  *  implemented logo over tftp if logo flash failes ..
@@ -50,7 +54,7 @@
  *  
  *  Reimplementet gtxfb.c
  *
- *  $Revision: 1.7 $
+ *  $Revision: 1.8 $
  *
  */
 #include <stdio.h>
@@ -60,6 +64,7 @@
 #include <idxfs.h>
 #include "enx.h"
 
+int have_logo=0; 
 static int pal=1;
 unsigned char *gtxmem, *gtxreg;
 unsigned char *enx_mem_addr = (unsigned char*)ENX_MEM_BASE;
@@ -265,19 +270,27 @@ int fb_init(void)
   unsigned char mID = *(char*)(0x1001ffe0);
   unsigned int size, offset = 0;
   unsigned char *iframe_logo;
+  have_logo = 0;
   idxfs_file_info((unsigned char*)IDXFS_OFFSET, 0, "logo-fb", &offset, &size);
   
     if (!offset) 
-   {
+        {
       printf("  No FB Logo in Flash , trying tftp\n");
-      NetLoop(33161152, "TFTP","%(bootpath)/tftpboot/logo-fb", 0x120000);
+      if (1==NetLoop(33161152, "TFTP","%(bootpath)/tftpboot/logo-fb", 0x120000)) {
+      have_logo = 1;
       iframe_logo = (unsigned char*)(0x120000);
-   }
-    else { iframe_logo = (unsigned char*)(IDXFS_OFFSET + offset); } 
-	
+   	} 
+	else { printf("  FB logo not found\n"); }
+	}    	
+    else { 
+	   have_logo = 1;
+	   iframe_logo = (unsigned char*)(IDXFS_OFFSET + offset); 
+	 } 
+
   i2c_bus_init();
   saa7126_init(mID);
 
+if (have_logo)
   switch (mID) {
     case 1:
       // NOKIA (GTX + CXA2092)
