@@ -37,6 +37,7 @@
 
 #define	CONFIG_MPC823		1	/* This is a MPC823 CPU		*/
 #define	CONFIG_DBOX2		1	/* ...on a dbox2 device		*/
+#define	CONFIG_SECONDSTAGE	1	/* ...with a second state loader*/
 
 #define	CONFIG_LCD_BOARD	1	/* ...with LCD			*/
 #define	CONFIG_DBOX2_FB		1	/* ...with FB			*/

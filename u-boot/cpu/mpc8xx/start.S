@@ -85,7 +85,7 @@
  * r4 - 2nd arg to board_init(): boot flag
  */
 	.text
-#ifdef CONFIG_DBOX2
+#ifdef CONFIG_SECONDSTAGE
 	bl EXC_OFF_SYS_RESET
 #endif
 	.long	0x27051956		/* U-Boot Magic Number			*/
