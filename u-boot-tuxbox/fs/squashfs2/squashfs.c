@@ -27,6 +27,13 @@
  * squashfs version 1.x is not supported anymore, compatibility
  * code may be added.
  *
+ *
+ * 2004-10-22:
+ *
+ * fragments are now supported, so -always-use-fragments works.
+ *
+ * compatibility with squashfs 1.x has been declared nonsense.
+ *
  */
 
 #include <common.h>
@@ -51,10 +58,8 @@
 #define WARNING(s, args...)				printf("SQUASHFS: "s, ## args)
 
 
-#ifdef IF_I_SUPPORTED_FRAGMENTS
 int read_fragment_table(struct part_info *info, squashfs_super_block *sBlk, squashfs_fragment_entry **fragment_table);
 squashfs_fragment_entry *frag_table;
-#endif
 
 
 int squashfs_read_super (struct part_info *info, squashfs_super_block *super)
@@ -79,14 +84,15 @@ int squashfs_read_super (struct part_info *info, squashfs_super_block *super)
 		return 0;
 	}
 
-#ifdef IF_I_SUPPORTED_FRAGMENTS
-	read_fragment_table(info, super, &frag_table);
-#else
-	if (SQUASHFS_ALWAYS_FRAGMENTS(super->flags))
+	TRACE ("fragments: %d\n", super->fragments);
+	TRACE ("fragment_table_start: 0x%x\n", super->fragment_table_start);
+	TRACE ("inode_table_start: 0x%x\n", super->inode_table_start);
+	TRACE ("directory_table_start: 0x%x\n", super->directory_table_start);
+
+	if (!read_fragment_table(info, super, &frag_table))
 	{
-		WARNING ("if boot fails, try not using -always-use-fragments\n");
+		return 0;
 	}
-#endif
 
 	return 1;
 }
@@ -167,7 +173,46 @@ static int read_block(struct part_info *info, unsigned int start, unsigned int *
 }
 
 
-#ifdef IF_I_SUPPORTED_FRAGMENTS
+static int read_fragment_block(struct part_info *info, unsigned int start, unsigned char *block, squashfs_super_block *sBlk, unsigned int *bytecount, unsigned int frag_offset, unsigned int frag_size)
+{
+	short int compressed;
+	unsigned int length;
+
+	compressed = SQUASHFS_COMPRESSED_BLOCK(*bytecount);
+	length = SQUASHFS_COMPRESSED_SIZE_BLOCK(*bytecount);
+
+	if(compressed) 
+	{
+		unsigned char buffer[SQUASHFS_FILE_SIZE];
+		unsigned char uncompressed_buffer[SQUASHFS_FILE_SIZE];
+		int res;
+		long bytes = SQUASHFS_FILE_SIZE;
+
+		TRACE("compressed block @ 0x%x, compressed size %d\n", start, length);
+		read_bytes(info, start, length, buffer);
+
+		squashfs_uncompress_init();
+		res = squashfs_uncompress_block(uncompressed_buffer, bytes, buffer, length);
+		TRACE("compressed block @ 0x%x, uncompressed size %d\n", start, res);
+		if(!res)
+		{
+			ERROR("zlib::uncompress failed\n");
+			squashfs_uncompress_exit();
+			return 0;
+		}
+		squashfs_uncompress_exit();
+		memcpy(block, uncompressed_buffer, frag_size);
+		return frag_size;
+	} 
+	else 
+	{
+		TRACE("uncompressed block @ 0x%x, size %d\n", start, length);
+		read_bytes(info, start + frag_offset, frag_size, block);
+		return frag_size;
+	}
+}
+
+
 int read_fragment_table(struct part_info *info, squashfs_super_block *sBlk, squashfs_fragment_entry **fragment_table)
 {
 	int i, indexes = SQUASHFS_FRAGMENT_INDEXES(sBlk->fragments);
@@ -187,13 +232,12 @@ int read_fragment_table(struct part_info *info, squashfs_super_block *sBlk, squa
 
 	for(i = 0; i < indexes; i++) 
 	{
-		int length = read_block(info, fragment_table_index[i], NULL, ((char *) *fragment_table) + (i * SQUASHFS_METADATA_SIZE), sBlk, NULL);
-		TRACE("reading fragment table block %d, from 0x%x, length %d\n", i, fragment_table_index[i], length);
+		TRACE("reading fragment table block @ 0x%x\n", fragment_table_index[i]);
+		int length = read_block(info, fragment_table_index[i], NULL, ((unsigned char *) *fragment_table) + (i * SQUASHFS_METADATA_SIZE), sBlk, NULL);
 	}
 
 	return 1;
 }
-#endif
 
 
 /* reads directory header(s) and entries and looks for a given name. Returns the inode if found */
@@ -408,6 +452,14 @@ static unsigned int squashfs_lookup (struct part_info *info, char *entryname, ch
 					{
 						TRACE("reading block %d\n", i);
 						bytes += read_block(info, cur_ptr, &cur_ptr, (unsigned char*)(loadoffset+bytes), &sBlk, blocklist+i);
+					}
+					if (frag_bytes)
+					{
+						squashfs_fragment_entry *frag_entry = frag_table + dirreg.fragment;
+						TRACE("%d bytes in fragment %d, offset %d\n", frag_bytes, dirreg.fragment, dirreg.offset);
+						TRACE("fragment %d, start_block=0x%x, size=%d\n",
+							dirreg.fragment, frag_entry->start_block, SQUASHFS_COMPRESSED_SIZE_BLOCK(frag_entry->size));
+						bytes += read_fragment_block(info, frag_entry->start_block, (unsigned char*)(loadoffset+bytes), &sBlk, &(frag_entry->size), dirreg.offset, frag_bytes);
 					}
 					*size=bytes;
 					free (blocklist);
