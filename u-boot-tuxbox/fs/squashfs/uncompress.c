@@ -39,7 +39,6 @@ static void zfree (void *x, void *addr, unsigned nb)
 	free (addr);
 }
 
-/* The correct size is already known in advance for squashfs from the meta data */
 int squashfs_uncompress_block (void *dst, int dstlen, void *src, int srclen)
 {
 	int err;

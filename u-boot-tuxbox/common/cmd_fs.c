@@ -40,6 +40,10 @@ int cramfs_info (struct part_info *info);
 #if (CONFIG_COMMANDS & CFG_CMD_JFFS2) || (CONFIG_FS & CFG_FS_JFFS2)
 #include <jffs2/jffs2.h>
 #endif
+#if (CONFIG_FS & CFG_FS_SQUASHFS)
+#include <squashfs/squashfs_fs.h>
+#endif
+
 
 #define MK_FS_PART_TBL_ENTRY(type,offset,size)				\
 	{ type, offset, size }
@@ -108,6 +112,12 @@ int do_fs_fsload (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 			size = cramfs_load ((char *) offset, part, filename);
 			break;
 #endif
+#if (CONFIG_FS & CFG_FS_SQUASHFS)
+		case CFG_FS_SQUASHFS:
+			printf ("### FS (squashfs) loading '%s' to 0x%lx\n", filename, offset);
+			size = squashfs_load ((char *) offset, part, filename);
+			break;
+#endif
 		default:
 			printf ("### FS unsupported (%d)\n", part -> type );
 			return 0;
@@ -156,6 +166,11 @@ int do_fs_ls (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 			ret = cramfs_ls (part, filename);
 			break;
 #endif
+#if (CONFIG_FS & CFG_FS_SQUASHFS)
+		case CFG_FS_SQUASHFS:
+			ret = squashfs_ls (part, filename);
+			break;
+#endif
 		default:
 			printf ("### FS unsupported (%d)\n", part -> type );
 			return 0;
@@ -178,6 +193,11 @@ static void fsinfo (int number)
 		case CFG_FS_CRAMFS:
 			puts ("cramfs");
 #if !(CONFIG_FS & CFG_FS_CRAMFS)
+			puts (" (unsupported)");
+#endif
+		case CFG_FS_SQUASHFS:
+			puts ("squashfs");
+#if !(CONFIG_FS & CFG_FS_SQUASHFS)
 			puts (" (unsupported)");
 #endif
 			break;
@@ -216,6 +236,11 @@ int do_fs_fsinfo(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 #if (CONFIG_FS & CFG_FS_CRAMFS)
 			case CFG_FS_CRAMFS:
 				ret = cramfs_info (part);
+				break;
+#endif
+#if (CONFIG_FS & CFG_FS_SQUASHFS)
+			case CFG_FS_SQUASHFS:
+				ret = squashfs_info (part);
 				break;
 #endif
 			default:
@@ -260,6 +285,11 @@ int fs_fsload (unsigned long offset, char *filename)
 #if (CONFIG_FS & CFG_FS_CRAMFS)
 		case CFG_FS_CRAMFS:
 			size = cramfs_load ((char *) offset, part, temp);
+			break;
+#endif
+#if (CONFIG_FS & CFG_FS_SQUASHFS)
+		case CFG_FS_SQUASHFS:
+			size = squashfs_load ((char *) offset, part, temp);
 			break;
 #endif
 		default:
