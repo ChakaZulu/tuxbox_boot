@@ -38,8 +38,8 @@
 #define	CONFIG_MPC823		1	/* This is a MPC823 CPU		*/
 #define	CONFIG_DBOX2		1	/* ...on a dbox2 device		*/
 
-//#define	CONFIG_LCD_BOARD	1	/* ...with LCD			*/
-//#define	CONFIG_DBOX2_FB		1	/* ...with FB			*/
+#define	CONFIG_LCD_BOARD	1	/* ...with LCD			*/
+#define	CONFIG_DBOX2_FB		1	/* ...with FB			*/
 
 #define	CONFIG_HARD_I2C		1	/* ...and I2C hardware support	*/
 #define	CFG_I2C_SPEED		50000
@@ -79,9 +79,9 @@
 
 #define	CONFIG_WATCHDOG		1	/* watchdog enabled		*/
 
-#define CONFIG_BOOTP_MASK	CONFIG_BOOTP_ALL
+#define CONFIG_BOOTP_MASK	( CONFIG_BOOTP_DEFAULT | CONFIG_BOOTP_VENDOREX )
 
-#define CONFIG_COMMANDS		( CONFIG_CMD_DFL | CFG_CMD_FS )
+#define CONFIG_COMMANDS		( CONFIG_CMD_DFL | CFG_CMD_FS | CFG_CMD_DHCP )
 
 #define	CONFIG_FS		( CFG_FS_CRAMFS | CFG_FS_JFFS2 )
 
@@ -93,6 +93,8 @@
 #define	CFG_FS_PART1_SIZE	0xe0000
 
 #define	CONFIG_DBOX2_FS_ENV_READ		"1:env"
+
+#define	CONFIG_DBOX2_NETWORK		1
 
 #ifdef	CONFIG_LCD_BOARD
 #define	CONFIG_DBOX2_LCD_INFO			1
@@ -121,6 +123,11 @@
 //#define	CONFIG_AUTOBOOT_SELECT_4_COMMAND	""
 //#define	CONFIG_AUTOBOOT_SELECT_5_TEXT		""
 //#define	CONFIG_AUTOBOOT_SELECT_5_COMMAND	""
+
+#if defined(CONFIG_DBOX2_LCD_LOGO) || defined(CONFIG_DBOX2_FB_LOGO)
+#define	CONFIG_LAST_STAGE_INIT
+#endif
+
 
 /* this must be included AFTER the definition of CONFIG_COMMANDS (if any) */
 #include <cmd_confdefs.h>
@@ -174,6 +181,11 @@
 #define	CFG_GBL_DATA_SIZE	64  /* size in bytes reserved for initial data */
 #define CFG_GBL_DATA_OFFSET	(CFG_INIT_RAM_END - CFG_GBL_DATA_SIZE)
 #define	CFG_INIT_SP_OFFSET	CFG_GBL_DATA_OFFSET
+
+/*-----------------------------------------------------------------------
+ * Address accessed to reset the board - must not be mapped/assigned
+ */
+#define	CFG_RESET_ADDRESS	0xFFFFFFFF
 
 /*-----------------------------------------------------------------------
  * Start addresses for the final memory configuration

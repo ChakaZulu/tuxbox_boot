@@ -333,14 +333,14 @@ BootpHandler(uchar * pkt, unsigned dest, unsigned src, unsigned len)
 		return;
 	}
 
-#ifdef CONFIG_DBOX2
+#ifdef CONFIG_DBOX2_NETWORK
 	NetState = NETLOOP_SUCCESS;
-#else /* CONFIG_DBOX2 */
+#else /* CONFIG_DBOX2_NETWORK */
 	/* Send ARP request to get TFTP server ethernet address.
 	 * This automagically starts TFTP, too.
 	 */
 	ArpRequest();
-#endif /* CONFIG_DBOX2 */
+#endif /* CONFIG_DBOX2_NETWORK */
 }
 #endif	/* !CFG_CMD_DHCP */
 
@@ -712,6 +712,8 @@ void DhcpOptionsProcess(char *popt)
 				memcpy(&NetOurRootPath, popt+2, size);
 				NetOurRootPath[size] = 0 ;
 				break;
+			case 28:		/* Ignore Broadcast Address Option */
+				break;
 			case 51:
 				dhcp_leasetime = *(unsigned int *)(popt + 2);
 				break;
@@ -868,12 +870,12 @@ DhcpHandler(uchar * pkt, unsigned dest, unsigned src, unsigned len)
 			}
 #ifdef CONFIG_DBOX2_NETWORK
 			NetState = NETLOOP_SUCCESS;
-#else /* CONFIG_DBOX2 */
+#else /* CONFIG_DBOX2_NETWORK */
 			/* Send ARP request to get TFTP server ethernet address.
 			 * This automagically starts TFTP, too.
 			 */
 			ArpRequest();
-#endif /* CONFIG_DBOX2 */
+#endif /* CONFIG_DBOX2_NETWORK */
 			return;
 		}
 		break;

@@ -25,12 +25,17 @@
  */
 
 #include <common.h>
+#include <config.h>
 #include "mpc8xx.h"
 
 #ifdef CONFIG_DBOX2_ENV_READ_FS
 #include <cmd_fs.h>
 #include <net.h>
 #endif /* CONFIG_DBOX2_ENV_READ_FS */
+
+#if (CONFIG_COMMANDS & CFG_CMD_DHCP) && (CONFIG_BOOTP_MASK & CONFIG_BOOTP_VENDOREX)
+#include <version.h>
+#endif /* CFG_CMD_DHCP && CONFIG_BOOTP_VENDOREX */
 
 /* ------------------------------------------------------------------------- */
 
@@ -62,35 +67,23 @@ const uint sdram_table_upmb_nokia[] =
  * Check Board Identity
  */
 
+const char *id2name[] = { "EMPTY", "Nokia", "Phillips", "Sagem" };
+unsigned char *hwi = (unsigned char *) (CFG_FLASH_BASE + CFG_HWINFO_OFFSET);
+static unsigned char id = 0;
+
 int checkboard (void)
 {
-	unsigned char *hwi = (unsigned char *) (CFG_FLASH_BASE + CFG_HWINFO_OFFSET);
-	unsigned char k = hwi[0];
+	id = hwi[0];
 
-	switch (k)
+	if (id < 1 && id > 3)
 	{
-		case 1:
-		case 2:
-		case 3:
-			puts ("       DBOX2, ");
-			break;
-		default:
-			printf ("       unknown board (0x%02x)\n", k);
-			return -1;
+		printf ("Board: unknown (0x%02x)\n", id);
+		return -1;
 	}
 
-	switch (k)
-	{
-		case 1:
-			puts ("Nokia\n");
-			break;
-		case 2:
-			puts ("Phillips\n");
-			break;
-		case 3:
-			puts ("Sagem\n");
-			break;
-	}
+	puts ("Board: DBOX2, ");
+	puts (id2name[id]);
+	puts ("\n");
 
 	return 0;
 }
@@ -102,15 +95,9 @@ long int initdram (int board_type)
 	volatile immap_t *immap = (immap_t *) CFG_IMMR;
 	volatile memctl8xx_t *memctl = &immap->im_memctl;
 	int size = 0;
-	unsigned char *hwi = (unsigned char *) (CFG_FLASH_BASE + CFG_HWINFO_OFFSET);
-	unsigned char k = hwi[0];
 
-	switch (k)
-	{
-		case 1:
-			upmconfig (UPMB, (uint *) sdram_table_upmb_nokia, sizeof (sdram_table_upmb_nokia) / sizeof (uint));
-			break;
-	}
+	if (id == 1)
+		upmconfig (UPMB, (uint *) sdram_table_upmb_nokia, sizeof (sdram_table_upmb_nokia) / sizeof (uint));
 
 	if ( memctl->memc_br1 & 0x1 )
 		size += ~(memctl->memc_or1 & 0xffff8000) + 1;
@@ -127,11 +114,11 @@ long int initdram (int board_type)
 void load_sernum_ethaddr (void)
 {
 	int i;
-	unsigned char *hwi;
 	unsigned char  ethaddr[18];
 	static char byte_to_hex[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
 	
-	hwi = (unsigned char *) (CFG_FLASH_BASE + CFG_HWINFO_OFFSET);
+	if (getenv ("ethaddr") != NULL)
+		return;
 
 	for (i = 0; i < 6; i++)
 	{
@@ -141,9 +128,7 @@ void load_sernum_ethaddr (void)
 	}
 	ethaddr[17] = '\0';
 
-	if (getenv ("ethaddr") == NULL) {
-		setenv ("ethaddr", ethaddr);
-	}
+	setenv ("ethaddr", ethaddr);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -186,3 +171,31 @@ void load_env_fs (void)
 #endif /* CONFIG_DBOX2_ENV_READ_FS */
 
 /* ------------------------------------------------------------------------- */
+
+#if (CONFIG_COMMANDS & CFG_CMD_DHCP) && (CONFIG_BOOTP_MASK & CONFIG_BOOTP_VENDOREX)
+u8 *dhcp_vendorex_prep (u8 *e)
+{
+	const char *part1 = "DBOX2, ";
+	const char *part2 = id2name[id];
+
+	/* DHCP vendor-class-identifier = 60 */
+	*e++ = 60;
+	*e++ = strlen (part1) + strlen (part2);
+	while (*part1)
+		*e++ = *part1++;
+	while (*part2)
+		*e++ = *part2++;
+
+	return e;
+}
+
+/* ------------------------------------------------------------------------- */
+
+u8 *dhcp_vendorex_proc (u8 * popt)
+{
+	return NULL;
+}
+#endif /* CFG_CMD_DHCP && CONFIG_BOOTP_VENDOREX */
+
+/* ------------------------------------------------------------------------- */
+

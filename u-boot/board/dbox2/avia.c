@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *
- * $Id: avia.c,v 1.1 2002/12/22 17:38:55 bastian Exp $
+ * $Id: avia.c,v 1.2 2002/12/24 15:54:51 bastian Exp $
  */
 
 #include <common.h>
@@ -26,13 +26,13 @@
 
 #include "avia.h"
 
+extern int decodestillmpg (void *, const void *, int, int);
+
 unsigned char chip_type;
 unsigned char *mem_addr;
 unsigned char *reg_addr;
 
-extern int decodestillmpg (void *, const void *, int, int);
-
-void avia_init (int mid, unsigned char *offset, int size)
+void avia_init_pre (int mid)
 {
 	unsigned long val;
 
@@ -73,9 +73,16 @@ void avia_init (int mid, unsigned char *offset, int size)
 			}
 			break;
 	}
+}
 
-	if (offset && size)
-		decodestillmpg (mem_addr + 0x100000, offset, 720, 576);
+void avia_init_load (unsigned char* fb_logo)
+{
+	decodestillmpg (mem_addr + 0x100000, fb_logo, 720, 576);
+}
+
+void avia_init_post (int mid)
+{
+	unsigned long val;
 
 	switch (mid)
 	{

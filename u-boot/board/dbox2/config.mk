@@ -28,3 +28,5 @@
 #
 
 TEXT_BASE = 0x40000
+PLATFORM_CPPFLAGS += -mcpu=823
+

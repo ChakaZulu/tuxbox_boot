@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *
- * $Id: fb.c,v 1.2 2002/12/22 22:09:56 bastian Exp $
+ * $Id: fb.c,v 1.3 2002/12/24 15:54:51 bastian Exp $
  */
 
 #include <common.h>
@@ -32,14 +32,30 @@
 #include <net.h>
 #endif /* CONFIG_DBOX2_FB_LOGO_TFTP */
 
+extern unsigned char *hwi;
+
 extern void saa7126_init (int);
 extern void avs_init (int);
-extern void avia_init (int, unsigned char*, int);
+extern void avia_init_pre (int);
+extern void avia_init_load (unsigned char*);
+extern void avia_init_post (int);
 
-void fb_init (void)
+int fb_init (void)
 {
+	puts ("FB:    ");
+
+	saa7126_init (hwi[0]);
+	avs_init (hwi[0]);
+	avia_init_pre (hwi[0]);
+
+	puts ("ready\n");
+
+	return 0;
+}
+
 #ifdef CONFIG_DBOX2_FB_LOGO
-	unsigned char *hwi = (unsigned char *) (CFG_FLASH_BASE + CFG_HWINFO_OFFSET);
+int fb_load (void)
+{
 	unsigned char *fb_logo = (unsigned char *) 0x100000;
 	int size;
 
@@ -49,10 +65,10 @@ void fb_init (void)
 	if (size <= 0)
 	{
 #  ifdef CONFIG_DBOX2_FB_LOGO_TFTP
-		printf ("can't find logo in flash - try network\n");
+		puts ("can't find logo in flash - try network\n");
 #  else /* CONFIG_DBOX2_FB_LOGO_TFTP */
-		printf ("can't find logo in flash - no init\n");
-		return;
+		puts ("can't find logo in flash\n");
+		return 1;
 #  endif /* CONFIG_DBOX2_FB_LOGO_TFTP */
 	}
 	else
@@ -65,25 +81,18 @@ void fb_init (void)
 
 	if (size <= 0)
 	{
-		printf ("can't find logo - no init\n");
-		return;
+		puts ("can't find logo\n");
+		return 1;
 	}
 	else
 		goto load_logo;
 # endif /* CONFIG_DBOX2_FB_LOGO_TFTP */
 load_logo:
-	printf ("loading");
-
-	saa7126_init (hwi[0]);
-	avs_init (hwi[0]);
-	avia_init (hwi[0], fb_logo, size);
-
-	printf (" - ready\n");
-#else /* CONFIG_DBOX2_FB_LOGO */
-	printf ("no init\n");
+	avia_init_load (fb_logo);
+	avia_init_post (hwi[0]);
 #endif /* CONFIG_DBOX2_FB_LOGO */
 
-	return;
+	return 0;
 }
 
 #endif
