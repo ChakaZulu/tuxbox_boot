@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *
- * $Id: fb.c,v 1.5 2003/03/06 18:03:03 waldi Exp $
+ * $Id: fb.c,v 1.6 2003/03/14 16:30:57 waldi Exp $
  */
 
 #include <common.h>
@@ -45,7 +45,11 @@ int fb_init (void)
 {
 	puts ("FB:    ");
 
+#ifdef CONFIG_DBOX2_FB_LOGO
 	avs_blank (mid);
+#else /* CONFIG_DBOX2_FB_LOGO */
+	avs_init (mid);
+#endif /* CONFIG_DBOX2_FB_LOGO */
 	saa7126_init (mid);
 	avia_init_pre (mid);
 
