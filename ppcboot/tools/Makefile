@@ -34,22 +34,21 @@ OBJS	= img2srec.o mkimage.o crc32.o
 #
 CPPFLAGS   = -Wall -pedantic -O
 CFLAGS     = $(CPPFLAGS) -I../include
-CC	   = $(HOSTCC)
 MAKEDEPEND = makedepend
 
 all:	.depend $(BINS) subdirs
 
 img2srec:	img2srec.o
-		$(CC) $(CFLAGS) -s -o $@ $^
+		$(HOSTCC) $(CFLAGS) -s -o $@ $^
 
 mkimage:	mkimage.o crc32.o
-		$(CC) -g $(CFLAGS) -o $@ $^
+		$(HOSTCC) -g $(CFLAGS) -o $@ $^
 
 crc32.o:	crc32.c
-		$(CC) -g $(CFLAGS) -c $<
+		$(HOSTCC) -g $(CFLAGS) -c $<
 
 mkimage.o:	mkimage.c
-		$(CC) -g $(CFLAGS) -c $<
+		$(HOSTCC) -g $(CFLAGS) -c $<
 
 subdirs:
 #		@for dir in $(TOOLSUBDIRS) ; do $(MAKE) -C $$dir || exit 1 ; done
@@ -60,7 +59,10 @@ crc32.c:
 #########################################################################
 
 .depend:	Makefile $(OBJS:.o=.c)
-		$(CC) -M $(CPPFLAGS) -I../include $(OBJS:.o=.c) > $@
+		$(HOSTCC) -M $(CPPFLAGS) -I../include $(OBJS:.o=.c) > $@
+
+%.o: %.c
+		$(HOSTCC) -g $(CFLAGS) -c $<
 
 sinclude .depend
 
