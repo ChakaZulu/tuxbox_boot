@@ -17,11 +17,11 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *
- * $Id: avia.c,v 1.2 2002/12/24 15:54:51 bastian Exp $
+ * $Id: avia.c,v 1.3 2003/10/16 08:48:31 alexw Exp $
  */
 
 #include <common.h>
-
+ 
 #ifdef CONFIG_DBOX2_FB
 
 #include "avia.h"
@@ -32,14 +32,79 @@ unsigned char chip_type;
 unsigned char *mem_addr;
 unsigned char *reg_addr;
 
-void avia_init_pre (int mid)
+
+static int pal=1;
+unsigned char *gtxmem, *gtxreg;
+unsigned char *enx_mem_addr = (unsigned char*)ENX_MEM_BASE;
+unsigned char *enx_reg_addr = (unsigned char*)ENX_REG_BASE;
+
+#define fboffset 1024*1024
+
+
+void avia_init (int mid, unsigned char* fb_logo)
 {
+	int cr;
 	unsigned long val;
 
 	switch (mid)
 	{
 		case 1:
-			mem_addr = (unsigned char *) GTX_MEM_BASE;
+			gtxmem=(unsigned char*)GTX_PHYSBASE;
+			gtxreg=gtxmem+0x400000;
+			
+			rh(RR0)=0xFFFF;
+			rh(RR1)=0x00FF;
+			rh(RR0)&=~((1<<13)|(1<<12)|(1<<10)|(1<<9)|(1<<6)|1);
+			rh(RR0)=0;   
+			rh(RR1)=0; 
+			cr=rh(CR0);
+			cr|=1<<11;
+			cr&=~(1<<10);
+			cr|=1<<9;
+			cr&=~(1<<5);
+			cr|=1<<3; 
+			    
+			cr&=~(3<<6);
+			cr|=1<<6; 
+			cr&=~(1<<2);
+			rh(CR0)=cr;
+
+			decodestillmpg(gtxmem + fboffset, fb_logo, 720, 576);
+
+			rh(VCR)=0x340;
+			rh(VHT)=pal?858:852;
+			rh(VLT)=pal?(623|(21<<11)):(523|(18<<11));
+			
+			val=3<<30;   //16bit rgb
+			val|=3<<24;  //chroma filter	
+			val|=0<<20;  //BLEV1
+			val|=0<<16;  //BLEV0
+			val|=720*2;  //Stride
+			
+			rw(GMR)=val;
+			
+			rh(CCR)=0x7FFF;
+			rw(GVSA)=fboffset;
+			rh(GVP)=0;
+			VCR_SET_HP(2);
+			VCR_SET_FP(0);
+			
+			val=pal?127:117;
+			val*=8;
+			if (rw(GMR)&(1<<28))
+			        val/=9;
+			else
+			        val/=8;
+			
+			val-=64;
+			GVP_SET_COORD(val, pal?42:36);
+			rh(GFUNC)=0x10;
+			rh(TCR)=0xFC0F;
+			GVS_SET_XSZ(720);
+			GVS_SET_YSZ(576);
+			rw(VBR)=(1<<24)|0x123456;               // hier nochmal schwarz einbauen...
+
+/*			mem_addr = (unsigned char *) GTX_MEM_BASE;
 			reg_addr = (unsigned char *) GTX_REG_BASE;
 
 			gtx_reg_16 (RR0) = 0xffff;
@@ -53,10 +118,54 @@ void avia_init_pre (int mid)
 			val |= 1 << 3;
 			val &= ~(1 << 2);
 			gtx_reg_16 (CR0) = val;
+*/
 			break;
 		case 2:
 		case 3:
-			mem_addr = (unsigned char *) ENX_MEM_BASE;
+			enx_reg_w(RSTR0) = 0xFCF6BEFF;
+			enx_reg_w(SCSC) = 0x00000000;
+			enx_reg_w(RSTR0) &= ~(1 << 12);
+			enx_reg_w(MC) = 0x00001015;
+			enx_reg_w(RSTR0) &= ~(1 << 11);
+			enx_reg_w(RSTR0) &= ~(1 << 9);
+
+			enx_reg_w(CFGR0) |= 1 << 24;    // dac
+			enx_reg_w(RSTR0) &= ~(1 << 20); // Get dac out of reset state
+			enx_reg_h(DAC_PC) = 0x0000;     // dac auf 0
+			enx_reg_h(DAC_CP) = 0x0009;     // dac
+
+			decodestillmpg(enx_mem_addr + fboffset, fb_logo, 720, 576);
+
+			enx_reg_w(VBR) = 0;
+			enx_reg_h(VCR) = 0x40;
+			enx_reg_h(VHT) = 857|0x5000;
+			enx_reg_h(VLT) = 623|(21<<11);
+
+			val=0;
+			val|=1<<26;  
+			val|=3<<20;  
+			val|=(720*2);		
+
+			enx_reg_w(GMR1)=val;
+			enx_reg_w(GMR2)=0;
+			enx_reg_h(GBLEV1) = 0;
+			enx_reg_h(GBLEV2) = 0;
+			enx_reg_w(GVSA1) = fboffset;
+			enx_reg_w(GVP1) = 0;
+			enx_reg_h(G1CFR)=0;
+			enx_reg_h(G2CFR)=0;
+
+#define ENX_GVP_SET_X(X)     enx_reg_w(GVP1) = ((enx_reg_w(GVP1)&(~(0x3FF<<16))) | ((X&0x3FF)<<16))
+#define ENX_GVP_SET_Y(X)     enx_reg_w(GVP1) = ((enx_reg_w(GVP1)&(~0x3FF))|(X&0x3FF))
+#define ENX_GVP_SET_COORD(X,Y) ENX_GVP_SET_X(X); ENX_GVP_SET_Y(Y)
+#define ENX_GVS_SET_XSZ(X)   enx_reg_w(GVSZ1) = ((enx_reg_w(GVSZ1)&(~(0x3FF<<16))) | ((X&0x3FF)<<16))
+#define ENX_GVS_SET_YSZ(X)   enx_reg_w(GVSZ1) = ((enx_reg_w(GVSZ1)&(~0x3FF))|(X&0x3FF))
+
+			ENX_GVP_SET_COORD(113,42);
+			ENX_GVS_SET_XSZ(720);
+			ENX_GVS_SET_YSZ(576);
+
+/*			mem_addr = (unsigned char *) ENX_MEM_BASE;
 			reg_addr = (unsigned char *) ENX_REG_BASE;
 
 			enx_reg_32 (RSTR0) = 0xfffcffff;
@@ -71,50 +180,13 @@ void avia_init_pre (int mid)
 				enx_reg_16 (DAC_PC) = 0x0000;
 				enx_reg_16 (DAC_CP) = 0x0009;
 			}
+*/
 			break;
 	}
 }
 
-void avia_init_load (unsigned char* fb_logo)
-{
-	decodestillmpg (mem_addr + 0x100000, fb_logo, 720, 576);
-}
-
-void avia_init_post (int mid)
-{
-	unsigned long val;
-
-	switch (mid)
-	{
-		case 1:
-			val = 3 << 30;
-			val |= 3 << 24;
-			val |= 720 * 2;
-			gtx_reg_32 (GMR) = val;
-
-			gtx_reg_32 (GVSA) = 0x100000;
-			gtx_reg_32 (GVP) = ((127 * 8 % 8) << 27) | ((127 * 8 / 8 - 3 - 56) << 16) | (42 + 2);
-			gtx_reg_32 (GVS) = (720 << 16) | 576;
-
-			gtx_reg_16 (VCR) = 2 << 10;
-			gtx_reg_16 (VHT) = 858;
-			gtx_reg_16 (VLT) = 623 | (21 << 11);
-			break;
-		case 2:
-		case 3:
-			val = 3 << 20;
-			val |= 1 << 26;
-			val |= 720 * 2;
-			enx_reg_32 (GMR1) = val;
-
-			enx_reg_32 (GVSA1) = 0x100000;
-			enx_reg_32 (GVP1) = ((118 - 3) << 16) | (42 + 2);
-			enx_reg_32 (GVSZ1) = (720 << 16) | 576;
-
-			enx_reg_16 (VHT) = 857 | (1 << 14) | (1 << 12);
-			enx_reg_16 (VLT) = 623 | (21 << 11);
-			break;
-	}
+unsigned char *enx_get_reg_addr(void) {
+    return enx_reg_addr;
 }
 
 #endif /* CONFIG_DBOX2_FB */
