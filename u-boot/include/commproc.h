@@ -607,7 +607,7 @@ typedef struct scc_enet {
 #define	PA_ENET_TXD	((ushort)0x0008)	/* PA 12 */
 #define	PA_ENET_RCLK	((ushort)0x0200)	/* PA  6 */
 #define	PA_ENET_TCLK	((ushort)0x0800)	/* PA  4 */
-#define	PB_ENET_TENA	((uint)0x00002000)	/* PB 18 */
+#define	PC_ENET_TENA	((ushort)0x0002)	/* PC 14 */
 #define	PC_ENET_CLSN	((ushort)0x0040)	/* PC  9 */
 #define	PC_ENET_RENA	((ushort)0x0080)	/* PC  8 */
 
