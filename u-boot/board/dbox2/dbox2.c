@@ -153,6 +153,10 @@ void load_env_fs (void)
 			setenv ("bootcmd", &s[valuestart]);
 		else if (!strcmp (&s[namestart], "console"))
 			setenv ("console", &s[valuestart]);
+		else if (!strcmp (&s[namestart], "lcd_contrast")) 
+			setenv ("lcd_contrast", &s[valuestart]); 
+		else if (!strcmp (&s[namestart], "lcd_inverse")) 
+			setenv ("lcd_inverse", &s[valuestart]); 
 		else
 			printf ("env: can't set \"%s\"\n", &s[namestart]);
 	}

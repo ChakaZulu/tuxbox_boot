@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *
- * $Id: lcd.c,v 1.6 2003/09/08 10:43:41 diemade Exp $
+ * $Id: lcd.c,v 1.7 2003/09/11 10:21:38 alexw Exp $
  */
 
 #include <common.h>
@@ -288,6 +288,19 @@ static void lcd_reset_init (void)
 {
 	unsigned char *hwi = (unsigned char *) (CFG_FLASH_BASE + CFG_HWINFO_OFFSET);
 
+	char *s;
+	int lcd_contrast = 15;
+	int lcd_inverse = 0;
+
+	if ((s = getenv("lcd_contrast")) != NULL)
+	{
+		lcd_contrast = (int)simple_strtoul(s,NULL,8);
+	}
+	if ((s = getenv("lcd_inverse")) != NULL)
+	{
+		lcd_inverse = (int)simple_strtoul(s,NULL,8);
+	}
+
 	lcd_send_cmd (LCD_CMD_RESET, 0);
 
 	udelay (1000*100);
@@ -295,7 +308,7 @@ static void lcd_reset_init (void)
 	lcd_send_cmd (LCD_CMD_ON, 1);
 	lcd_send_cmd (LCD_CMD_RES, 7);
 	lcd_send_cmd (LCD_CMD_SRV, 1);
-	lcd_send_cmd (0x00, 15);
+	lcd_send_cmd (0x00, lcd_contrast);
 
 	switch (hwi[0])
 	{
@@ -312,7 +325,7 @@ static void lcd_reset_init (void)
 	lcd_send_cmd (LCD_CMD_ADC, 0);
 	lcd_send_cmd (LCD_CMD_SHL, 0);
 	lcd_send_cmd (LCD_CMD_EON, 0);
-	lcd_send_cmd (LCD_CMD_REVERSE, 0);
+	lcd_send_cmd (LCD_CMD_REVERSE, lcd_inverse);
 	lcd_send_cmd (LCD_CMD_IDL, 0);
 }
 
