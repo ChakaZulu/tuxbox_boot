@@ -374,8 +374,16 @@ void do_bootidxfs (cmd_tbl_t *cmdtp, bd_t *bd, int flag, int argc, char *argv[])
 {
 	unsigned int size, offset;
 
-	idxfs_file_info((unsigned char*)0x100000, 0x100, "kernel", &offset, &size);
+	idxfs_file_info((unsigned char*)0x10020000, 256 * 1024, "kernel", &offset, &size);
         do_bootm (cmdtp, bd, flag, argc, argv);
+}
+#endif
+	
+ 
+#if (CONFIG_COMMANDS & CFG_CMD_INFOIDXFS)
+void do_infoidxfs (cmd_tbl_t *cmdtp, bd_t *bd, int flag, int argc, char *argv[])
+{
+	idxfs_dump_info((unsigned char*)0x10020000, 256 * 1024);
 }
 #endif
 	
