@@ -82,6 +82,26 @@ const uint sdram_table[] =
 		    _NOT_USED_, _NOT_USED_, _NOT_USED_,
 };
 
+const uint sdram_table_upmb_nokia[] =
+{
+	0xFFF3CC04, 0xCFF7CC04, 0x0FFFDC04, 0x0FFFDC84,
+	0x0FFFDC04, 0x0FFFDC84, 0x0FF3CC00, 0xFFF3CC47,
+	_NOT_USED_, _NOT_USED_, _NOT_USED_, _NOT_USED_,
+	_NOT_USED_, _NOT_USED_, _NOT_USED_, _NOT_USED_,
+	_NOT_USED_, _NOT_USED_, _NOT_USED_, _NOT_USED_,
+	_NOT_USED_, _NOT_USED_, _NOT_USED_, _NOT_USED_,
+	0xFFFFCC04, 0xCFFFCC04, 0x00FFCC04, 0x00FFDC84,
+	0x00FFDC04, 0x00FFDC84, 0x0FF3CC00, 0xFFF7CC47,
+	_NOT_USED_, _NOT_USED_, _NOT_USED_, _NOT_USED_,
+	_NOT_USED_, _NOT_USED_, _NOT_USED_, _NOT_USED_,
+	_NOT_USED_, _NOT_USED_, _NOT_USED_, _NOT_USED_,
+	_NOT_USED_, _NOT_USED_, _NOT_USED_, _NOT_USED_,
+	_NOT_USED_, _NOT_USED_, _NOT_USED_, _NOT_USED_,
+	_NOT_USED_, _NOT_USED_, _NOT_USED_, _NOT_USED_,
+	0x7FFFFC07, _NOT_USED_, _NOT_USED_, _NOT_USED_,
+	_NOT_USED_, _NOT_USED_, _NOT_USED_, _NOT_USED_
+};
+
 /* ------------------------------------------------------------------------- */
 
 
@@ -128,6 +148,16 @@ long int initdram (int board_type)
     volatile immap_t     *immap  = (immap_t *)CFG_IMMR;
     volatile memctl8xx_t *memctl = &immap->im_memctl;
     long int size_b0, size_b1, size8, size9;
+    
+    unsigned char mID = *(char*)(0x1001ffe0);
+
+    switch (mID)
+    {
+    case 1:
+    	upmconfig(UPMB, (uint *)sdram_table_upmb_nokia, sizeof(sdram_table_upmb_nokia)/sizeof(uint));
+	break;
+    }
+
     printf("(faked) ");
     return 32*1024*1024;
 
