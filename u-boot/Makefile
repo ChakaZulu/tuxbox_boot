@@ -721,7 +721,7 @@ clobber:	clean
 		| xargs rm -f
 	rm -f $(OBJS) *.bak tags TAGS
 	rm -fr *.*~
-	rm -f u-boot u-boot.bin u-boot.elf u-boot.srec u-boot.map System.map
+	rm -f u-boot u-boot.* System.map
 	rm -f tools/crc32.c tools/environment.c tools/env/crc32.c
 	rm -f cpu/mpc824x/bedbug_603e.c
 	rm -f include/asm/arch include/asm
