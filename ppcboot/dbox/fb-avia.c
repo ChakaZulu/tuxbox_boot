@@ -20,6 +20,9 @@
  *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *   
  *  $Log: fb-avia.c,v $
+ *  Revision 1.10  2001/10/02 20:27:53  TripleDES
+ *  added Philips Bootlogo support
+ *
  *  Revision 1.9  2001/09/17 20:47:21  TripleDES
  *  some fixes
  *
@@ -57,7 +60,7 @@
  *  
  *  Reimplementet gtxfb.c
  *
- *  $Revision: 1.9 $
+ *  $Revision: 1.10 $
  *
  */
 #include <stdio.h>
@@ -119,7 +122,6 @@ void saa7126_init(char mId)
     i2c_send(0x88, 0x40, 0x01, 0x40, PAL_SAA7126_NOKIA_INIT + 0x40);
     break;
     case 2:
-    break;	
     case 3:
     i2c_send(0x88, 0x00, 0x01, 0x40, PAL_SAA7126_SAGEM_INIT);
     i2c_send(0x88, 0x40, 0x01, 0x40, PAL_SAA7126_SAGEM_INIT + 0x40);
@@ -135,7 +137,7 @@ void avs_init(char mId)
       i2c_send(0x90, 0, 0, 5, "\x0d\x29\xc9\xa9\x00");
     break;
     case 2:
-      i2c_send(0x94, 0, 0, 8, "\x00\x0a\x19\x99\xb5\x08\x34\x88");
+      i2c_send(0x94, 0, 0, 8, "\x00\x04\x19\x11\xa5\x00\x30\x88");
     break;	
     case 3:
       i2c_send(0x90, 0, 0, 7, "\x00\x00\x00\x00\x04\x3F\x00");
