@@ -153,6 +153,9 @@ static ulong flash_get_size (vu_long *addr, flash_info_t *info)
 		case INTEL_MANUFACT:
 			info->flash_id = FLASH_MAN_INTEL;
 			break;
+		case STM_MANUFACT:
+			info->flash_id = FLASH_MAN_STM;
+			break;
 		default:
 			info->flash_id = FLASH_UNKNOWN;
 			info->sector_count = 0;
@@ -169,6 +172,12 @@ static ulong flash_get_size (vu_long *addr, flash_info_t *info)
 	{
 		case AMD_ID_DL323B:
 			info->flash_id |= FLASH_AMDL323B;
+			info->sector_count = 63 + 8;
+			info->size = 0x00800000;
+			break;
+		case STM_ID_28W320CB:
+			info->flash_id |= FLASH_BTYPE;
+			info->flash_id |= FLASH_STM320CB;
 			info->sector_count = 63 + 8;
 			info->size = 0x00800000;
 			break;
@@ -299,6 +308,9 @@ void flash_print_info  (flash_info_t *info)
 		case FLASH_MAN_INTEL:
 			printf ("INTEL ");
 			break;
+		case FLASH_MAN_STM:
+			printf ("STM ");
+			break;
 		default:
 			printf ("Unknown Vendor ");
 	}
@@ -316,6 +328,9 @@ void flash_print_info  (flash_info_t *info)
 			break;
 		case FLASH_28F640J3A:
 			printf ("28F640J3A (64M), ");
+			break;
+		case FLASH_STM320CB:
+			printf ("28M320CB (32M, bottom boot sect), ");
 			break;
 		default:
 			printf ("Unknown Chip Type, ");
