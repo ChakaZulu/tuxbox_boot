@@ -118,6 +118,7 @@ static void debugmode_enable(int *product)
 		 * ask user whether to continue
 		 * even if "product?" does not equal -1
 		 */
+		return;
 	}
 
 	product[0] = 0;
@@ -133,6 +134,7 @@ static void debugmode_disable(int *product)
 		 * ask user whether to continue
 		 * even if "product?" does not equal 0
 		 */
+		return;
 	}
 
 	/*
