@@ -31,9 +31,11 @@ typedef unsigned int __u32;
 		(((__u32)(x) & (__u32)0x0000ff00UL) <<  8) | \
 		(((__u32)(x) & (__u32)0x00ff0000UL) >>  8) | \
 		(((__u32)(x) & (__u32)0xff000000UL) >> 24) ))
+/*
 typedef		unsigned char	uint8_t;
 typedef		unsigned short	uint16_t;
 typedef		unsigned int	uint32_t;
+*/
 
 #define     ntohl(a)	SWAP_LONG(a)
 #define     htonl(a)	SWAP_LONG(a)
