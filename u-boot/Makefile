@@ -420,7 +420,7 @@ CRAYL1_config:unconfig
 DASA_SIM_config: unconfig
 	@./mkconfig $(@:_config=) ppc ppc4xx dasa_sim esd
 
-DREAMBOX_config:	unconfig
+dreambox_config:	unconfig
 	@./mkconfig $(@:_config=) ppc ppc4xx dreambox
 
 DU405_config:	unconfig
