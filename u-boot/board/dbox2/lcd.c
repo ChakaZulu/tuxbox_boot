@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *
- * $Id: lcd.c,v 1.5 2003/09/06 19:01:22 diemade Exp $
+ * $Id: lcd.c,v 1.6 2003/09/08 10:43:41 diemade Exp $
  */
 
 #include <common.h>
@@ -294,7 +294,6 @@ static void lcd_reset_init (void)
 
 	lcd_send_cmd (LCD_CMD_ON, 1);
 	lcd_send_cmd (LCD_CMD_RES, 7);
-	lcd_send_cmd (LCD_CMD_SRV, 0);
 	lcd_send_cmd (LCD_CMD_SRV, 1);
 	lcd_send_cmd (0x00, 15);
 
