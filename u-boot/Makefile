@@ -39,11 +39,7 @@ VENDOR=
 
 #########################################################################
 
-ifndef CYGWIN
-TOPDIR	:= $(shell if [ "$$PWD" != "" ]; then echo $$PWD; else pwd; fi)
-else
 TOPDIR	:= $(shell pwd)
-endif
 export	TOPDIR
 
 ifeq (include/config.mk,$(wildcard include/config.mk))
