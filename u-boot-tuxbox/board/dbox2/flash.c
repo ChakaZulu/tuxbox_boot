@@ -181,13 +181,11 @@ static ulong flash_get_size (vu_long *addr, flash_info_t *info)
 			info->size = 0x00800000;
 			break;
 		case STM_ID_28W320CB:
-			info->flash_id |= FLASH_BTYPE;
 			info->flash_id |= FLASH_STM320CB;
 			info->sector_count = 63 + 8;
 			info->size = 0x00800000;
 			break;
 		case INTEL_ID_28F320C3B:
-			info->flash_id |= FLASH_BTYPE;
 		case INTEL_ID_28F320C3T:
 			info->flash_id |= FLASH_INTEL320T;
 			info->sector_count = 63 + 8;
@@ -199,7 +197,6 @@ static ulong flash_get_size (vu_long *addr, flash_info_t *info)
 			info->size = 0x00800000;
 			break;
 		case INTEL_ID_28F640C3B:
-			info->flash_id |= FLASH_BTYPE;
 			info->flash_id |= FLASH_28F640C3B;
 			info->sector_count = 127 + 8;
 			info->size = 0x01000000;
@@ -221,36 +218,39 @@ static void flash_get_offsets (ulong base, flash_info_t *info)
 	if (info->flash_id & FLASH_BTYPE)
 	{
 		/* set sector offsets for bottom boot block type */
-		if ((info->flash_id & FLASH_TYPEMASK) != FLASH_28F640J3A)
-		{
-			info->start[0] = base;
-			info->start[1] = base + 0x4000;
-			info->start[2] = base + 0x8000;
-			info->start[3] = base + 0xC000;
-			info->start[4] = base + 0x10000;
-			info->start[5] = base + 0x14000;
-			info->start[6] = base + 0x18000;
-			info->start[7] = base + 0x1C000;
-			for (i = 8; i < info->sector_count; i++)
-				info->start[i] = base + ((i - 7) * 0x20000);
-		}
-		else
-			for (i = 0; i < info->sector_count; i++)
-				info->start[i] = base + (i * 0x20000);
+		info->start[0] = base;
+		info->start[1] = base + 0x4000;
+		info->start[2] = base + 0x8000;
+		info->start[3] = base + 0xC000;
+		info->start[4] = base + 0x10000;
+		info->start[5] = base + 0x14000;
+		info->start[6] = base + 0x18000;
+		info->start[7] = base + 0x1C000;
+		for (i = 8; i < info->sector_count; i++)
+			info->start[i] = base + ((i - 7) * 0x20000);
 	}
 	else
 	{
 		/* set sector offsets for top boot block type */
-		i = info->sector_count - 1;
-		info->start[i--] = base + info->size - 0x4000;
-		info->start[i--] = base + info->size - 0x8000;
-		info->start[i--] = base + info->size - 0xC000;
-		info->start[i--] = base + info->size - 0x10000;
-		info->start[i--] = base + info->size - 0x14000;
-		info->start[i--] = base + info->size - 0x18000;
-		info->start[i--] = base + info->size - 0x1C000;
-		for (; i >= 0; i--)
-			info->start[i] = base + info->size - ((i - 6) * 0x20000);
+		switch (info->flash_id&FLASH_TYPEMASK)
+		{
+		case FLASH_28F640J3A:	/* flash has no boot blocks */
+			for (i = 0; i < info->sector_count; i++)
+				info->start[i] = base + (i * 0x20000);
+			break;
+		default:		
+			i = info->sector_count - 1;
+    		info->start[i--] = base + info->size - 0x4000;
+			info->start[i--] = base + info->size - 0x8000;
+			info->start[i--] = base + info->size - 0xC000;
+			info->start[i--] = base + info->size - 0x10000;
+			info->start[i--] = base + info->size - 0x14000;
+			info->start[i--] = base + info->size - 0x18000;
+			info->start[i--] = base + info->size - 0x1C000;
+			for (; i >= 0; i--)
+				info->start[i] = base + (i * 0x20000);
+			break;
+		}
 	}
 }
 
@@ -449,7 +449,7 @@ int flash_real_protect (flash_info_t *info, long sector, int prot)
 			secchk_last = info->sector_count-1;
 		}
 		for (secchk = secchk_first; secchk <= secchk_last; ++secchk){
-			switch (flash_get (info, info->start[secchk], 2) & flashmask)
+			switch (flash_get (info, (vu_long*)info->start[secchk], 2) & flashmask)
 			{
 				case 0:
 					info->protect[secchk] = 0;
