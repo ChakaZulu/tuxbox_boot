@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *
- * $Id: lcd.c,v 1.2 2005/02/03 15:02:44 carjay Exp $
+ * $Id: lcd.c,v 1.3 2005/02/14 16:35:32 carjay Exp $
  */
 
 #include <common.h>
@@ -155,13 +155,13 @@ static short console_col = 0;
 static short console_row = 0;
 
 #if CONFIG_DBOX2_LCD_LOGO
-#define	CONSOLE_COLS (LCD_COLS / FONT_WIDTH)
-#define	CONSOLE_ROWS CONFIG_DBOX2_LCD_LOGO_RESERVE
-#define	CONSOLE_ROWS_OFFSET (LCD_ROWS / FONT_HEIGHT - CONFIG_DBOX2_LCD_LOGO_RESERVE)
+#define	LCD_CONSOLE_COLS (LCD_COLS / FONT_WIDTH)
+#define	LCD_CONSOLE_ROWS CONFIG_DBOX2_LCD_LOGO_RESERVE
+#define	LCD_CONSOLE_ROWS_OFFSET (LCD_ROWS / FONT_HEIGHT - CONFIG_DBOX2_LCD_LOGO_RESERVE)
 #else /* CONFIG_DBOX2_LCD_LOGO */
-#define	CONSOLE_COLS (LCD_COLS / FONT_WIDTH)
-#define	CONSOLE_ROWS (LCD_ROWS / FONT_HEIGHT)
-#define	CONSOLE_ROWS_OFFSET 0
+#define	LCD_CONSOLE_COLS (LCD_COLS / FONT_WIDTH)
+#define	LCD_CONSOLE_ROWS (LCD_ROWS / FONT_HEIGHT)
+#define	LCD_CONSOLE_ROWS_OFFSET 0
 #endif /* CONFIG_DBOX2_LCD_LOGO */
 
 static void lcd_drawchars (unsigned short x, unsigned short y, unsigned char *str, int count);
@@ -393,7 +393,7 @@ static void console_scrollup (void)
 	int i, j;
 	unsigned char buf[LCD_COLS];
 
-	for (i = CONSOLE_ROWS_OFFSET; i < (LCD_ROWS - FONT_HEIGHT) / 8; i++)
+	for (i = LCD_CONSOLE_ROWS_OFFSET; i < (LCD_ROWS - FONT_HEIGHT) / 8; i++)
 	{
 #if FONT_HEIGHT == 8
 		lcd_set_pos (i + 1, 0);
@@ -422,7 +422,7 @@ static inline void console_back (void)
 	unsigned char *w = (unsigned char *)' ';
 
 	if (--console_col < 0) {
-		console_col = CONSOLE_COLS-1 ;
+		console_col = LCD_CONSOLE_COLS-1 ;
 		if (--console_row < 0)
 			console_row = 0;
 	}
@@ -436,7 +436,7 @@ static inline void console_newline (void)
 	console_col = 0;
 
 	/* Check if we need to scroll the terminal */
-	if (console_row >= CONSOLE_ROWS) {
+	if (console_row >= LCD_CONSOLE_ROWS) {
 		/* Scroll everything up */
 		console_scrollup () ;
 		--console_row;
@@ -462,7 +462,7 @@ void lcd_putc (const char c)
 			console_back ();
 			return;
 		default:
-			if (console_col >= CONSOLE_COLS)
+			if (console_col >= LCD_CONSOLE_COLS)
 				console_newline();
 
 			lcd_drawchars (console_col++, console_row, (unsigned char *) &c, 1);
@@ -490,7 +490,7 @@ void lcd_printf (const char *fmt, ...)
 
 static void lcd_drawchars (unsigned short x, unsigned short y, unsigned char *str, int count)
 {
-	unsigned short col = x * FONT_WIDTH, row = (CONSOLE_ROWS_OFFSET + y) * FONT_HEIGHT;
+	unsigned short col = x * FONT_WIDTH, row = (LCD_CONSOLE_ROWS_OFFSET + y) * FONT_HEIGHT;
 	unsigned short font_col, font_row;
 	int i;
 	unsigned char *s = str;
