@@ -253,6 +253,8 @@ int do_protect (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 		p = 0;
 	else if (strcmp(argv[1], "on") == 0)
 		p = 1;
+	else if (strcmp(argv[1], "ld") == 0)
+		p = 2;	
 	else {
 		printf ("Usage:\n%s\n", cmdtp->usage);
 		return 1;
