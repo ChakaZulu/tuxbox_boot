@@ -51,7 +51,7 @@ int squashfs_uncompress_block (void *dst, int dstlen, void *src, int srclen)
 	stream.avail_out = dstlen;
 
 	err = inflate (&stream, Z_FINISH);
-	if ((err==Z_OK)||(err=Z_STREAM_END))
+	if ((err==Z_OK)||(err==Z_STREAM_END))
 		return dstlen-stream.avail_out;
 	else
 		return 0;
