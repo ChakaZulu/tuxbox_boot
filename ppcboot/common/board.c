@@ -526,6 +526,10 @@ void    board_init_r  (bd_t *bd, ulong dest_addr)
     /* Initialize devices */
     devices_init();
 
+#ifdef CONFIG_DBOX
+    lcd_init();
+#endif
+
     /* Initialize the console (after the relocation and devices init) */
     console_init_r ();
     putc('\n');
