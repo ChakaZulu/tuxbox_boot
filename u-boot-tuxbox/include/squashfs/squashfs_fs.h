@@ -26,7 +26,7 @@
 #include <cmd_fs.h>
 
 #define SQUASHFS_MAJOR			2
-#define SQUASHFS_MINOR			0
+#define SQUASHFS_MINOR			1
 #define SQUASHFS_MAGIC			0x73717368
 #define SQUASHFS_MAGIC_SWAP		0x68737173
 #define SQUASHFS_START			0
@@ -78,6 +78,7 @@
 #define SQUASHFS_CHRDEV_TYPE		5
 #define SQUASHFS_FIFO_TYPE		6
 #define SQUASHFS_SOCKET_TYPE		7
+#define SQUASHFS_LDIR_TYPE		8
 
 /* 1.0 filesystem type definitions */
 #define SQUASHFS_TYPES			5
@@ -128,6 +129,7 @@ typedef unsigned int			squashfs_fragment_index;
 
 #define SQUASHFS_MARKER_BYTE		0xff
 
+
 /*
  * definitions for structures on disk
  */
@@ -158,6 +160,13 @@ typedef struct squashfs_super_block {
 	unsigned int		fragments;
 	unsigned int		fragment_table_start;
 } __attribute__ ((packed)) squashfs_super_block;
+
+typedef struct {
+	unsigned int		index:27;
+	unsigned int		start_block:29;
+	unsigned char		size;
+	unsigned char		name[0];
+} __attribute__ ((packed)) squashfs_dir_index;
 
 typedef struct {
 	unsigned int		inode_type:4;
@@ -209,12 +218,26 @@ typedef struct {
 	unsigned int		start_block:24;
 } __attribute__  ((packed)) squashfs_dir_inode_header;
 
+typedef struct {
+	unsigned int		inode_type:4;
+	unsigned int		mode:12; /* protection */
+	unsigned int		uid:8; /* index into uid table */
+	unsigned int		guid:8; /* index into guid table */
+	unsigned int		file_size:27;
+	unsigned int		offset:13;
+	unsigned int		mtime;
+	unsigned int		start_block:24;
+	unsigned int		i_count:16;
+	squashfs_dir_index	index[0];
+} __attribute__  ((packed)) squashfs_ldir_inode_header;
+
 typedef union {
 	squashfs_base_inode_header	base;
 	squashfs_dev_inode_header	dev;
 	squashfs_symlink_inode_header	symlink;
 	squashfs_reg_inode_header	reg;
 	squashfs_dir_inode_header	dir;
+	squashfs_ldir_inode_header	ldir;
 	squashfs_ipc_inode_header	ipc;
 } squashfs_inode_header;
 	
@@ -229,7 +252,6 @@ typedef struct {
 	unsigned int		count:8;
 	unsigned int		start_block:24;
 } __attribute__ ((packed)) squashfs_dir_header;
-
 
 typedef struct {
 	unsigned int		start_block;
@@ -305,6 +327,22 @@ extern int squashfs_uncompress_exit(void);
 	SQUASHFS_SWAP((s)->offset, d, 51, 13);\
 	SQUASHFS_SWAP((s)->mtime, d, 64, 32);\
 	SQUASHFS_SWAP((s)->start_block, d, 96, 24);\
+}
+
+#define SQUASHFS_SWAP_LDIR_INODE_HEADER(s, d) {\
+	SQUASHFS_SWAP_BASE_INODE_HEADER(s, d, sizeof(squashfs_ldir_inode_header));\
+	SQUASHFS_SWAP((s)->file_size, d, 32, 27);\
+	SQUASHFS_SWAP((s)->offset, d, 59, 13);\
+	SQUASHFS_SWAP((s)->mtime, d, 72, 32);\
+	SQUASHFS_SWAP((s)->start_block, d, 104, 24);\
+	SQUASHFS_SWAP((s)->i_count, d, 128, 16);\
+}
+
+#define SQUASHFS_SWAP_DIR_INDEX(s, d) {\
+	SQUASHFS_MEMSET(s, d, sizeof(squashfs_dir_index));\
+	SQUASHFS_SWAP((s)->index, d, 0, 27);\
+	SQUASHFS_SWAP((s)->start_block, d, 27, 29);\
+	SQUASHFS_SWAP((s)->size, d, 56, 8);\
 }
 
 #define SQUASHFS_SWAP_DIR_HEADER(s, d) {\
