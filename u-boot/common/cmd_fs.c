@@ -67,7 +67,7 @@ static part_info_t part_info[] =
 #endif
 };
 
-int do_fs_fsload (cmd_tbl_t *cmdtp, bd_t *bd, int flag, int argc, char *argv[])
+int do_fs_fsload (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 {
 	part_info_t *part = part_info;
 	char *filename = "vmlinuz";
@@ -115,12 +115,12 @@ int do_fs_fsload (cmd_tbl_t *cmdtp, bd_t *bd, int flag, int argc, char *argv[])
 	if (size > 0)
 		printf ("### FS load compleate: %d bytes loaded to 0x%lx\n", size, offset);
 	else
-		printf ("### FS LOAD ERROR<%x> for %s!\n", size, filename);
+		printf ("### FS LOAD ERROR<%d> for %s!\n", size, filename);
 
 	return !(size > 0);
 }
 
-int do_fs_ls (cmd_tbl_t *cmdtp, bd_t *bd, int flag, int argc, char *argv[])
+int do_fs_ls (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 {
 	part_info_t *part = part_info;
 	char *filename = "/";
@@ -187,10 +187,10 @@ static void fsinfo (int number)
 	printf (", offset: 0x%x, size 0x%x\n", part_info[number].offset, part_info[number].size);
 }
 
-int do_fs_fsinfo(cmd_tbl_t *cmdtp, bd_t *bd, int flag, int argc, char *argv[])
+int do_fs_fsinfo(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 {
 	struct part_info *part = NULL;
-	int ret;
+	int ret = 1;
 
 	if (argc == 2)
 		if (argv[1][0])

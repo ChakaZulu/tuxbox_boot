@@ -111,8 +111,6 @@ long int initdram (int board_type)
 
 int misc_init_r (void)
 {
-	DECLARE_GLOBAL_DATA_PTR;
-	int i;
 	char tmp[32];
 
 	sprintf (tmp, "%02x:%02x:%02x:%02x:%02x:%02x",

@@ -42,7 +42,7 @@
 	),
 
 #define CMD_TBL_FS_FSINFO	MK_CMD_TBL_ENTRY(			\
-	"fsinfo",	5,	1,	1,	do_fs_fsinfo,		\
+	"fsinfo",	5,	2,	1,	do_fs_fsinfo,		\
 	"fsinfo  - print information about filesystems\n",		\
 	"    - print information about filesystems\n"			\
 	),
@@ -60,14 +60,14 @@
 typedef struct part_info
 {
 	int type;
-	unsigned long offset;
-	unsigned long size;
+	unsigned int offset;
+	unsigned int size;
 	void *jffs2_priv;
 } part_info_t;
 
-int do_fs_fsload (cmd_tbl_t *cmdtp, bd_t *bd, int flag, int argc, char *argv[]);
-int do_fs_fsinfo (cmd_tbl_t *cmdtp, bd_t *bd, int flag, int argc, char *argv[]);
-int do_fs_ls (cmd_tbl_t *cmdtp, bd_t *bd, int flag, int argc, char *argv[]);
+int do_fs_fsload (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);
+int do_fs_fsinfo (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);
+int do_fs_ls (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);
 
 int fs_fsload (unsigned long offset, char *filename);
 
