@@ -195,7 +195,7 @@ static __inline__ int abortboot(int bootdelay)
 	int abort = 0;
 
 #ifdef CONFIG_AUTOBOOT_SELECT
-	char option = '2';
+	char option = 'CONFIG_AUTOBOOT_SELECT_AUTOBOOT';
 
 	puts("\nOptions:\n");
 # if CONFIG_AUTOBOOT_SELECT_NUMBER >= 1
@@ -251,8 +251,8 @@ static __inline__ int abortboot(int bootdelay)
 			if (tstc()) {	/* we got a key press	*/
 #ifdef CONFIG_AUTOBOOT_SELECT
 				option = getc();
-# ifdef CONFIG__AUTOBOOT_SELECT_AUTOBOOT
-				if (option < '1' || option > CONFIG_DBOX2_AUTOBOOT_SELECT_NUMBER + '0')
+# ifdef CONFIG_AUTOBOOT_SELECT_AUTOBOOT
+				if (option < '1' || option > CONFIG_AUTOBOOT_SELECT_NUMBER + '0')
 # endif /* CONFIG_AUTOBOOT_SELECT_AUTOBOOT */
 #endif /* CONFIG_AUTOBOOT_SELECT */
 				abort  = 1;	/* don't auto boot	*/
