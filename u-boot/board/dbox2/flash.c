@@ -150,6 +150,9 @@ static ulong flash_get_size (vu_long *addr, flash_info_t *info)
 		case AMD_MANUFACT:
 			info->flash_id = FLASH_MAN_AMD;
 			break;
+		case FUJ_MANUFACT:
+			info->flash_id = FLASH_MAN_FUJ;
+			break;
 		case INTEL_MANUFACT:
 			info->flash_id = FLASH_MAN_INTEL;
 			break;
@@ -304,6 +307,9 @@ void flash_print_info  (flash_info_t *info)
 	{
 		case FLASH_MAN_AMD:
 			printf ("AMD ");
+			break;
+		case FLASH_MAN_FUJ:
+			printf ("FUJITSU ");
 			break;
 		case FLASH_MAN_INTEL:
 			printf ("INTEL ");
