@@ -153,7 +153,7 @@ static void BootpVendorProcess(u8 *ext, int size)
 	NetPrintIPaddr (NetOurGatewaysIP[0]);
 	putc('\n');
     }
-*/    
+*/
     if (NetBootFileSize) {
 	printf("NetBootFileSize : %d\n", NetBootFileSize);
     }
@@ -169,7 +169,7 @@ static void BootpVendorProcess(u8 *ext, int size)
     if (NetOurBootPath[0]) {
 	printf("NetOurBootPath  : %s\n", NetOurBootPath);
     }
-    
+
     if (NetOurNISDomain[0]) {
         printf("NetOurNISDomain : %s\n", NetOurNISDomain);
     }
@@ -177,6 +177,7 @@ static void BootpVendorProcess(u8 *ext, int size)
 }
 
 void netboot_update_env(void); // quick'n dirty proto
+void process_macros (char *input, char *output, char delim);
 
 /*
  *	Handle a BOOTP received packet.
@@ -185,7 +186,7 @@ static void
 BootpHandler(uchar * pkt, unsigned dest, unsigned src, unsigned len)
 {
 	Bootp_t *	bp;
-	char *s;
+	char *s1, *s2;
 
 #ifdef DEBUG
 	printf("got BOOTP packet (src=%d, dst=%d, len=%d want_len=%d)\n",
@@ -216,26 +217,41 @@ BootpHandler(uchar * pkt, unsigned dest, unsigned src, unsigned len)
 	NetOurIP = bp->bp_yiaddr;
 	NetServerIP = bp->bp_siaddr;
 	NetCopyEther(NetServerEther, ((Ethernet_t *)NetRxPkt)->et_src);
-	if(*BootFile) {
-	    /* if we have send a bootfile name we asume we've got bootfile+normal bootfile back */
+
+	/* The following is somewhat strange but if I send
+	     %(bootpath)/tftpboot/kernel
+	   to my bootpd bootpd will send back
+	     /%(bootpath)/tftpboot/blabla/tftpboot/ppcboot
+           instead of
+	     /blabla/tftpboot/ppcboot
+           as dhcpd does
+	*/
+	bp->bp_file[sizeof(bp->bp_file)-1]=0; // keep str... save
+	s1=strchr(BootFile, '/');
+	s2=strchr(bp->bp_file, '/');
+	if(s1!=BootFile && s2==bp->bp_file)
+	  // we've got a new / first
+	  s2++;
+        else
+	  s2=bp->bp_file;
+	if(s1 && s2 && !strncmp(BootFile, s2, s1-BootFile))
+	    /* if we have send a bootfile name and we asume we've got bootfile+normal bootfile back */
 	    memcpy(NetOurBootPath, bp->bp_file+(strrchr(BootFile, '/')-BootFile+1), sizeof(bp->bp_file)-(strrchr(BootFile, '/')-BootFile+1));
-	}
-	else {
-	    memcpy(BootFile, bp->bp_file, sizeof bp->bp_file);
+	else
+	    // We have got the same filename as used for ppcboot
 	    memcpy(NetOurBootPath, bp->bp_file, sizeof(bp->bp_file));
-	}
 	NetOurBootPath[sizeof(NetOurBootPath)-1]=0;
-	s=strrchr(NetOurBootPath, '/');
-	if(s) {
-	    *s=0;
-	    s=strrchr(NetOurBootPath, '/');
-	    if(s)
-		*s=0;
+	s1=strrchr(NetOurBootPath, '/');
+	if(s1) {
+	    *s1=0;
+	    s1=strrchr(NetOurBootPath, '/');
+	    if(s1)
+		*s1=0;
 	}
 	/* Retrieve extended informations (we must parse the vendor area) */
 	if ((*(uint *)bp->bp_vend) == BOOTP_VENDOR_MAGIC)
 	    BootpVendorProcess(&bp->bp_vend[4], len);
-	netboot_update_env();	
+	netboot_update_env();
 	NetSetTimeout(0, (thand_f *)0);
 
 #ifdef DEBUG
@@ -312,7 +328,7 @@ static int BootpExtended (u8 *e)
 #endif
 
     *e = 255;		/* End of the list */
-    
+
     return e - start ;
 }
 
@@ -355,7 +371,6 @@ BootpRequest(char *fileName, ulong loadAdr)
 
 	/* store boot file name for repetitions in case of bootp timeout */
 	strcpy(BootFile, fileName);
-
 	/*
 	 *	Bootp ID is the lower 4 bytes of our ethernet address
 	 *	plus the current time in HZ.
