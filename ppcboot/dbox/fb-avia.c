@@ -20,6 +20,11 @@
  *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *   
  *  $Log: fb-avia.c,v $
+ *  Revision 1.7  2001/08/28 10:52:38  derget
+ *
+ *  implemented logo over tftp if logo flash failes ..
+ *  not good , but working , will fixx bad code in some time
+ *
  *  Revision 1.6  2001/07/09 22:51:39  derget
  *
  *  finaly fixxed sagem s/w problem
@@ -45,7 +50,7 @@
  *  
  *  Reimplementet gtxfb.c
  *
- *  $Revision: 1.6 $
+ *  $Revision: 1.7 $
  *
  */
 #include <stdio.h>
@@ -262,12 +267,14 @@ int fb_init(void)
   unsigned char *iframe_logo;
   idxfs_file_info((unsigned char*)IDXFS_OFFSET, 0, "logo-fb", &offset, &size);
   
-    if (!offset) {
-      printf("  FB logo at: none\n");
-      return 0;
+    if (!offset) 
+   {
+      printf("  No FB Logo in Flash , trying tftp\n");
+      NetLoop(33161152, "TFTP","%(bootpath)/tftpboot/logo-fb", 0x120000);
+      iframe_logo = (unsigned char*)(0x120000);
    }
-  iframe_logo = (unsigned char*)(IDXFS_OFFSET + offset);
-
+    else { iframe_logo = (unsigned char*)(IDXFS_OFFSET + offset); } 
+	
   i2c_bus_init();
   saa7126_init(mID);
 

@@ -21,6 +21,11 @@
  *
  *
  *   $Log: lcd-ks0713.c,v $
+ *   Revision 1.6  2001/08/28 10:52:38  derget
+ *
+ *   implemented logo over tftp if logo flash failes ..
+ *   not good , but working , will fixx bad code in some time
+ *
  *   Revision 1.5  2001/06/05 11:10:13  derget
  *
  *   implemented IDXFS_OFFSET
@@ -58,7 +63,7 @@
  *   Revision 1.5  2001/01/06 10:06:35  gillem
  *   cvs check
  *
- *   $Revision: 1.5 $
+ *   $Revision: 1.6 $
  *
  */
 
@@ -421,17 +426,17 @@ int lcd_init(void)
 	   
     idxfs_file_info((unsigned char*)IDXFS_OFFSET, 0, "logo-lcd", &offset, &size);
     
-    if (!offset) {
-    
-      printf("  LCD logo at: none\n");
-    
-      return 0;
-      
-    }
-      
-    printf("  LCD logo at: 0x%X (0x%X bytes)\n", offset, size);
-    
-    lcd_logo = (unsigned char*)(IDXFS_OFFSET + offset);
+    if (!offset)
+         {
+      printf("  No LCD Logo in Flash , trying tftp\n");
+      NetLoop(33161152, "TFTP","%(bootpath)/tftpboot/logo-lcd", 0x130000);
+      lcd_logo = (unsigned char*)(0x130000);
+      printf("  LCD logo at: 0x130000 (0x%X bytes)\n", size);
+         }
+    else { 
+		lcd_logo = (unsigned char*)(IDXFS_OFFSET + offset); 
+		printf("  LCD logo at: 0x%X (0x%X bytes)\n", offset, size);
+    	 }
 
     p.x = 0;
     p.y = 0;
