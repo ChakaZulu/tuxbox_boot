@@ -67,6 +67,8 @@
 
 #define CONFIG_BOOTP_MASK	CONFIG_BOOTP_ALL
 
+#define CONFIG_COMMANDS  (CONFIG_CMD_DFL | CFG_CMD_BOOTIDXFS)
+
 /* this must be included AFTER the definition of CONFIG_COMMANDS (if any) */
 #include <cmd_confdefs.h>
 

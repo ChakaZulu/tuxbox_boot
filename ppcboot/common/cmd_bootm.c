@@ -367,6 +367,14 @@ void do_bootm (cmd_tbl_t *cmdtp, bd_t *bd, int flag, int argc, char *argv[])
 #endif
 }
 
+
+#if (CONFIG_COMMANDS & CFG_CMD_BOOTIDXFS)
+void do_bootidxfs (cmd_tbl_t *cmdtp, bd_t *bd, int flag, int argc, char *argv[])
+{
+        do_bootm (cmdtp, bd, flag, argc, argv);
+}
+#endif
+	
  
 #if (CONFIG_COMMANDS & CFG_CMD_BOOTD)
 void do_bootd (cmd_tbl_t *cmdtp, bd_t *bd, int flag, int argc, char *argv[])

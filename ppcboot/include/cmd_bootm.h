@@ -37,6 +37,20 @@ void do_bootm (cmd_tbl_t *cmdtp, bd_t *bd, int flag, int argc, char *argv[]);
 	"        'arg' can be the address of an initrd image\n"			\
 ),
 
+#if (CONFIG_COMMANDS & CFG_CMD_BOOTIDXFS)
+void do_bootidxfs (cmd_tbl_t *cmdtp, bd_t *bd, int flag, int argc, char *argv[]);
+
+#define CMD_TBL_BOOTIDXFS       MK_CMD_TBL_ENTRY(                               \
+        "bootidxfs",    5,      CFG_MAXARGS,    1,      do_bootidxfs,           \
+        "bootidxfs   - boot application image from idxfs\n",                    \
+        "[addr [arg ...]]\n    - boot application image stored in memory\n"     \
+        "        passing arguments 'arg ...'; when booting a Linux kernel,\n"   \
+        "        'arg' can be the address of an initrd image\n"                 \
+),
+#else
+#define CMD_TBL_BOOTIDXFS
+#endif
+					
 #if (CONFIG_COMMANDS & CFG_CMD_BOOTD)
 void do_bootd (cmd_tbl_t *cmdtp, bd_t *bd, int flag, int argc, char *argv[]);
 

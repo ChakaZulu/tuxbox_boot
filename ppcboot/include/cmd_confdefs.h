@@ -30,29 +30,30 @@
 /*
  * Configurable monitor commands
  */
-#define CFG_CMD_BDI	0x00000001	/* bdinfo			*/
-#define CFG_CMD_LOADS	0x00000002	/* loads			*/
-#define CFG_CMD_LOADB	0x00000004	/* loadb			*/
-#define CFG_CMD_IMI	0x00000008	/* iminfo			*/
-#define CFG_CMD_CACHE	0x00000010	/* icache, dcache		*/
-#define CFG_CMD_FLASH	0x00000020	/* flinfo, erase, protect	*/
-#define CFG_CMD_MEMORY	0x00000040	/* md, mm, nm, mw, cp, cmp,	*/
-					/* crc, base, loop, mtest	*/
-#define CFG_CMD_NET	0x00000080	/* bootp, tftpboot, rarpboot	*/
-#define CFG_CMD_ENV	0x00000100	/* saveenv			*/
-#define CFG_CMD_KGDB	0x00000200	/* kgdb				*/
-#define	CFG_CMD_IDE	0x00000400	/* IDE harddisk support		*/
-#define	CFG_CMD_PCI	0x00000800	/* pciinfo			*/
-#define	CFG_CMD_IRQ	0x00001000	/* irqinfo			*/
-#define CFG_CMD_BOOTD	0x00002000	/* bootd			*/
-#define CFG_CMD_CONSOLE	0x00004000	/* coninfo			*/
+#define CFG_CMD_BDI		0x00000001	/* bdinfo			*/
+#define CFG_CMD_LOADS		0x00000002	/* loads			*/
+#define CFG_CMD_LOADB		0x00000004	/* loadb			*/
+#define CFG_CMD_IMI		0x00000008	/* iminfo			*/
+#define CFG_CMD_CACHE		0x00000010	/* icache, dcache		*/
+#define CFG_CMD_FLASH		0x00000020	/* flinfo, erase, protect	*/
+#define CFG_CMD_MEMORY		0x00000040	/* md, mm, nm, mw, cp, cmp,	*/
+				    		/* crc, base, loop, mtest	*/
+#define CFG_CMD_NET		0x00000080	/* bootp, tftpboot, rarpboot	*/
+#define CFG_CMD_ENV		0x00000100	/* saveenv			*/
+#define CFG_CMD_KGDB		0x00000200	/* kgdb				*/
+#define	CFG_CMD_IDE		0x00000400	/* IDE harddisk support		*/
+#define	CFG_CMD_PCI	  	0x00000800	/* pciinfo			*/
+#define	CFG_CMD_IRQ		0x00001000	/* irqinfo			*/
+#define CFG_CMD_BOOTD		0x00002000	/* bootd			*/
+#define CFG_CMD_CONSOLE		0x00004000	/* coninfo			*/
+#define CFG_CMD_BOOTIDXFS	0x00008000	/* bootidxfs			*/
 
 #define CFG_CMD_ALL	0xFFFFFFFF	/* ALL commands			*/
 
 /* Commands that are considered "non-standard" for some reason
  * (memory hogs, requires special hardware, not fully tested, etc.)
  */
-#define CFG_CMD_NONSTD	(CFG_CMD_KGDB | CFG_CMD_IDE | CFG_CMD_PCI | CFG_CMD_IRQ)
+#define CFG_CMD_NONSTD	(CFG_CMD_KGDB | CFG_CMD_IDE | CFG_CMD_PCI | CFG_CMD_IRQ | CFG_CMD_BOOTIDXFS)
 
 /* Default configuration
  */

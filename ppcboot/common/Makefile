@@ -31,7 +31,7 @@ endif
 COBJS	= board.o main.o command.o \
 	  cmd_boot.o cmd_bootm.o cmd_cache.o \
 	  cmd_console.o cmd_flash.o cmd_ide.o \
-	  cmd_mem.o cmd_net.o cmd_nvedit.o  \
+	  cmd_mem.o cmd_net.o cmd_nvedit.o \
 	  s_record.o dlmalloc.o kgdb.o \
 	  console.o lists.o devices.o
 
