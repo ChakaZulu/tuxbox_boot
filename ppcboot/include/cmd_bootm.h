@@ -56,8 +56,8 @@ void do_infoidxfs (cmd_tbl_t *cmdtp, bd_t *bd, int flag, int argc, char *argv[])
 
 #define CMD_TBL_INFOIDXFS       MK_CMD_TBL_ENTRY(                               \
         "infoidxfs",    5,      CFG_MAXARGS,    1,      do_infoidxfs,           \
-        "infoidxfs   - boot application image from idxfs\n",                    \
-        "[addr [arg ...]]\n    - boot application image stored in memory\n"     \
+        "infoidxfs   - list content of idxfs\n",                    \
+        "[addr [arg ...]]\n    - list content of idxfs stored in flash\n"     \
         "        passing arguments 'arg ...'; when booting a Linux kernel,\n"   \
         "        'arg' can be the address of an initrd image\n"                 \
 ),
