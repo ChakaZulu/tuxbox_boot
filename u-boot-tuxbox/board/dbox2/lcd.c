@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *
- * $Id: lcd.c,v 1.1 2004/05/01 23:38:34 carjay Exp $
+ * $Id: lcd.c,v 1.2 2005/02/03 15:02:44 carjay Exp $
  */
 
 #include <common.h>
@@ -330,7 +330,7 @@ int lcd_init (void)
 #ifdef CONFIG_DBOX2_LCD_LOGO
 int lcd_load (void)
 {
-	unsigned char *lcd_logo = (unsigned char *) 0x100000;
+	unsigned char *lcd_logo = (unsigned char *) CFG_LOAD_ADDR;
 	int size;
 	int x, y, y2, pix;
 
