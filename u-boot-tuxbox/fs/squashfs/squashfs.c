@@ -61,6 +61,7 @@
 int read_fragment_table(struct part_info *info, squashfs_super_block *sBlk, squashfs_fragment_entry **fragment_table);
 squashfs_fragment_entry *frag_table;
 
+unsigned int uncompr_size;
 
 int squashfs_read_super (struct part_info *info, squashfs_super_block *super)
 {
@@ -101,7 +102,7 @@ int squashfs_read_super (struct part_info *info, squashfs_super_block *super)
 /* read raw bytes from partition */
 static void read_bytes(struct part_info *info, unsigned int offset, int size, char *buffer)
 {
-	TRACE("read_bytes @ 0x%x, size %d, buffer 0x%x\n", offset,size,buffer);
+	TRACE("read_bytes @ 0x%x, size %d, buffer 0x%x\n", offset, size, buffer);
 	/* grab them directly off the Flash */
 	char *src = (char *)info->offset+offset;
 	memcpy (buffer,src,size);
@@ -113,7 +114,7 @@ static int read_block(
 	struct part_info *info,
 	unsigned int start,		/* start address of block */
 	unsigned int *next,		/* start + <number of read bytes> is put here, unless NULL is passed */
-	unsigned char *block,	/* destination buffer */
+	unsigned char *block,		/* destination buffer */
 	squashfs_super_block *sBlk,
 	unsigned int *bytecount,	/* if this is a data block, pass the c_byte here. otherwise you must pass NULL */
 	unsigned int frag_offset,	/* offset into the block if this is a fragment */
@@ -124,14 +125,13 @@ static int read_block(
 	int offset;
 	unsigned char check_data;
 	short int compressed;
-	unsigned int length;
 
 	/* if this is a meta data block, the size is in the block's first 2 bytes */
 	if (!bytecount)
 	{
 		read_bytes(info, start, 2, (char *)&c_byte);
 		compressed = SQUASHFS_COMPRESSED(c_byte);
-		length = SQUASHFS_COMPRESSED_SIZE(c_byte);
+		uncompr_size = SQUASHFS_COMPRESSED_SIZE(c_byte);
 		offset = 2;
 		/* check_data needs one byte per block */
 		if(SQUASHFS_CHECK_DATA(sBlk->flags))
@@ -145,56 +145,57 @@ static int read_block(
 	else
 	{
 		compressed = SQUASHFS_COMPRESSED_BLOCK(*bytecount);
-		length = SQUASHFS_COMPRESSED_SIZE_BLOCK(*bytecount);
-		offset = frag_size ? frag_offset : 0;
+		uncompr_size = SQUASHFS_COMPRESSED_SIZE_BLOCK(*bytecount);
+		offset = 0;
 	}
 
 	/* handle compressed block */
 	if(compressed) 
 	{
-		unsigned char buffer[SQUASHFS_FILE_SIZE];
+		unsigned char buffer[sBlk->block_size];
+	
 		/* if this is a fragment, we need a temporary decompression buffer */
-		unsigned char uncompressed_buffer[SQUASHFS_FILE_SIZE];
+		unsigned char uncompressed_buffer[sBlk->block_size];
 		int res;
-		long bytes = SQUASHFS_FILE_SIZE;
+		long bytes = sBlk->block_size;		
 
-		TRACE("compressed block @ 0x%x, compressed size %d\n", start, length);
-		read_bytes(info, start + offset, length, buffer);
-
+		TRACE("compressed block @ 0x%x, compressed size %d\n", start, uncompr_size);
+		read_bytes(info, start + offset, uncompr_size, buffer);
 		squashfs_uncompress_init();
+
 		/* inflate the block (to temporary buffer if we only need a fragment) */
-		res = squashfs_uncompress_block(frag_size ? uncompressed_buffer : block, bytes, buffer, length);
+		res = squashfs_uncompress_block(frag_size ? uncompressed_buffer : block, bytes, buffer, uncompr_size);
+
 		TRACE("compressed block @ 0x%x, uncompressed size %d\n", start, res);
-		if(!res)
-		{
-			ERROR("zlib::uncompress failed\n");
-			squashfs_uncompress_exit();
-			return 0;
-		}
 		squashfs_uncompress_exit();
+		
+		if(!res)
+		    return 0;
+
 		/* if this is a fragment, copy only that part of the block */
 		if (frag_size)
 		{
-			memcpy(block, uncompressed_buffer, frag_size);
+			memcpy(block, uncompressed_buffer + frag_offset, frag_size);
 		}
 		/* advance buffer pointer if requested */
 		if(next && !frag_size)
 		{
-			*next = start + offset + length;
+			*next = start + offset + uncompr_size;
 		}
+	
 		return frag_size ? frag_size : res;
 	} 
 	/* handle uncompressed block */
 	else 
 	{
-		TRACE("uncompressed block @ 0x%x, size %d\n", start, frag_size ? frag_size : length);
+		TRACE("uncompressed block @ 0x%x, size %d\n", start, frag_size ? frag_size : uncompr_size);
 		/* just copy the block (or a fragment of it) from partition to destination buffer */
-		read_bytes(info, start + offset, frag_size ? frag_size : length, block);
+		read_bytes(info, start + offset, frag_size ? frag_size : uncompr_size, block);
 		if(next && !frag_size)
 		{
-			*next = start + offset + length;
+			*next = start + offset + uncompr_size;
 		}
-		return frag_size ? frag_size : length;
+		return frag_size ? frag_size : uncompr_size;
 	}
 }
 
@@ -226,50 +227,86 @@ int read_fragment_table(struct part_info *info, squashfs_super_block *sBlk, squa
 	return 1;
 }
 
-
 /* reads directory header(s) and entries and looks for a given name. Returns the inode if found */
 static int squashfs_readdir(struct part_info *info, squashfs_dir_inode_header *diri,
-								char *filename, squashfs_inode *inode, squashfs_super_block *sBlk)
+			char *filename, squashfs_inode *inode, squashfs_super_block *sBlk)
 {
 	squashfs_dir_header *dirh;
 	char buffer[sizeof(squashfs_dir_entry) + SQUASHFS_NAME_LEN + 1];
 	squashfs_dir_entry *dire = (squashfs_dir_entry *) buffer;
-	int dir_count;
+	int dir_count, block_size;
 	unsigned int initial_offset = diri->offset;
+
 	int bytes = 0;
+	int tmpbytes = 0;
 
 	unsigned char *dirblock = malloc (SQUASHFS_METADATA_SIZE);
+	unsigned char *tmpblock = malloc (SQUASHFS_METADATA_SIZE);
+	
 	unsigned int start = sBlk->directory_table_start + diri->start_block;
 	unsigned int dirs=0;
 
+	TRACE("initial_offset 0x%x, table_start 0x%x\n", diri->offset, sBlk->directory_table_start);
+	
 	if (!dirblock)
 	{
 		ERROR ("squashfs_readdir: out of memory\n");
 		return 0;
 	}
-	if (!read_block (info, start, NULL, dirblock, sBlk, NULL, 0, 0))
+	
+	block_size = read_block (info, start, NULL, dirblock, sBlk, NULL, 0, 0);
+	
+	if (!block_size)
 	{
 		ERROR ("squashfs_readdir: read_block\n");
 		free (dirblock);
 		return 0;
 	}
+
+	memcpy(tmpblock, dirblock + initial_offset, block_size - initial_offset);
+
+	/* check wether all entries are in the same block */
+	tmpbytes = diri->file_size - (block_size - initial_offset);
+	if(tmpbytes > 0)
+	{
+		/* check_data needs one byte more per block */
+		if(SQUASHFS_CHECK_DATA(sBlk->flags))
+		{
+		    block_size = read_block (info, start + uncompr_size + 3, NULL, tmpblock + block_size - initial_offset, sBlk, NULL, 0 , 0);
+		}
+		else
+		{
+		    block_size = read_block (info, start + uncompr_size + 2, NULL, tmpblock + block_size - initial_offset, sBlk, NULL, 0 , 0);
+		}    
+		
+		if (!block_size)
+		{
+		    ERROR ("squashfs_readdir: read_block\n");
+		    free (tmpblock);
+		    return 0;
+		}
+	}	
+
 	while (bytes<diri->file_size)
 	{
-		dirh = (squashfs_dir_header*)(dirblock + initial_offset + bytes);
+ 		dirh = (squashfs_dir_header*)(tmpblock + bytes);
 		dir_count = dirh->count + 1;
 		dirs+=dir_count;
 		bytes += sizeof(squashfs_dir_header);
+
+		TRACE("dir_count: %d file_size: %d bytes: %d\n", dir_count, diri->file_size, bytes);
+
 		while(dir_count--) 
 		{
-			memcpy((void *)dire, dirblock + initial_offset + bytes, sizeof(dire));
+			memcpy((void *)dire, tmpblock + bytes, sizeof(dire));
 			bytes += sizeof(*dire);
-			memcpy((void *)dire->name, dirblock + initial_offset + bytes, dire->size + 1);
+			memcpy((void *)dire->name, tmpblock + bytes, dire->size + 1);
 			dire->name[dire->size + 1] = '\0';
 			if (!filename)
 			{
 				printf ("entry is %s\n", dire->name);
 			}
-			else if (filename && inode && !strncmp(dire->name,filename,dire->size+1))
+			if (filename && inode && !strncmp(dire->name,filename,dire->size+1))
 			{
 				TRACE ("entry found: %s\n", dire->name);
 				*inode = SQUASHFS_MKINODE(dirh->start_block,dire->offset);
@@ -279,11 +316,13 @@ static int squashfs_readdir(struct part_info *info, squashfs_dir_inode_header *d
 			bytes += dire->size + 1;
 		}
 	}
+
 	if (!filename)
 	{
 		printf ("%d directory entries\n", dirs);
 	}
 	free (dirblock);
+	free (tmpblock);
 	return 0;
 }
 
@@ -292,6 +331,7 @@ static int squashfs_readdir(struct part_info *info, squashfs_dir_inode_header *d
  */
 #define SQUASHFS_FLAGS_LS	1
 #define SQUASHFS_FLAGS_LOAD	2
+
 static unsigned int squashfs_lookup (struct part_info *info, char *entryname, char flags,unsigned int loadoffset, unsigned int *size){
 	squashfs_super_block sBlk;
 
@@ -339,6 +379,7 @@ static unsigned int squashfs_lookup (struct part_info *info, char *entryname, ch
 
 		/* first lookup the dir-inode (starting with root) */
 		blocksize = read_block(info, cur_ptr, &cur_ptr, blockbuffer, &sBlk, NULL, 0, 0);
+		
 		if (!blocksize)
 		{
 			ERROR ("reading inode block");
@@ -361,6 +402,7 @@ static unsigned int squashfs_lookup (struct part_info *info, char *entryname, ch
 		cur_ptr = sBlk.inode_table_start + SQUASHFS_INODE_BLK(inode);
 		cur_offset = SQUASHFS_INODE_OFFSET(inode);
 		TRACE ("inode @ %x:%x\n",cur_ptr,cur_offset);
+
 		if (partname)
 		{
 			partname = strtok (NULL,"/");
@@ -385,13 +427,16 @@ static unsigned int squashfs_lookup (struct part_info *info, char *entryname, ch
 				{
 					squashfs_dir_inode_header diri;
 					memcpy (&diri, blockbuffer + cur_offset,sizeof (diri));
-    					cur_ptr = sBlk.directory_table_start+diri.start_block;
+    					cur_ptr = sBlk.directory_table_start + diri.start_block;
 					squashfs_readdir (info, &diri, NULL, NULL, &sBlk);
 					break;
 				}
 				case SQUASHFS_FILE_TYPE:
 					break;
 				case SQUASHFS_SYMLINK_TYPE:
+					/* resolve */
+					break;
+				case SQUASHFS_LDIR_TYPE:
 					/* resolve */
 					break;
 				default:
@@ -411,21 +456,17 @@ static unsigned int squashfs_lookup (struct part_info *info, char *entryname, ch
 					int frag_bytes;
 					unsigned int *blocklist;
 					unsigned int bytes = 0;
-					int start;
+					
 					squashfs_reg_inode_header dirreg;
-
-					memcpy (&dirreg,blockbuffer + cur_offset,sizeof(dirreg));
+					memcpy (&dirreg,blockbuffer + cur_offset, sizeof(dirreg));
 					
 					blocks = dirreg.fragment == SQUASHFS_INVALID_BLK
 									? (dirreg.file_size + sBlk.block_size - 1) >> sBlk.block_log
 									: dirreg.file_size >> sBlk.block_log;
 					frag_bytes = dirreg.fragment == SQUASHFS_INVALID_BLK ? 0 : dirreg.file_size % sBlk.block_size;
-					start = dirreg.start_block;
-					
-					TRACE("regular file, size %d, blocks %d\n", dirreg.file_size, blocks);
-					TRACE("frag_bytes %d, start_block 0x%x\n", frag_bytes, start);
 
-					cur_offset += sizeof(dirreg);
+					TRACE("regular file, size %d, blocks %d, start_block 0x%x\n", dirreg.file_size, blocks, dirreg.start_block);
+					
 					blocklist=malloc (blocks*sizeof(unsigned int));
 					if (!blocklist)
 					{
@@ -433,6 +474,7 @@ static unsigned int squashfs_lookup (struct part_info *info, char *entryname, ch
 						free (blockbuffer);
 						return 0;
 					}
+					cur_offset += sizeof(dirreg);
 					memcpy (blocklist,blockbuffer+cur_offset,blocks*sizeof(unsigned int));
 					cur_ptr = dirreg.start_block;
 					for (i=0;i<blocks;i++)
@@ -442,10 +484,13 @@ static unsigned int squashfs_lookup (struct part_info *info, char *entryname, ch
 					}
 					if (frag_bytes)
 					{
-						squashfs_fragment_entry *frag_entry = frag_table + dirreg.fragment;
-						TRACE("%d bytes in fragment %d, offset %d\n", frag_bytes, dirreg.fragment, dirreg.offset);
+	    					squashfs_fragment_entry *frag_entry = frag_table + dirreg.fragment;
+						
+						TRACE("%d bytes in fragment %d, offset %d\n",
+						 frag_bytes, dirreg.fragment, dirreg.offset);
+
 						TRACE("fragment %d, start_block=0x%x, size=%d\n",
-							dirreg.fragment, frag_entry->start_block, SQUASHFS_COMPRESSED_SIZE_BLOCK(frag_entry->size));
+						 dirreg.fragment, frag_entry->start_block, SQUASHFS_COMPRESSED_SIZE_BLOCK(frag_entry->size));
 						bytes += read_block(info, frag_entry->start_block, NULL, (unsigned char*)(loadoffset+bytes), &sBlk, &(frag_entry->size), dirreg.offset, frag_bytes);
 					}
 					*size=bytes;
@@ -459,7 +504,14 @@ static unsigned int squashfs_lookup (struct part_info *info, char *entryname, ch
 					return 0;
 					break;
 				}
+				case SQUASHFS_LDIR_TYPE:
+				{
+					printf ("loading ldirs is not supported\n");
+					free (blockbuffer);
+					return 0;
+					break;
 				}
+			}
 			}
 			parsed=1;
 			break;
