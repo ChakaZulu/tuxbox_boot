@@ -34,7 +34,11 @@ export	CROSS_COMPILE HOSTARCH
 
 #########################################################################
 
+ifndef CYGWIN
 TOPDIR	:= $(shell if [ "$$PWD" != "" ]; then echo $$PWD; else pwd; fi)
+else
+TOPDIR	:= $(shell pwd)
+endif
 export	TOPDIR
 
 ifeq (include/config.mk,$(wildcard include/config.mk))
@@ -44,7 +48,11 @@ export	ARCH CPU BOARD
 # load other configuration
 include $(TOPDIR)/config.mk
 
+ifndef CYGWIN
 SUBDIRS	= $(ARCH) $(CPU) $(BOARD) common net disk examples tools
+else
+SUBDIRS	= $(ARCH) $(CPU) $(BOARD) common net disk
+endif
 
 #########################################################################
 # ppcboot objects....order is important (i.e. start must be first)
