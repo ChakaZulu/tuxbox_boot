@@ -117,7 +117,7 @@ TQM860L_config	:	unconfig
 	echo "CPU   = mpc8xx"	>>config.mk ;	\
 	echo "#include <config_$(@:_config=).h>" >config.h
 
-dbox_config     :       unconfig
+dbox2_config     :       unconfig
 	@echo "Configuring for $(@:_config=) Board..." ; \
 	cd include ;				\
 	echo "ARCH  = ppc"	> config.mk ;	\
