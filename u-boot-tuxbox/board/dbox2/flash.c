@@ -135,6 +135,8 @@ unsigned long flash_init (void)
 #ifndef CONFIG_DBOX2_FLASH_FAKE
 static ulong flash_get_size (vu_long *addr, flash_info_t *info)
 {
+	volatile immap_t *immap = (immap_t *) CFG_IMMR;
+	volatile memctl8xx_t *memctl = &immap->im_memctl;
 	ulong value;
 
 	flash_put (info, addr, 0x0555, 0x00AA00AA);
@@ -195,6 +197,13 @@ static ulong flash_get_size (vu_long *addr, flash_info_t *info)
 			info->flash_id |= FLASH_28F640J3A;
 			info->sector_count = 64;
 			info->size = 0x00800000;
+			break;
+		case INTEL_ID_28F640C3B:
+			info->flash_id |= FLASH_BTYPE;
+			info->flash_id |= FLASH_28F640C3B;
+			info->sector_count = 127 + 8;
+			info->size = 0x01000000;
+			memctl->memc_or0 = memctl->memc_or0 & 0xff00ffff;	// reset mask in OR0 to 16MB
 			break;
 		default:
 			info->flash_id = FLASH_UNKNOWN;
@@ -338,6 +347,9 @@ void flash_print_info  (flash_info_t *info)
 		case FLASH_STM320CB:
 			printf ("28M320CB (32M, bottom boot sect), ");
 			break;
+		case FLASH_28F640C3B:
+			printf ("28F640C3B (64M, bottom boot sect), ");
+			break;
 		default:
 			printf ("Unknown Chip Type, ");
 	}
@@ -357,6 +369,10 @@ void flash_print_info  (flash_info_t *info)
 
 	printf ("\n  Size: %ld kB in %d Sectors\n",
 		info->size >> 10, info->sector_count);
+
+#ifdef CFG_FLASH_PROTECTION
+	flash_get_protect (&flash_info[0]);
+#endif
 
 	printf ("  Sector Start Addresses:");
 	for (i = 0; i < info->sector_count; ++i)
@@ -506,6 +522,7 @@ int flash_erase (flash_info_t *info, int s_first, int s_last)
 			if (!info->protect[sect])
 			{
 				addr = (volatile unsigned long *) (info->start[sect]);
+				printf("Sector %d, address 0x%08lx     \r", sect, addr);
 				/* erase setup */
 				flash_put (info, addr, 0, 0x00200020);
 				/* erase confirm */
@@ -524,11 +541,13 @@ int flash_erase (flash_info_t *info, int s_first, int s_last)
 						printf ("Timeout\n");
 						return 1;
 					}
+					/*
 					if ((now - last) > 1000)
 					{
 						putc ('.');
 						last = now;
 					}
+					*/
 				}
 			}
 		}
@@ -590,7 +609,7 @@ DONE_AMD:
 		flash_put (info, addr, 0, 0x00F000F0);
 	}
 
-	printf (" done\n");
+	printf ("done                                         \n");
 #endif /* CONFIG_DBOX2_FLASH_FAKE */
 	return 0;
 }
