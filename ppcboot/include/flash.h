@@ -57,7 +57,7 @@ void	flash_erase	 (flash_info_t *, int, int);
 #define INT_ID_28F160B  0x88C388C3      /* 28F160C3 ID ( 2 M, bottom boot sect) */
 #define INT_ID_28F320T  0x88C488C4      /* 28F320C3 ID ( 4 M, top boot sector)  */
 #define INT_ID_28F320B  0x88C588C5      /* 28F320C3 ID ( 4 M, bottom boot sect) */
-#define INT_ID_28F640B  0x88CC88CC      /* 28F640C3 ID ( 8 M, top boot sector)  */
+#define INT_ID_28F640B  0x00170017      /* 28F640C3 ID ( 8 M, top boot sector)  */
 #define INT_ID_28F640T  0x88CD88CD      /* 28F640C3 ID ( 8 M, bottom boot sect) */
 
 #define	MT_ID_28F400_T	0x44704470	/* 28F400B3 ID ( 4 M, top boot sector)	*/
@@ -78,6 +78,8 @@ void	flash_erase	 (flash_info_t *, int, int);
 /* 29LV320 device IDs are not yet available */
 #define AMD_ID_LV320T	0xDEADBEEF	/* 29LV320T ID (32 M, top boot sector)	*/
 #define AMD_ID_LV320B	0xDEADBEEF	/* 29LV320B ID (32 M, bottom boot sect)	*/
+
+#define AMD_ID_LV323B	0x22532253	/* 29LV322B ID (16 M, bottom boot sect)	*/
 
 #define SST_ID_xF200A	0x27892789	/* 39xF200A ID ( 2M = 128K x 16	)	*/
 #define SST_ID_xF400A	0x27802780	/* 39xF400A ID ( 4M = 256K x 16	)	*/
@@ -104,6 +106,8 @@ void	flash_erase	 (flash_info_t *, int, int);
 #define FLASH_INT160B	0x0037
 #define FLASH_AM320T	0x0008		/* AMD AM29LV320			*/
 #define FLASH_AM320B	0x0009
+#define FLASH_AM323B	0x0041
+
 #define FLASH_INT320T	0x0038
 #define FLASH_INT320B	0x0039
 #define FLASH_INT640T	0x003A

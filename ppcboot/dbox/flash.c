@@ -4,6 +4,7 @@
 #include <mpc8xx.h>
 
 flash_info_t	flash_info[CFG_MAX_FLASH_BANKS]; /* info for FLASH chips	*/
+unsigned char flash_bus_width;
 
 /*-----------------------------------------------------------------------
  * Protection Flags:
@@ -27,6 +28,37 @@ static int  flash_protect (int flag, ulong from, ulong to, flash_info_t *info);
 /*-----------------------------------------------------------------------
  */
 
+void flash_put(vu_long *addr, ulong offs, ulong val) {
+
+    vu_short *addr16 = (vu_short*)addr;
+    
+    if (flash_bus_width == 2)
+	addr16[offs] = (ushort)(val & 0xFFFF);
+    else  
+	addr[offs] = val;
+
+}
+
+ulong flash_get(vu_long *addr, ulong offs) {
+
+    vu_short *addr16 = (vu_short*)addr;
+    
+    if (flash_bus_width == 2)
+	return (addr16[offs] & 0xFFFF);
+    else  
+	return addr[offs];
+
+}
+
+ulong flash_mask(ulong val) {
+
+    if (flash_bus_width == 2)
+	return (val & 0xFFFF);
+    else  
+	return val;
+
+}
+
 unsigned long flash_init (void)
 {
 	volatile immap_t     *immap  = (immap_t *)CFG_IMMR;
@@ -40,8 +72,14 @@ unsigned long flash_init (void)
 	}
 
 	/* Static FLASH Bank configuration here - FIXME XXX */
-
+	
+	flash_bus_width = 4;
+	
 	size_b0 = flash_get_size((vu_long *)FLASH_BASE0_PRELIM, &flash_info[0]);
+	if (flash_info[0].flash_id == FLASH_UNKNOWN) {
+	    flash_bus_width = 2;
+  	    size_b0 = flash_get_size((vu_long *)FLASH_BASE0_PRELIM, &flash_info[0]);
+	}
 
 	if (flash_info[0].flash_id == FLASH_UNKNOWN) {
 		printf ("## Unknown FLASH on Bank 0 - Size = 0x%08lx = %ld MB\n",
@@ -49,8 +87,11 @@ unsigned long flash_init (void)
 	}
 
 	/* Remap FLASH according to real size */
-	memctl->memc_or0 = CFG_OR_TIMING_FLASH | (-size_b0 & 0xFFFF8000);
-	memctl->memc_br0 = (CFG_FLASH_BASE & BR_BA_MSK) | BR_MS_GPCM | BR_V;
+
+//  Doesnt work for Sagem! FIXME!!!
+
+//	memctl->memc_or0 = CFG_OR_TIMING_FLASH | (-size_b0 & 0xFFFF8000);
+//	memctl->memc_br0 = (CFG_FLASH_BASE & BR_BA_MSK) | BR_MS_GPCM | BR_V;
 
 	/* Re-do sizing to get full correct info */
 	size_b0 = flash_get_size((vu_long *)CFG_FLASH_BASE, &flash_info[0]);
@@ -140,13 +181,19 @@ static void flash_get_offsets (ulong base, flash_info_t *info)
 	/* set up sector start adress table */
 	if (info->flash_id & FLASH_BTYPE) {
 		/* set sector offsets for bottom boot block type	*/
-		info->start[0] = base + 0x00000000;
-		info->start[1] = base + 0x00008000;
-		info->start[2] = base + 0x0000C000;
-		info->start[3] = base + 0x00010000;
-		for (i = 4; i < info->sector_count; i++) {
-			info->start[i] = base + (i * 0x00020000) - 0x00060000;
-		}
+		if ((info->flash_id & FLASH_TYPEMASK) != FLASH_INT640B) {
+		    info->start[0] = base + 0x00000000;
+		    info->start[1] = base + 0x00008000;
+		    info->start[2] = base + 0x0000C000;
+		    info->start[3] = base + 0x00010000;
+		    for (i = 4; i < info->sector_count; i++) {
+			    info->start[i] = base + (i * 0x00020000) - 0x00060000;
+		    }
+		} else {
+		    for (i = 0; i < info->sector_count; i++) {
+			    info->start[i] = base + (i * 0x00020000);
+		    }
+		}    
 	} else {
 		/* set sector offsets for top boot block type		*/
 		i = info->sector_count - 1;
@@ -195,6 +242,8 @@ void flash_print_info  (flash_info_t *info)
 				break;
 	case FLASH_AM320T:	printf ("AM29LV320T (32 Mbit, top boot sector)\n");
 				break;
+	case FLASH_AM323B:	printf ("AM29LV323B (32 Mbit, bottom boot sector)\n");
+				break;
 	case FLASH_INT800B:	printf ("28F800-B   (8 Mbit, bottom boot sect)\n");
 				break;
 	case FLASH_INT800T:	printf ("28F800-T   (8 Mbit, top boot sector)\n");
@@ -206,6 +255,8 @@ void flash_print_info  (flash_info_t *info)
 	case FLASH_INT320B:	printf ("28F320-B  (32 Mbit, bottom boot sect)\n");
 				break;
 	case FLASH_INT320T:	printf ("28F320-T  (32 Mbit, top boot sector)\n");
+				break;
+	case FLASH_INT640B:	printf ("28F640-B  (64 Mbit, bottom boot sect)\n");
 				break;
         default:		printf ("Unknown Chip Type\n");
 				break;
@@ -219,9 +270,9 @@ void flash_print_info  (flash_info_t *info)
                 if ((info->flash_id & FLASH_VENDMASK) == FLASH_MAN_INTEL)
                 {
                 	volatile unsigned long *addr = (volatile unsigned long *)info->start[i];
-                        *addr=0x00900090;               /* read configuration */
-                        info->protect[i]=addr[2];
-                        *addr=0x00FF00FF;               /* read array */
+                        flash_put(addr, 0, 0x00900090);               /* read configuration */
+                        info->protect[i]= flash_get(addr, 2) & 1;
+                        flash_put(addr, 0, 0x00FF00FF);               /* read array */
                 }
 		if ((i % 5) == 0)
 			printf ("\n   ");
@@ -252,12 +303,15 @@ static ulong flash_get_size (vu_long *addr, flash_info_t *info)
 
 
 	/* Write auto select command: read Manufacturer ID */
-	addr[0x0555] = 0x00AA00AA;
-	addr[0x02AA] = 0x00550055;
-	addr[0x0555] = 0x00900090;
+	flash_put(addr, 0x0555, 0x00AA00AA);
+	flash_put(addr, 0x02AA, 0x00550055);
+	flash_put(addr, 0x0555, 0x00900090);
 
-	value = addr[0];
+	value = flash_get(addr, 0);
 
+	if (flash_bus_width == 2)
+	    value |= value << 16;
+	    
 	switch (value) {
 	case AMD_MANUFACT:
 		info->flash_id = FLASH_MAN_AMD;
@@ -275,7 +329,10 @@ static ulong flash_get_size (vu_long *addr, flash_info_t *info)
 		return (0);			/* no or unknown flash	*/
 	}
 
-	value = addr[1];			/* device ID		*/
+	value = flash_get(addr, 1);			/* device ID		*/
+
+	if (flash_bus_width == 2)
+	    value |= value << 16;
 
 	switch (value) {
 	case AMD_ID_LV400T:
@@ -326,6 +383,12 @@ static ulong flash_get_size (vu_long *addr, flash_info_t *info)
 		info->size = 0x00800000;
 		break;				/* => 8 MB		*/
 #endif
+	case AMD_ID_LV323B:
+		info->flash_id += FLASH_AM323B;
+		info->sector_count = 63+4;
+		info->size = 0x00800000;
+		break;				/* => 8 MB		*/
+
         case INT_ID_28F800B:
                 info->flash_id |= FLASH_BTYPE;
         case INT_ID_28F800T:
@@ -351,7 +414,7 @@ static ulong flash_get_size (vu_long *addr, flash_info_t *info)
                 info->flash_id |= FLASH_BTYPE;
         case INT_ID_28F640T:
                 info->flash_id += FLASH_INT640T;
-                info->sector_count = 127+4;
+                info->sector_count = 64;
                 info->size = 0x00800000;
                 break;
 	default:
@@ -363,13 +426,20 @@ static ulong flash_get_size (vu_long *addr, flash_info_t *info)
 	/* set up sector start adress table */
 	if (info->flash_id & FLASH_BTYPE) {
 		/* set sector offsets for bottom boot block type	*/
-       		info->start[0] = base + 0x00000000;
-       		info->start[1] = base + 0x00004000;
-       		info->start[2] = base + 0x0000C000;
-      		info->start[3] = base + 0x00010000;
-		for (i = 4; i < info->sector_count; i++) {
-			info->start[i] = base + (i * 0x00020000) - 0x00060000;
-		}
+		if ((info->flash_id & FLASH_TYPEMASK) != FLASH_INT640B) {
+		
+       		    info->start[0] = base + 0x00000000;
+       		    info->start[1] = base + 0x00004000;
+       		    info->start[2] = base + 0x0000C000;
+      		    info->start[3] = base + 0x00010000;
+		    for (i = 4; i < info->sector_count; i++) {
+			    info->start[i] = base + (i * 0x00020000) - 0x00060000;
+		    }
+		} else {
+		    for (i = 0; i < info->sector_count; i++) {
+			    info->start[i] = base + (i * 0x00020000);
+		    }
+		}    
 	} else {
 		/* set sector offsets for top boot block type		*/
 		i = info->sector_count - 1;
@@ -386,7 +456,7 @@ static ulong flash_get_size (vu_long *addr, flash_info_t *info)
 		/* read sector protection at sector address, (A7 .. A0) = 0x02 */
 		/* D0 = 1 if protected */
 		addr = (volatile unsigned long *)(info->start[i]);
-		info->protect[i] = addr[2] & 1;
+		info->protect[i] = flash_get(addr, 2) & 1;
 	}
 
 	/*
@@ -396,9 +466,9 @@ static ulong flash_get_size (vu_long *addr, flash_info_t *info)
 		addr = (volatile unsigned long *)info->start[0];
 
                 if ((info->flash_id & FLASH_VENDMASK)==FLASH_MAN_INTEL)
-                	addr[0] = 0x00FF00FF;	/* read array */
+                	flash_put(addr, 0, 0x00FF00FF);	/* read array */
                 else
-        	        addr[0] = 0x00F000F0;	/* reset bank */
+        	        flash_put(addr, 0, 0x00F000F0);	/* reset bank */
 	}
 
 	return (info->size);
@@ -451,17 +521,17 @@ void	flash_erase (flash_info_t *info, int s_first, int s_last)
         if ((info->flash_id & FLASH_VENDMASK)!=FLASH_MAN_INTEL)
         {
         	flag = disable_interrupts();
-        	addr[0x0555] = 0x00AA00AA;
-	        addr[0x02AA] = 0x00550055;
-        	addr[0x0555] = 0x00800080;
-        	addr[0x0555] = 0x00AA00AA;
-        	addr[0x02AA] = 0x00550055;
+        	flash_put(addr, 0x0555, 0x00AA00AA);
+	        flash_put(addr, 0x02AA, 0x00550055);
+        	flash_put(addr, 0x0555, 0x00800080);
+        	flash_put(addr, 0x0555, 0x00AA00AA);
+        	flash_put(addr, 0x02AA, 0x00550055);
 
         	/* Start erase on unprotected sectors */
         	for (sect = s_first; sect<=s_last; sect++) {
         		if (info->protect[sect] == 0) {	/* not protected */
         			addr = (vu_long*)(info->start[sect]);
-        			addr[0] = 0x00300030;
+        			flash_put(addr, 0, 0x00300030);
         			l_sect = sect;
         		}
         	}
@@ -471,7 +541,7 @@ void	flash_erase (flash_info_t *info, int s_first, int s_last)
 
         } else
         {
-                addr[0]=0x00500050;     /* clear status register */
+                flash_put(addr, 0, 0x00500050);     /* clear status register */
         	/* Start erase on unprotected sectors */
         	for (sect = s_first; sect<=s_last; sect++) 
                 {
@@ -479,13 +549,13 @@ void	flash_erase (flash_info_t *info, int s_first, int s_last)
         		if (info->protect[sect] == 0) 
         	        {
         			addr = (vu_long*)(info->start[sect]);
-        			addr[0] = 0x00200020;           /* erase setup */
-                                addr[0] = 0x00D000D0;           /* erase confirm */
+        			flash_put(addr, 0, 0x00200020);           /* erase setup */
+                                flash_put(addr, 0, 0x00D000D0);           /* erase confirm */
         			l_sect = sect;
-                                addr[0]=0x00700070;     /* read status register */
+                                flash_put(addr, 0, 0x00700070);     /* read status register */
                                 start = get_timer (0);
                         	last  = start;
-                          	while ((addr[0] & 0x00800080) != 0x00800080) 
+                          	while ((flash_get(addr, 0) & 0x00800080) != flash_mask(0x00800080)) 
                                 {
                        		        if ((now = get_timer(start)) > CFG_FLASH_ERASE_TOUT) 
                        		        {
@@ -518,8 +588,8 @@ void	flash_erase (flash_info_t *info, int s_first, int s_last)
 	last  = start;
 	addr = (vu_long*)(info->start[l_sect]);
         if ((info->flash_id & FLASH_VENDMASK)==FLASH_MAN_INTEL)
-                addr[0]=0x00700070;     /* read status register */
-       	while ((addr[0] & 0x00800080) != 0x00800080) 
+                flash_put(addr, 0, 0x00700070);     /* read status register */
+       	while ((flash_get(addr, 0) & 0x00800080) != flash_mask(0x00800080)) 
         {
        		if ((now = get_timer(start)) > CFG_FLASH_ERASE_TOUT) 
                 {
@@ -533,7 +603,7 @@ void	flash_erase (flash_info_t *info, int s_first, int s_last)
        		}
        	}
 
-        if (addr[0] != 0x00800080)
+        if (flash_get(addr, 0) != flash_mask(0x00800080))
         {
                 if ((info->flash_id & FLASH_VENDMASK)==FLASH_MAN_INTEL)
                         printf("erase failed: %02x\n", addr[0]);
@@ -542,9 +612,9 @@ DONE:
 	/* reset to read mode */
 	addr = (volatile unsigned long *)info->start[0];
         if ((info->flash_id & FLASH_VENDMASK)==FLASH_MAN_INTEL)
-        	addr[0] = 0x00FF00FF;	/* read array */
+        	flash_put(addr, 0, 0x00FF00FF);	/* read array */
         else
-	        addr[0] = 0x00F000F0;	/* reset bank */
+	        flash_put(addr, 0, 0x00F000F0);	/* reset bank */
 
 	printf (" done\n");
 }
@@ -636,7 +706,7 @@ static int write_buff (flash_info_t *info, uchar *src, ulong addr, ulong cnt)
 	ulong cp, wp, data;
 	int i, l, rc;
 
-	wp = (addr & ~3);	/* get lower word aligned address */
+	wp = (addr & ~(flash_bus_width - 1));	/* get lower word aligned address */
 
 	/*
 	 * handle unaligned start bytes
@@ -646,34 +716,34 @@ static int write_buff (flash_info_t *info, uchar *src, ulong addr, ulong cnt)
 		for (i=0, cp=wp; i<l; ++i, ++cp) {
 			data = (data << 8) | (*(uchar *)cp);
 		}
-		for (; i<4 && cnt>0; ++i) {
+		for (; i<flash_bus_width && cnt>0; ++i) {
 			data = (data << 8) | *src++;
 			--cnt;
 			++cp;
 		}
-		for (; cnt==0 && i<4; ++i, ++cp) {
+		for (; cnt==0 && i<flash_bus_width; ++i, ++cp) {
 			data = (data << 8) | (*(uchar *)cp);
 		}
 
 		if ((rc = write_word(info, wp, data)) != 0) {
 			return (rc);
 		}
-		wp += 4;
+		wp += flash_bus_width;
 	}
 
 	/*
 	 * handle word aligned part
 	 */
-	while (cnt >= 4) {
+	while (cnt >= flash_bus_width) {
 		data = 0;
-		for (i=0; i<4; ++i) {
+		for (i=0; i<flash_bus_width; ++i) {
 			data = (data << 8) | *src++;
 		}
 		if ((rc = write_word(info, wp, data)) != 0) {
 			return (rc);
 		}
-		wp  += 4;
-		cnt -= 4;
+		wp  += flash_bus_width;
+		cnt -= flash_bus_width;
 	}
 
 	if (cnt == 0) {
@@ -684,11 +754,11 @@ static int write_buff (flash_info_t *info, uchar *src, ulong addr, ulong cnt)
 	 * handle unaligned tail bytes
 	 */
 	data = 0;
-	for (i=0, cp=wp; i<4 && cnt>0; ++i, ++cp) {
+	for (i=0, cp=wp; i<flash_bus_width && cnt>0; ++i, ++cp) {
 		data = (data << 8) | *src++;
 		--cnt;
 	}
-	for (; i<4; ++i, ++cp) {
+	for (; i<flash_bus_width; ++i, ++cp) {
 		data = (data << 8) | (*(uchar *)cp);
 	}
 	
@@ -708,7 +778,7 @@ static int write_word (flash_info_t *info, ulong dest, ulong data)
 	int flag;
 
 	/* Check if Flash is (sufficiently) erased */
-	if ((*((vu_long *)dest) & data) != data) {
+	if ((flash_get((vu_long *)dest, 0) & data) != flash_mask(data)) {
 		return (2);
 	}
 	/* Disable interrupts which might cause a timeout here */
@@ -716,14 +786,14 @@ static int write_word (flash_info_t *info, ulong dest, ulong data)
 
         if ((info->flash_id & FLASH_VENDMASK)!=FLASH_MAN_INTEL)
         {
-        	addr[0x0555] = 0x00AA00AA;
-        	addr[0x02AA] = 0x00550055;
-        	addr[0x0555] = 0x00A000A0;
-        	*((vu_long *)dest) = data;
+        	flash_put(addr, 0x0555, 0x00AA00AA);
+        	flash_put(addr, 0x02AA, 0x00550055);
+        	flash_put(addr, 0x0555, 0x00A000A0);
+        	flash_put((vu_long *)dest, 0, data);
         } else
         {
-        	*((vu_long *)dest) = 0x00400040;
-        	*((vu_long *)dest) = data;
+        	flash_put((vu_long *)dest, 0, 0x00400040);
+        	flash_put((vu_long *)dest, 0, data);
         }
 	/* re-enable interrupts if necessary */
 	if (flag)
@@ -733,31 +803,31 @@ static int write_word (flash_info_t *info, ulong dest, ulong data)
         {
         	/* data polling for D7 */
         	start = get_timer (0);
-        	while ((*((vu_long *)dest) & 0x00800080) != (data & 0x00800080)) {
+        	while ((flash_get((vu_long *)dest, 0) & 0x00800080) != (data & flash_mask(0x00800080))) {
         		if (get_timer(start) > CFG_FLASH_WRITE_TOUT) {
         			return (1);
         		}
         	}
         } else
         {
-        	*((vu_long *)dest) = 0x00700070;        /* read status */
+        	flash_put((vu_long *)dest, 0, 0x00700070);        /* read status */
                 start = get_timer (0);
-                while ((addr[0]&0x00800080)!=0x00800080)
+                while ((flash_get(addr, 0) & 0x00800080) != flash_mask(0x00800080))
                         if (get_timer(start) > (CFG_FLASH_WRITE_TOUT*5))
                         {
-                                addr[0]=0x00FF00FF;     /* read array */
+                                flash_put(addr, 0, 0x00FF00FF);     /* read array */
                                 return (1);
                         }
-                if (addr[0]!=0x00800080)
+                if (flash_get(addr, 0) != flash_mask(0x00800080))
                 {
                         printf("flash error: status %x\n", addr[0]);
-                        addr[0]=0x00FF00FF;
+                        flash_put(addr, 0, 0x00FF00FF);
                         return (1);
                 }
         }
         if ((info->flash_id & FLASH_VENDMASK)==FLASH_MAN_INTEL)
         {
-                addr[0]=0x00FF00FF;     /* read array */
+                flash_put(addr, 0, 0x00FF00FF);     /* read array */
         }
     	return (0);
 }
