@@ -38,6 +38,10 @@
 # define SHOW_BOOT_PROGRESS(arg)
 #endif
 
+#ifdef CONFIG_DBOX2_ENV_READ_FS
+void load_env_fs (void);
+#endif /* CONFIG_DBOX2_ENV_READ_FS */
+
 #ifdef CONFIG_AMIGAONEG3SE
 	extern void enable_nvram(void);
 	extern void disable_nvram(void);
@@ -233,6 +237,7 @@ void env_relocate (void)
 #if defined(CFG_ENV_IS_NOWHERE) /* we have no environment */
 #elif defined(CONFIG_GTH)       /* environment not changable */
 		puts ("Using default environment\n\n");
+#elif defined(CONFIG_DBOX2_ENV_READ_FS)
 #else
 		puts ("*** Warning - bad CRC, using default environment\n\n");
 		SHOW_BOOT_PROGRESS (-1);
@@ -262,4 +267,8 @@ void env_relocate (void)
 #ifdef CONFIG_AMIGAONEG3SE
 	disable_nvram();
 #endif
+
+#ifdef CONFIG_DBOX2_ENV_READ_FS
+	load_env_fs ();
+#endif /* CONFIG_DBOX2_ENV_READ_FS */
 }
