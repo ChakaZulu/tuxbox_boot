@@ -116,6 +116,10 @@ volatile uchar *NetTxPacket = 0;	/* THE transmit packet			*/
 
 static int net_check_prereq (proto_t protocol);
 
+#ifdef CONFIG_DBOX2
+void netboot_update_env(void)
+#endif /* CONFIG_DBOX2 */
+
 /**********************************************************************/
 /*
  *	Main network processing loop.
@@ -283,6 +287,10 @@ restart:
 			goto restart;
 
 		case NETLOOP_SUCCESS:
+#ifdef CONFIG_DBOX2
+			if (protocol == BOOTP || protocol == DHCP)
+				netboot_update_env ();
+#endif /* CONFIG_DBOX2 */
 			if (NetBootFileXferSize > 0) {
 				char buf[10];
 				printf("Bytes transferred = %ld (%lx hex)\n",

@@ -333,10 +333,14 @@ BootpHandler(uchar * pkt, unsigned dest, unsigned src, unsigned len)
 		return;
 	}
 
+#ifdef CONFIG_DBOX2
+	NetState = NETLOOP_SUCCESS;
+#else /* CONFIG_DBOX2 */
 	/* Send ARP request to get TFTP server ethernet address.
 	 * This automagically starts TFTP, too.
 	 */
 	ArpRequest();
+#endif /* CONFIG_DBOX2 */
 }
 #endif	/* !CFG_CMD_DHCP */
 
@@ -862,10 +866,14 @@ DhcpHandler(uchar * pkt, unsigned dest, unsigned src, unsigned len)
 				NetState = NETLOOP_SUCCESS;
 				return;
 			}
+#ifdef CONFIG_DBOX2_NETWORK
+			NetState = NETLOOP_SUCCESS;
+#else /* CONFIG_DBOX2 */
 			/* Send ARP request to get TFTP server ethernet address.
 			 * This automagically starts TFTP, too.
 			 */
 			ArpRequest();
+#endif /* CONFIG_DBOX2 */
 			return;
 		}
 		break;

@@ -61,7 +61,10 @@ int do_dhcp (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 }
 #endif	/* CFG_CMD_DHCP */
 
-static void netboot_update_env(void)
+#ifndef CONFIG_DBOX2
+static 
+#endif /* CONFIG_DBOX2 */
+void netboot_update_env(void)
 {
     char tmp[16] ;
 
