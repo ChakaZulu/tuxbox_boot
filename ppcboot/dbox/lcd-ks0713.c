@@ -21,6 +21,9 @@
  *
  *
  *   $Log: lcd-ks0713.c,v $
+ *   Revision 1.10  2002/02/28 17:35:41  trh
+ *   fixed lcd_reset... works now on philips too... i hope
+ *
  *   Revision 1.9  2002/01/23 18:57:47  gillem
  *   - add lcd reset function
  *
@@ -72,7 +75,7 @@
  *   Revision 1.5  2001/01/06 10:06:35  gillem
  *   cvs check
  *
- *   $Revision: 1.9 $
+ *   $Revision: 1.10 $
  *
  */
 
@@ -397,7 +400,11 @@ void lcd_clear(void)
 
 void lcd_reset_init(void)
 {
+	unsigned char mID = *(char*)(0x1001ffe0);
+
 	// i hope it works now
+	// me too (trh ;)
+
 	lcd_send_cmd( LCD_CMD_RESET, 0 );
 
 	udelay(1000*100);
@@ -406,7 +413,15 @@ void lcd_reset_init(void)
 	lcd_send_cmd( LCD_CMD_RES, 7 );
 	lcd_send_cmd( LCD_CMD_SRV, 1 );
 	lcd_send_cmd( 0x00, 15 );
-	lcd_send_cmd( LCD_CMD_BIAS, 1 );
+	switch(mID)
+	{
+		case 2:
+			lcd_send_cmd( LCD_CMD_BIAS, 0 );
+		break;
+		default:
+			lcd_send_cmd( LCD_CMD_BIAS, 1);
+		break;
+	}	
 	lcd_send_cmd( LCD_CMD_POWERC, 7 );
 	lcd_send_cmd( LCD_CMD_SIR, 3 );
 	lcd_send_cmd( LCD_CMD_ADC, 0 );
