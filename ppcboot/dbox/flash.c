@@ -21,6 +21,9 @@
  *
  *
  *   $Log: flash.c,v $
+ *   Revision 1.8  2001/12/16 08:57:52  gillem
+ *   - add removed AMD support
+ *
  *   Revision 1.7  2001/12/12 20:22:31  derget
  *   unnoetiges entfernt um platzt zu sparen
  *
@@ -41,7 +44,7 @@
  *   thanks to Marko
  *
  *
- *   $Revision: 1.7 $
+ *   $Revision: 1.8 $
  *   
  */
 
@@ -271,6 +274,8 @@ void flash_print_info  (flash_info_t *info)
 	}
 
 	switch (info->flash_id & FLASH_TYPEMASK) {
+	case FLASH_AM323B:	printf ("AM29LV323B (32 Mbit, bottom boot sector)\n");
+				break;
 	case FLASH_AM320B:	printf ("AM29LV320B (32 Mbit, bottom boot sect)\n");
 				break;
 	case FLASH_AM320T:	printf ("AM29LV320T (32 Mbit, top boot sector)\n");
@@ -371,6 +376,11 @@ static ulong flash_get_size (vu_long *addr, flash_info_t *info)
 		info->size = 0x00800000;
 		break;				/* => 8 MB		*/
 #endif
+	case AMD_ID_LV323B:
+		info->flash_id += FLASH_AM323B;
+		info->sector_count = 63+4;
+		info->size = 0x00800000;
+		break;				/* => 8 MB		*/
         case INT_ID_28F320B:
                 info->flash_id |= FLASH_BTYPE;
         case INT_ID_28F320T:
