@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#ifndef __WIN32__
+#ifndef __CYGWIN32__
 #include <netinet/in.h>		/* for host / network byte order conversions	*/
 #endif
 #include <sys/mman.h>
@@ -22,7 +22,7 @@
 #include <inttypes.h>
 #endif
 
-#ifdef __WIN32__
+#ifdef __CYGWIN32__
 typedef unsigned int __u32;
 
 #define SWAP_LONG(x) \
@@ -37,7 +37,7 @@ typedef		unsigned int	uint32_t;
 
 #define     ntohl(a)	SWAP_LONG(a)
 #define     htonl(a)	SWAP_LONG(a)
-#endif	/* __WIN32__ */
+#endif	/* __CYGWIN32__ */
 
 #include <image.h>
 
@@ -262,7 +262,7 @@ NXTARG:		;
 	if (lflag) {
 		ifd = open(imagefile, O_RDONLY);
 	} else {
-#ifdef __WIN32__
+#ifdef __CYGWIN32__
 		ifd = open(imagefile, O_RDWR|O_CREAT|O_TRUNC|O_BINARY, 0666);
 #else
 		ifd = open(imagefile, O_RDWR|O_CREAT|O_TRUNC, 0666);
