@@ -20,6 +20,9 @@
  *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *   
  *  $Log: fb-avia.c,v $
+ *  Revision 1.5  2001/06/29 22:54:53  TripleDES
+ *  added colours to the bootlogo for enx (FNC/FBLK)
+ *
  *  Revision 1.4  2001/06/24 12:54:46  TripleDES
  *  added eNX support
  *
@@ -36,7 +39,7 @@
  *  
  *  Reimplementet gtxfb.c
  *
- *  $Revision: 1.4 $
+ *  $Revision: 1.5 $
  *
  */
 #include <stdio.h>
@@ -45,6 +48,7 @@
 #include "fb-avia.h"
 #include <idxfs.h>
 #include "enx.h"
+//#include "ilogo.c"
 
 static int pal=1;
 unsigned char *gtxmem, *gtxreg;
@@ -75,16 +79,53 @@ static unsigned char SAA7126_INIT[] = {
   
 };
 
+static unsigned char SAGEM_SAA7126_INIT[] = {
+
+0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0x00, 0x70, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0x21, 0x1D, 0x00, 0x00, 0x00, 0x0F, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0x1E, 0x1E, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+
+0x00, 0x00, 0x00, 0x00, 0x00, 0x54, 0xF2, 0x90,
+0x00, 0x00, 0x70, 0x75, 0xA5, 0x37, 0x39, 0x39,
+0x00, 0x06, 0x2C, 0xCB, 0x8A, 0x09, 0x2A, 0x00,
+0x00, 0x00, 0x00, 0x52, 0x6F, 0x00, 0xA0, 0x31,
+0x7D, 0xBF, 0x60, 0x40, 0x07, 0x00, 0x06, 0x16,
+0x06, 0x16, 0x16, 0x36, 0x60, 0x00, 0x00, 0x00
+  
+};
+
+
 void i2c_bus_init(void)
 {
   i2c_init();
   i2c_setspeed(50000);
 }
 
-void saa7126_init(void)
+void saa7126_init(char mId)
 {
-  i2c_send(0x88, 0x00, 0x01, 0x40, SAA7126_INIT);
-  i2c_send(0x88, 0x40, 0x01, 0x40, SAA7126_INIT + 0x40);
+  switch(mId) {
+    case 1:
+    i2c_send(0x88, 0x00, 0x01, 0x40, SAA7126_INIT);
+    i2c_send(0x88, 0x40, 0x01, 0x40, SAA7126_INIT + 0x40);
+    break;
+    case 2:
+    //break;	
+    case 3:
+    i2c_send(0x88, 0x00, 0x01, 0x40, SAGEM_SAA7126_INIT);
+    i2c_send(0x88, 0x40, 0x01, 0x40, SAGEM_SAA7126_INIT + 0x40);
+    break;	
+  }    
+
+
+
+
 }
 
 void avs_init(char mId)
@@ -101,7 +142,7 @@ void avs_init(char mId)
       i2c_send(0x94, 0, 0, 8, "\x00\x0a\x19\x99\xb5\x08\x34\x88");
     break;	
     case 3:
-      i2c_send(0x90, 0, 0, 7, "\x00\x00\x00\x00\x00\x3F\x00");
+      i2c_send(0x90, 0, 0, 7, "\x00\x00\x00\x00\x0C\x3F\x00");
     break;	
   }    
 }
@@ -147,7 +188,7 @@ void enxcore_init(void)
 	enx_reg_w(MC) = 0x00001015;
 	enx_reg_w(RSTR0) &= ~(1 << 11);
 	enx_reg_w(RSTR0) &= ~(1 << 9);
-	enx_reg_w(RSTR0) &= ~(1 << 6);
+
 }	
 void gtxvideo_init(void)
 {
@@ -189,7 +230,7 @@ void gtxvideo_init(void)
 void enxvideo_init(void)
 {
 	int val;
-	enx_reg_w(VBR) = (1<<24)|0x123456;
+	enx_reg_w(VBR) = 0;
 	enx_reg_h(VCR) = 0x40;
 	enx_reg_h(VHT) = 857|0x5000;
 	enx_reg_h(VLT) = 623|(21<<11);
@@ -215,9 +256,11 @@ void enxvideo_init(void)
 #define ENX_GVP_SET_COORD(X,Y) ENX_GVP_SET_X(X); ENX_GVP_SET_Y(Y)
 #define ENX_GVS_SET_XSZ(X)   enx_reg_w(GVSZ1) = ((enx_reg_w(GVSZ1)&(~(0x3FF<<16))) | ((X&0x3FF)<<16))
 #define ENX_GVS_SET_YSZ(X)   enx_reg_w(GVSZ1) = ((enx_reg_w(GVSZ1)&(~0x3FF))|(X&0x3FF))
+#define ENX_GVP_SET_SPP(X)   enx_reg_w(GVP1) = ((enx_reg_w(GVP1)&(~(0x01F<<27))) | ((X&0x1F)<<27))
+#define ENX_GVS_SET_IPS(X)   enx_reg_w(GVSZ1) = ((enx_reg_w(GVSZ1)&0xFC000000) | ((X&0x3f)<<27))
+#define ENX_GVS_SET_XSZ(X)   enx_reg_w(GVSZ1) = ((enx_reg_w(GVSZ1)&(~(0x3FF<<16))) | ((X&0x3FF)<<16))
+#define ENX_GVS_SET_YSZ(X)   enx_reg_w(GVSZ1) = ((enx_reg_w(GVSZ1)&(~0x3FF))|(X&0x3FF))
 
-	ENX_VCR_SET_HP(0);
-	ENX_VCR_SET_FP(0);
 	ENX_GVP_SET_COORD(113,42);
 	ENX_GVS_SET_XSZ(720);
 	ENX_GVS_SET_YSZ(576);
@@ -240,7 +283,7 @@ int fb_init(void)
   iframe_logo = (unsigned char*)(IDXFS_OFFSET + offset);
 
   i2c_bus_init();
-  saa7126_init();
+  saa7126_init(mID);
 
   switch (mID) {
     case 1:
