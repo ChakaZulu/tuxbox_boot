@@ -470,13 +470,13 @@ void do_bootidxfs (cmd_tbl_t *cmdtp, bd_t *bd, int flag, int argc, char *argv[])
 	char argv1[20];
 	char *newargv[2] = {argv0, argv1};
 
-	idxfs_file_info((unsigned char*)0x10040000, 0, "kernel", &offset, &size);
+	idxfs_file_info((unsigned char*)IDXFS_OFFSET, 0, "kernel", &offset, &size);
 	
 	if (!offset) {
   	  printf("Kernel image at: none\n");
 	} else {  
-  	  sprintf(argv1, "%X", 0x10040000 + offset);
-	  printf("Kernel image at: 0x%X (0x%X bytes)\n", 0x10040000 + offset, size);
+  	  sprintf(argv1, "%X", IDXFS_OFFSET + offset);
+	  printf("Kernel image at: 0x%X (0x%X bytes)\n", IDXFS_OFFSET + offset, size);
           do_bootm (cmdtp, bd, flag, 2, newargv);
 	}  
 }
@@ -486,7 +486,7 @@ void do_bootidxfs (cmd_tbl_t *cmdtp, bd_t *bd, int flag, int argc, char *argv[])
 #if (CONFIG_COMMANDS & CFG_CMD_INFOIDXFS)
 void do_infoidxfs (cmd_tbl_t *cmdtp, bd_t *bd, int flag, int argc, char *argv[])
 {
-	idxfs_dump_info((unsigned char*)0x10040000, 0);
+	idxfs_dump_info((unsigned char*)IDXFS_OFFSET, 0);
 }
 #endif
 	
