@@ -30,17 +30,31 @@ void idxfs_dump_info(unsigned char *mem, unsigned int mem_size)
   sIdxFsHdr *hdr;
   sIdxFsFatEntry *fat;
   unsigned int offs;
+  
+  // Disable sanity checks if < 0
+  if (mem_size < 0)
+    mem_size = 0xFFFFFFFF;
 
   if (sizeof(sIdxFsHdr) > mem_size)
     return;    
 
   hdr = (sIdxFsHdr *)mem;
 
-  if (hdr->Magic != IDXFS_MAGIC)
+  if (hdr->Magic != IDXFS_MAGIC) {
+  
+    printf("Bad magic\n");
+  
     return;
+    
+  }
 
-  if (hdr->Version != IDXFS_VERSION)
+  if (hdr->Version != IDXFS_VERSION) {
+
+    printf("Bad version\n");
+
     return;
+    
+  }
 
   if ((!hdr->FatOffsFirst) || (hdr->FatOffsFirst + sizeof(sIdxFsFatEntry) > mem_size))
     return;
@@ -50,10 +64,23 @@ void idxfs_dump_info(unsigned char *mem, unsigned int mem_size)
 
   while (1) {
   
-    printf("IdxFs entry: Offset->0x%08X Next->0x%08X Filename->%s\n", offs + sizeof(sIdxFsFatEntry), fat->OffsNext, fat->Name);
+    printf("Offs->0x%08X Size->0x%08X Next->0x%08X Name->%s\n", offs + sizeof(sIdxFsFatEntry), fat->Size, fat->OffsNext, fat->Name);
     
-    if ((!fat->OffsNext) || (fat->OffsNext + sizeof(sIdxFsFatEntry) > mem_size))
+    if (!fat->OffsNext) {
+    
+      printf("Done\n");
+    
       return;
+      
+    }  
+    
+    if (fat->OffsNext + sizeof(sIdxFsFatEntry) > mem_size) {
+    
+      printf("Buffer overflow\n");
+    
+      return;
+      
+    }  
       
     offs = fat->OffsNext;
     fat = (sIdxFsFatEntry *)&mem[offs];  
@@ -67,6 +94,7 @@ unsigned int idxfs_file_info(unsigned char *mem, unsigned int mem_size, unsigned
 
   sIdxFsHdr *hdr = (sIdxFsHdr *)mem;
   sIdxFsFatEntry *fat;
+  unsigned int offs;
   
   if ((!hdr) || (!file_name))
     return 0;
@@ -83,14 +111,15 @@ unsigned int idxfs_file_info(unsigned char *mem, unsigned int mem_size, unsigned
   if ((!hdr->FatOffsFirst) || (hdr->FatOffsFirst + sizeof(sIdxFsFatEntry) > mem_size))
     return 0;
     
-  fat = (sIdxFsFatEntry *)&mem[hdr->FatOffsFirst];
+  offs = hdr->FatOffsFirst;
+  fat = (sIdxFsFatEntry *)&mem[offs];
     
   while (1) {
   
-    if (fat->Name) {
+    if (strncmp(fat->Name, file_name, IDXFS_MAX_NAME_LEN) == 0) {
     
       if (file_offset)
-        *file_offset = (unsigned int)(fat + sizeof(sIdxFsFatEntry));
+        *file_offset = offs + sizeof(sIdxFsFatEntry);
 
       if (file_size)
         *file_size = fat->Size;
@@ -102,7 +131,8 @@ unsigned int idxfs_file_info(unsigned char *mem, unsigned int mem_size, unsigned
     if ((!fat->OffsNext) || (fat->OffsNext + sizeof(sIdxFsFatEntry) > mem_size))
       return 0;
       
-    fat = (sIdxFsFatEntry *)&mem[fat->OffsNext];  
+    offs = fat->OffsNext;
+    fat = (sIdxFsFatEntry *)&mem[offs];  
   
   }
   

@@ -21,7 +21,19 @@
 #include <stdio.h>
 #include "../ppcboot/include/idxfs.h"
 
+
+#define TARGET_IS_BE 
+
 #define BUFFER_SIZE 1024
+
+#ifdef TARGET_IS_BE  
+unsigned short swab16(unsigned short w) { return ( (w>>8)|(w<<8) ); };
+unsigned int swab32(unsigned int w) { return ( swab16(w>>16) | (swab16(w)<<16) ); };
+#else
+#define swab16(X) (X)
+#define swab32(X) (X)
+#endif
+
 
 void write_file(FILE *image, char *filename, unsigned char last)
 {
@@ -36,24 +48,20 @@ void write_file(FILE *image, char *filename, unsigned char last)
   fseek(idxfs_file, 0, 2);
   size = ftell(idxfs_file);
   fseek(idxfs_file, 0, 0);
-  
-  idxfs_fat.Size = size;
+
+  idxfs_fat.Size = swab32(size);
+
   strncpy(idxfs_fat.Name, filename, IDXFS_MAX_NAME_LEN);
   
   if (last)
     idxfs_fat.OffsNext = 0;
   else
-    idxfs_fat.OffsNext = ftell(image) + sizeof(sIdxFsFatEntry) + size;
+    idxfs_fat.OffsNext = swab32(ftell(image) + sizeof(sIdxFsFatEntry) + size);
   
   fwrite(&idxfs_fat, sizeof(sIdxFsFatEntry), 1, image);
-  printf("sizeof(sIdxFsFatEntry): %d\n", sizeof(sIdxFsFatEntry));
   
-  while ((size = fread(buffer, 1, BUFFER_SIZE, idxfs_file))) {
-  
-    printf("Writing 0x%X\n", size);
+  while ((size = fread(buffer, 1, BUFFER_SIZE, idxfs_file)))
     fwrite(buffer, size, 1, image);
-  
-  }
   
   fclose(idxfs_file);
 
@@ -67,12 +75,11 @@ int main(void)
 
   idxfs_img = fopen("image.idx", "wb");
   
-  idxfs_hdr.Magic = IDXFS_MAGIC;
-  idxfs_hdr.Version = IDXFS_VERSION;
-  idxfs_hdr.FatOffsFirst = sizeof(sIdxFsHdr);
+  idxfs_hdr.Magic = swab32(IDXFS_MAGIC);
+  idxfs_hdr.Version = swab32(IDXFS_VERSION);
+  idxfs_hdr.FatOffsFirst = swab32(sizeof(sIdxFsHdr));
   
   fwrite(&idxfs_hdr, sizeof(sIdxFsHdr), 1, idxfs_img);
-  printf("sizeof(sIdxFsHdr): %d\n", sizeof(sIdxFsHdr));
   
   write_file(idxfs_img, "kernel", 0);
   write_file(idxfs_img, "logo-lcd", 0);

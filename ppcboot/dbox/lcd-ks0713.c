@@ -21,6 +21,9 @@
  *
  *
  *   $Log: lcd-ks0713.c,v $
+ *   Revision 1.3  2001/04/25 19:41:29  Jolt
+ *   IdxFs fixes, lcd logo from flash
+ *
  *   Revision 1.2  2001/04/23 14:15:06  Jolt
  *   Colorbar tests, lcd fixes
  *
@@ -48,14 +51,14 @@
  *   Revision 1.5  2001/01/06 10:06:35  gillem
  *   cvs check
  *
- *   $Revision: 1.2 $
+ *   $Revision: 1.3 $
  *
  */
 
 #include <ppcboot.h>
 #include "mpc8xx.h"
 #include "lcd-ks0713.h"
-#include "lcd-logo.h"
+#include <idxfs.h>
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -394,9 +397,11 @@ int lcd_init(void)
     immap_t	*immap;
     int i;
     lcd_pixel p;
+    unsigned char *lcd_logo;
+    unsigned int size, offset = 0;
 
 
-   printf("LCD driver (KS0713) initialized\n");
+   printf("  LCD driver (KS0713) initialized\n");
 
   if ( ( immap = ( immap_t * ) CFG_IMMR ) == NULL )
     return -1;
@@ -405,6 +410,21 @@ int lcd_init(void)
 
     /* reset lcd todo ;-) */
 //    lcd_reset();
+
+	   
+    idxfs_file_info((unsigned char*)0x10040000, -1, "logo-lcd", &offset, &size);
+    
+    if (!offset) {
+    
+      printf("  LCD logo at: none\n");
+    
+      return 0;
+      
+    }
+      
+    printf("  LCD logo at: 0x%X (0x%X bytes)\n", offset, size);
+    
+    lcd_logo = (unsigned char*)(0x10040000 + offset);
 
     p.x = 0;
     p.y = 0;
