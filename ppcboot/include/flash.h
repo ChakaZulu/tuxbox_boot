@@ -38,6 +38,7 @@ typedef struct {
 
 unsigned long flash_init (void);
 void	flash_print_info (flash_info_t *);
+void 	flash_protect_sector(flash_info_t *, int, int);
 void	flash_erase	 (flash_info_t *, int, int);
 
 /*-----------------------------------------------------------------------
