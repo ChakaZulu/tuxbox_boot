@@ -21,6 +21,9 @@
  *
  *
  *   $Log: lcd-ks0713.c,v $
+ *   Revision 1.2  2001/04/23 14:15:06  Jolt
+ *   Colorbar tests, lcd fixes
+ *
  *   Revision 1.1  2001/04/23 10:01:06  Jolt
  *   LCD support
  *
@@ -45,7 +48,7 @@
  *   Revision 1.5  2001/01/06 10:06:35  gillem
  *   cvs check
  *
- *   $Revision: 1.1 $
+ *   $Revision: 1.2 $
  *
  */
 
@@ -188,7 +191,7 @@ static void lcd_set_port_write(void)
 {
 	iop->iop_pddat = 0x0B00;
 	iop->iop_pddir = LCD_DIR_WRITE;
-	udelay(LCD_DELAY);
+	//udelay(LCD_DELAY);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -199,9 +202,9 @@ static void lcd_send_cmd( int cmd, int flag )
 		lcd_set_port_write();
 
 		iop->iop_pddat = cmd | flag | LCD_CMD_LO;
-		udelay(LCD_DELAY);
+		//udelay(LCD_DELAY);
 		iop->iop_pddat = cmd | flag | LCD_CMD_HI;
-		udelay(LCD_DELAY);
+		//udelay(LCD_DELAY);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -214,9 +217,9 @@ static int lcd_read_status(void)
 	lcd_set_port_read();
 
 	iop->iop_pddat = LCD_READ_STATUS | LCD_CLK_LO;
-	udelay(LCD_DELAY);
+	//udelay(LCD_DELAY);
 	iop->iop_pddat = LCD_READ_STATUS | LCD_CLK_HI;
-	udelay(LCD_DELAY);
+	//udelay(LCD_DELAY);
 
 	status = (iop->iop_pddat & 0xF0);
 
@@ -232,9 +235,9 @@ static void lcd_read_dummy(void)
 
 	// write data
 	iop->iop_pddat = LCD_READ_DATA | LCD_CLK_LO;
-	udelay(LCD_DELAY);
+	//udelay(LCD_DELAY);
 	iop->iop_pddat = LCD_READ_DATA | LCD_CLK_HI;
-	udelay(LCD_DELAY);
+	//udelay(LCD_DELAY);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -260,9 +263,9 @@ void lcd_write_byte( int data )
 
 	// write data
 	iop->iop_pddat = LCD_WRITE_DATA | (data&0xFF) | LCD_CLK_LO;
-	udelay(LCD_DELAY);
+	//udelay(LCD_DELAY);
 	iop->iop_pddat = LCD_WRITE_DATA | (data&0xFF) | LCD_CLK_HI;
-	udelay(LCD_DELAY);
+	//udelay(LCD_DELAY);
 	iop->iop_pddat = LCD_WRITE_DATA | (data&0xFF) | LCD_CLK_LO;
 }
 

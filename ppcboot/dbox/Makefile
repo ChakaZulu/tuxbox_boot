@@ -25,7 +25,7 @@ include $(TOPDIR)/config.mk
 
 LIB	= lib$(BOARD).a
 
-OBJS	= $(BOARD).o flash.o lcd-ks0713.o
+OBJS	= $(BOARD).o flash.o lcd-ks0713.o fb-avia.o
 
 $(LIB):	.depend $(OBJS)
 	$(AR) crv $@ $^
