@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *
- * $Id: lcd.c,v 1.7 2003/09/11 10:21:38 alexw Exp $
+ * $Id: lcd.c,v 1.8 2004/02/19 00:01:58 carjay Exp $
  */
 
 #include <common.h>
@@ -40,6 +40,8 @@
 #else /* CONFIG_DBOX2_LCD_FONT8x16 */
 #include "font_8x8.h"
 #endif /* CONFIG_DBOX2_LCD_FONT8x16 */
+
+#define LCD_DELAY				1
 
 /* Read display data 11XXXXXXXX
  */
@@ -177,6 +179,7 @@ static void lcd_set_port_write (void)
 {
 	iop->iop_pddat = 0x0B00;
 	iop->iop_pddir = LCD_DIR_WRITE;
+	udelay(LCD_DELAY);
 }
 
 /* send cmd */
@@ -186,7 +189,9 @@ static void lcd_send_cmd (int cmd, int flag)
 	lcd_set_port_write ();
 
 	iop->iop_pddat = cmd | flag | LCD_CMD_LO;
+	udelay(LCD_DELAY);
 	iop->iop_pddat = cmd | flag | LCD_CMD_HI;
+	udelay(LCD_DELAY);
 }
 
 static void lcd_set_pos (int row, int col)
@@ -215,7 +220,9 @@ static int lcd_read_byte (void)
 	lcd_set_port_read ();
 
 	iop->iop_pddat = LCD_READ_DATA | LCD_CLK_LO;
+	udelay(LCD_DELAY);
 	iop->iop_pddat = LCD_READ_DATA | LCD_CLK_HI;
+	udelay(LCD_DELAY);
 
 	return (iop->iop_pddat & 0xFF);
 }
@@ -228,7 +235,9 @@ static void lcd_write_byte (int data)
 
 	// write data
 	iop->iop_pddat = LCD_WRITE_DATA | (data & 0xFF) | LCD_CLK_LO;
+	udelay(LCD_DELAY);
 	iop->iop_pddat = LCD_WRITE_DATA | (data & 0xFF) | LCD_CLK_HI;
+	udelay(LCD_DELAY);
 	iop->iop_pddat = LCD_WRITE_DATA | (data & 0xFF) | LCD_CLK_LO;
 }
 
@@ -531,7 +540,7 @@ static void lcd_drawchars (unsigned short x, unsigned short y, unsigned char *st
 #elif FONT_HEIGHT == 16
 	unsigned short w;
 #endif /* FONT_HEIGHT */
-
+	
 	for (i = 0; i < count; ++i)
 	{
 		c = *s++;
