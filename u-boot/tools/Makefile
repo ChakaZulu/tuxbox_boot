@@ -112,7 +112,7 @@ CC	   = $(HOSTCC)
 STRIP	   = $(HOSTSTRIP)
 MAKEDEPEND = makedepend
 
-all:	.depend $(BINS) $(LOGO_H) subdirs
+all:	.depend $(BINS) subdirs
 
 envcrc$(SFX):	envcrc.o crc32.o environment.o
 		$(CC) $(CFLAGS) -o $@ $^
