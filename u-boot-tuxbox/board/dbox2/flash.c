@@ -186,6 +186,10 @@ static ulong flash_get_size (vu_long *addr, flash_info_t *info)
 			info->size = 0x00800000;
 			break;
 		case INTEL_ID_28F320C3B:
+			info->flash_id |= FLASH_INTEL320B;
+			info->sector_count = 63 + 8;
+			info->size = 0x00800000;
+			break;
 		case INTEL_ID_28F320C3T:
 			info->flash_id |= FLASH_INTEL320T;
 			info->sector_count = 63 + 8;
