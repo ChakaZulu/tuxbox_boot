@@ -731,7 +731,7 @@ void DhcpOptionsProcess(char *popt)
 			    if (dhcp_vendorex_proc(popt))
         			break;
 #endif
-				printf("*** Unhandled DHCP Option in OFFER/ACK: %d\n",
+				debug_ext("*** Unhandled DHCP Option in OFFER/ACK: %d\n",
 					*popt);
 				break;
 		}
