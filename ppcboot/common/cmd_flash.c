@@ -247,8 +247,13 @@ void protect_sector (flash_info_t *info, int i, int p)
 		info->protect[i]=addr[2];
                 addr[0]=0x00700070;	/* read status register */
                 addr[0]=0x00FF00FF;	/* ende  status register lesen */
-        } else
+		printf(".");
+        } 
+	else
+	{ 
   	        info->protect[i] = p;
+		printf(".");
+	}
 }
 
 void do_protect(cmd_tbl_t *cmdtp, bd_t *bd, int flag, int argc, char *argv[])
