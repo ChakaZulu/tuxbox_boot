@@ -1,0 +1,161 @@
+======================================================================
+Changes since U-Boot 0.2.0:
+======================================================================
+
+* Switch LWMON board default config from FRAM to EEPROM;
+  in POST, EEPROM shows up on 8 addresses
+
+======================================================================
+Changes for U-Boot 0.2.0:
+======================================================================
+
+* Use 1-byte-read instead of -write for iprobe() function
+  Add i2c commands to PM826 config
+
+* extend I2C POST code: check for list on known addresses
+
+* Improve log buffer code; use "loglevel" to decide which messages
+  to log on the console, too (like in Linux); get rid of "logstart"
+
+* Add command line tool to access the U-Boot's environment
+  (board-specific for TRAB now, to be fixed later)
+
+* Patch by Hans-Joerg Frieden, 06 Dec 2002
+  Fix misc problems with AmigaOne support
+
+* Patch by Chris Hallinan, 3 Dec 2002:
+  minor cleanup to the MPC8245 EPIC driver
+
+* Patch by Pierre Aubert , 28 Nov 2002
+  Add support for external (SIU) interrupts on MPC8xx
+
+* Patch by Pierre Aubert , 28 Nov 2002
+  Fix nested syscalls bug in standalone applications
+
+* Patch by David Müller, 27 Nov 2002:
+  fix output of "pciinfo" command for CardBus bridge devices.
+
+* Fix bug in TQM8260 board detection - boards got stuck when board ID
+  was not readable
+
+* Add LED indication for IDE activity on KUP4K board
+
+* Fix startup problems with VFD display on TRAB
+
+* Patch by Pierre Aubert, 20 Nov 2002
+  Add driver for Epson SED13806 graphic controller.
+  Add support for BMP logos in cfb_console driver.
+
+* Added support for both PCMCIA slots (at the same time!) on MPC8xx
+
+* Patch by Rod Boyce, 21 Nov 2002:
+  fix PCMCIA on MBX8xx board
+
+* Patch by Pierre Aubert , 21 Nov 2002
+  Add CFG_CPM_POST_WORD_ADDR to make the offset of the
+  bootmode word in DPRAM configurable
+
+* Patch by Daniel Engström, 18 Nov 2002:
+  Fixes for x86 port (mostly strings issues)
+
+* Patch by Ken Chou, 18 Nov 2002:
+  Fix for natsemi NIC cards (DP83815)
+
+* Patch by Pierre Aubert, 19 Nov 2002:
+  fix a bug for the MII configuration, and some warnings
+
+* Patch by Thomas Frieden, 13 Nov 2002:
+  Add code for AmigaOne board
+  (preliminary merge to U-Boot, still WIP)
+
+* Patch by Jon Diekema, 12 Nov 2002:
+  - Adding URL for IEEE OUI lookup
+  - Making the autoboot #defines dependent on CONFIG_AUTOBOOT_KEYED
+    being defined.
+  - In the CONFIG_EXTRA_ENV_SETTINGS #define, the root-on-initrd and
+    root-on-nfs macros are designed to switch how the default boot
+    method gets defined.
+
+* Patch by Daniel Engström, 13 Nov 2002:
+  Add support for i386 architecture and AMD SC520 board
+
+* Patch by Pierre Aubert, 12 Nov 2002:
+  Add support for DOS filesystem and booting from DOS floppy disk
+
+* Patch by Jim Sandoz, 07 Nov 2002:
+  Increase number of network RX buffers (PKTBUFSRX in
+  "include/net.h") for EEPRO100 based boards (especially SP8240)
+  which showed "Receiver is not ready" errors when U-Boot was
+  processing the receive buffers slower than the network controller
+  was filling them.
+
+* Patch by Andreas Oberritter, 09 Nov 2002:
+  Change behaviour of NetLoop(): return -1 for errors, filesize
+  otherwise; return code 0 is valid an means no file loaded - in this
+  case the environment still gets updated!
+
+* Patches by Jon Diekema, 9 Nov 2002:
+  - improve ADC/DAC clocking on the SACSng board to align
+    the failing edges of LRCLK and SCLK
+  - sbc8260 configuration tweaks
+  - add status LED support for 82xx systems
+  - wire sspi/sspo commands into command handler; improved error
+    handlering
+  - add timestamp support and alternate memory test to the
+    SACSng configuration
+
+* Patch by Vince Husovsky, 7 Nov 2002:
+  Add "-n" to linker options to get rid of "Not enough room for
+  program headers" problem
+
+* Patch by David Müller, 05 Nov 2002
+  Rename CONFIG_PLL_INPUT_FREQ to CONFIG_SYS_CLK_FREQ
+  so we can use an already existing name
+
+* Patch by Pierre Aubert, 05 Nov 2002
+  Hardware relatied improvments in FDC boot code
+
+* Patch by Holger Schurig, 5 Nov 2002:
+  Make the PXA really change it's frequency
+
+* Patch by Pierre Aubert, 05 Nov 2002
+  Add support for slave serial Spartan 2 FPGAs
+
+* Fix uninitialized memory (MAC  address)  in  8xx  SCC/FEC  ethernet
+  drivers
+
+* Add support for log buffer which can be passed to Linux kernel's
+  syslog mechanism; used especially for POST results.
+
+* Patch by Klaus Heydeck, 31 Oct 2002:
+  Add initial support for kup4k board
+
+* Patch by Robert Schwebel, 04 Nov 2002:
+  - use watchdog to reset PXA250 systems
+  - added progress callbacks to (some of the) ARM code
+  - update for Cogent CSB226 board
+
+* Add support for FPS860 board
+
+* Patch by Guillaume Alexandre,, 04 Nov 2002:
+  Improve PCI access on 32-bits Compact PCI bus
+
+* Fix mdelay() on TRAB - this was still the debugging version with
+  seconds instead of ms.
+
+* Patch by Robert Schwebel, 1 Nov 2002:
+  XScale related cleanup (affects all ARM boards)
+
+* Cleanup of names and README.
+
+======================================================================
+Notes for U-Boot 0.1.0:
+======================================================================
+
+This is the initial version of "Das U-Boot", the Universal Boot Loader.
+
+It is based on version 2.0.0 (the "Halloween Release") of PPCBoot.
+For information about the history of the project please see the
+PPCBoot project page at http://sourceforge.net/projects/ppcboot
+
+======================================================================
