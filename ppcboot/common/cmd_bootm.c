@@ -45,6 +45,98 @@ image_header_t header;
 
 ulong load_addr = CFG_LOAD_ADDR;		/* Default Load Address */
 
+static void process_macros (char *input, char *output)
+{
+	char c, prev, *varname_start;
+	int inputcnt  = strlen (input);
+	int outputcnt = CFG_CBSIZE;
+	int state = 0;	/* 0 = waiting for '$'	*/
+			/* 1 = waiting for '('	*/
+			/* 2 = waiting for ')'	*/
+
+#ifdef DEBUG_PARSER
+	char *output_start = output;
+
+	printf ("[PROCESS_MACROS] INPUT=%s\n", input);
+#endif
+
+	prev = '\0';			/* previous character	*/
+
+	while (inputcnt && outputcnt) {
+	    c = *input++;
+	    inputcnt--;
+
+	    /* remove one level of escape characters */
+	    if ((c == '\\') && (prev != '\\')) {
+		if (inputcnt-- == 0)
+			break;
+		prev = c;
+	    	c = *input++;
+	    }
+
+	    switch (state) {
+	    case 0:			/* Waiting for (unescaped) $	*/
+		if ((c == '$') && (prev != '\\')) {
+			state++;
+		} else {
+			*(output++) = c;
+			outputcnt--;
+		}
+		break;
+	    case 1:			/* Waiting for (	*/
+		if (c == '(') {
+			state++;
+			varname_start = input;
+		} else {
+			state = 0;
+			*(output++) = '$';
+			outputcnt--;
+
+			if (outputcnt) {
+				*(output++) = c;
+				outputcnt--;
+			}
+		}
+		break;
+	    case 2:			/* Waiting for )	*/
+		if (c == ')') {
+			int i;
+			char envname[CFG_CBSIZE], *envval;
+			int envcnt = input-varname_start-1; /* Varname # of chars */
+
+			/* Get the varname */
+			for (i = 0; i < envcnt; i++) {
+				envname[i] = varname_start[i];
+			}
+			envname[i] = 0;
+
+			/* Get its value */
+			envval = getenv (envname);
+
+			/* Copy into the line if it exists */
+			if (envval != NULL)
+				while ((*envval) && outputcnt) {
+					*(output++) = *(envval++);
+					outputcnt--;
+				}
+			/* Look for another '$' */
+			state = 0;
+		}
+		break;
+	    }
+
+	    prev = c;
+	}
+
+	if (outputcnt)
+		*output = 0;
+
+#ifdef DEBUG_PARSER
+	printf ("[PROCESS_MACROS] OUTPUT=%s\n", output_start);
+#endif
+}
+
+
 void do_bootm (cmd_tbl_t *cmdtp, bd_t *bd, int flag, int argc, char *argv[])
 {
 	ulong	iflag;
@@ -212,8 +304,9 @@ void do_bootm (cmd_tbl_t *cmdtp, bd_t *bd, int flag, int argc, char *argv[])
 	if ((s = getenv("bootargs")) == NULL)
 		s = "";
 
-	strcpy (cmdline, s);
-
+        process_macros(s, cmdline);
+//	strcpy (cmdline, s);
+	
 	cmd_start    = (ulong)&cmdline[0];
 	cmd_end      = cmd_start + strlen(cmdline);
 

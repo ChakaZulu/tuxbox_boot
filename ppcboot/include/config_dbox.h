@@ -52,13 +52,14 @@
 #else
 #define CONFIG_BOOTDELAY	5	/* autoboot after 5 seconds	*/
 #endif
-#define CONFIG_BOOTCOMMAND      "bootp 100000 /tftpboot/dbox-linux; bootm 100000"
-// #define CONFIG_BOOTCOMMAND	"bootp;bootm 10000"
-// #define CONFIG_BOOTCOMMAND	"bootp;tftpboot 500000 /tftpboot/dbox-initrd;bootm 100000 500000" /* autoboot command	*/
 
-// #define CONFIG_BOOTARGS		"root=/dev/ram0 ramdisk=8192"
+#define CONFIG_BOOTIMG1         "cdk"
+#define CONFIG_BOOTIMG2         "tiab"
+#define CONFIG_BOOTIMG3         "test1"
+#define CONFIG_BOOTIMG4         "test2"
 
-#define CONFIG_BOOTARGS         "root=/dev/nfs rw nfsroot=10.0.0.1:/LinuxPPC"
+#define CONFIG_BOOTCOMMAND      "bootp 100000 /dbox2/images/kernel-$(img);bootm 100000" 
+#define CONFIG_BOOTARGS         "console=ttyS0 root=/dev/nfs rw nfsroot=$(serverip):/dbox2/$(img)/"
 
 #define CONFIG_LOADS_ECHO	1	/* echo on for serial download	*/
 #undef	CFG_LOADS_BAUD_CHANGE		/* don't allow baudrate change	*/

@@ -45,6 +45,7 @@ void main_loop(bd_t *bd)
 	char *s = getenv ("bootdelay");
 	int bootdelay = s ? (int)simple_strtoul(s, NULL, 10) : 0;
 	int autoboot  = 1;
+        char imageselect;
 
 #endif	/* CONFIG_BOOTDELAY */
 
@@ -60,10 +61,20 @@ void main_loop(bd_t *bd)
 		int flag = 0;
 		int len;
 
-#if (CONFIG_BOOTDELAY >= 0)
+                if ( autoboot && bootdelay > 0 )
+                { 
+                  printf("Images:");
+                  printf("\n 1: "); printf(CONFIG_BOOTIMG1);
+                  printf("\n 2: "); printf(CONFIG_BOOTIMG2);
+                  printf("\n 3: "); printf(CONFIG_BOOTIMG3);
+                  printf("\n 4: "); printf(CONFIG_BOOTIMG4);
+                  printf("\n");
+                  imageselect = '1';
+                }
+#if (CONFIG_BOOTDELAY >= 0)      
 
 		if (autoboot)
-			printf ("Hit any key to stop autoboot: %2d ", bootdelay);
+		  printf("Select image (1-4), other keys to stop autoboot: %2d ", bootdelay);
 
 		while (bootdelay > 0) {
 			int i;
@@ -72,9 +83,10 @@ void main_loop(bd_t *bd)
 			/* delay 100 * 10ms */
 			for (i=0; i<100; ++i) {
 				if (tstc()) {	/* we got a key press	*/
+                                        imageselect = getc();
+                                        if ( imageselect<'1' || imageselect>'4' )
+                                          autoboot = 0;
 					bootdelay = 0;	/* no more delays	*/
-					autoboot  = 0;	/* don't auto boot	*/
-					(void) getc();  /* consume input */
 					break;
 				}
 				udelay (10000);
@@ -84,6 +96,12 @@ void main_loop(bd_t *bd)
 		}
 
 		putc ('\n');
+
+                // Image speichern
+                if ( imageselect == '1' ) setenv("img", CONFIG_BOOTIMG1);
+                if ( imageselect == '2' ) setenv("img", CONFIG_BOOTIMG2);
+                if ( imageselect == '3' ) setenv("img", CONFIG_BOOTIMG3);
+                if ( imageselect == '4' ) setenv("img", CONFIG_BOOTIMG4);
 
 		if (autoboot) {
 			autoboot = 0;
@@ -462,8 +480,8 @@ static void run_command (int len,
 
 		if (!str)
 			return;
-
-		strcpy (lastcommand, str);
+	  	strcpy (lastcommand, str);
+  	  	  
 		lastlen = len;
 	} else {			/* Process last command (len = 0)	*/
 		/* Check if we have a valid command stored */
