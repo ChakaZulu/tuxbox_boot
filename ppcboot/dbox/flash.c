@@ -1,4 +1,34 @@
-/* dbox2 flash for intel. amd not yet supported, sorry. */
+/*
+ *   flash.c - nokia/sagem/philips flash driver (dbox-II-project)
+ *
+ *   Homepage: http://dbox2.elxsi.de
+ *
+ *   Copyright (C) 2000-2001 a lot of the developers ...
+ *
+ *   This program is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation; either version 2 of the License, or
+ *   (at your option) any later version.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program; if not, write to the Free Software
+ *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ *
+ *
+ *   $Log: flash.c,v $
+ *   Revision 1.3  2001/11/11 22:40:42  derget
+ *   added FAST Strata flash write
+ *   thanks to Marko
+ *
+ *
+ *   $Revision: 1.3 $
+ *   
+ */
 
 #include <ppcboot.h>
 #include <mpc8xx.h>
@@ -24,7 +54,7 @@ static int write_buff (flash_info_t *info, uchar *src, ulong addr, ulong cnt);
 static int write_word (flash_info_t *info, ulong dest, ulong data);
 static void flash_get_offsets (ulong base, flash_info_t *info);
 static int  flash_protect (int flag, ulong from, ulong to, flash_info_t *info);
-
+static int strata_buffer_write (flash_info_t *info, uchar *src, ulong addr, ulong cnt);
 /*-----------------------------------------------------------------------
  */
 
@@ -684,8 +714,15 @@ int flash_write (uchar *src, ulong addr, ulong cnt)
 		len = info->start[0] + info->size - addr;
 		if (len > cnt)
 			len = cnt;
-		if ((i = write_buff(info, src, addr, len)) != 0) {
-			return (i);
+		if ((info->flash_id & FLASH_TYPEMASK)==FLASH_INT640B) {
+		  if ((i = strata_buffer_write(info, src, addr, len)) != 0) {
+		    return (i);
+		  }
+		}
+		else {
+		  if ((i = write_buff(info, src, addr, len)) != 0) {
+		    return (i);
+		  }
 		}
 		cnt  -= len;
 		addr += len;
@@ -831,6 +868,134 @@ static int write_word (flash_info_t *info, ulong dest, ulong data)
         }
     	return (0);
 }
-
-/*-----------------------------------------------------------------------
+/*
+ *
  */
+
+static int strata_buffer_write (flash_info_t *info, uchar *src, ulong addr, ulong cnt)
+{
+  int buffer_size = 32; /* bytes */
+  int word_count;        /* word count */
+  int byte_count;
+  vu_long *cmd_adr;
+  ulong value;
+  vu_long *write_adr = (vu_long*)addr;
+  vu_long *read_adr = (vu_long*)src;
+  int sector;
+  int z, flag;
+  static int tot_cnt = 0;
+  static int Mbytes = 0;
+
+  printf("\nFlashed\t%dMB", Mbytes); 
+
+  /* clear status register */
+  flash_put(cmd_adr, 0, 0x00500050);
+
+  while (cnt > 0) {
+
+    /* find the sector the adress is in  
+
+    sector = 0;
+    while (!(info->start[sector+1] > (ulong)write_adr))
+      sector++; 
+
+    cmd_adr = (vu_long*) ((info->start[sector]) & ~(buffer_size-1));
+    */
+
+    cmd_adr = (vu_long*) ((ulong)write_adr & ~(buffer_size - 1)); 
+
+    /* printf("\ncmd_adr: %lx\twrite_adr: %lx\tread_adr: %lx", cmd_adr, write_adr, read_adr); */
+
+    flag = disable_interrupts();
+    
+    z=0;
+    /* issue write command */
+    flash_put(cmd_adr, 0, 0x00E800E8);
+    /* read extended status register */
+    flash_put(cmd_adr, 0, 0x00700070);
+    for(;;) {
+      if ((flash_get(cmd_adr, 0) & 0x00800080) == flash_mask(0x00800080))
+	break;
+      
+      udelay(5);
+      
+      if(++z > 20) {
+	flash_put(cmd_adr, 0, 0x00FF00FF);
+	if (flag)
+		enable_interrupts();
+	return 1;
+      }
+   }
+
+    /* write word count */  
+
+    byte_count = (((ulong)write_adr+32) & ~(buffer_size-1)) - (ulong)write_adr;
+
+    if (byte_count > cnt)
+      byte_count = cnt;
+
+     
+    word_count = (byte_count / flash_bus_width - 1) * 0x10000 + (byte_count / flash_bus_width - 1);
+    flash_put(cmd_adr, 0, word_count);
+
+    for(z=0; z< byte_count / flash_bus_width; z++) {
+      value = flash_get(read_adr, 0);
+      flash_put(write_adr, 0, value);
+      (char*)read_adr += flash_bus_width;
+      (char*)write_adr += flash_bus_width;
+    }
+
+    /*  confirm buffer write */
+    /* flash_put(cmd_adr, 0, 0x00D000D0); */
+    flash_put(write_adr-1, 0, 0x00D000D0);
+
+    z=0;
+    flash_put(cmd_adr, 0, 0x00700070);
+    for(;;) {
+      if ((flash_get(cmd_adr, 0) & 0x00800080) == flash_mask(0x00800080))
+	break;
+      
+      udelay(5);
+      
+      if(++z > 20) {
+	flash_put(cmd_adr, 0, 0x00FF00FF);
+	if (flag)
+	  enable_interrupts();
+	printf("Failure after flash\n");
+
+	return 1;
+      }
+    }
+    
+    if (flag)
+      enable_interrupts();	
+    
+    /* move section */
+    cnt -= byte_count;
+
+    tot_cnt += byte_count;
+    while (tot_cnt > 1048575) {
+      Mbytes++;
+      tot_cnt-= 1048575;
+      printf("\rFlashed\t%dMB", Mbytes); 
+    }
+
+  }
+  
+  printf("\n");
+  
+  flash_put(cmd_adr, 0, 0x00FF00FF);
+
+  if (flag)
+	enable_interrupts();	
+
+  return 0;
+}
+
+  
+
+
+
+
+
+
