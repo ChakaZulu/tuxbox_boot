@@ -210,7 +210,6 @@ void process_macros (char *input, char *output, char delim);
 void
 TftpStart (ulong loadAdr)
 {
-int tftpwiederholung = 1;
 char BootFile2[CFG_CBSIZE];
 
 #ifdef ET_DEBUG
