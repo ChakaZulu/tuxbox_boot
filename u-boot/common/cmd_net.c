@@ -61,9 +61,9 @@ int do_dhcp (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 }
 #endif	/* CFG_CMD_DHCP */
 
-#ifndef CONFIG_DBOX2
+#ifndef CONFIG_TUXBOX_NETWORK
 static 
-#endif /* CONFIG_DBOX2 */
+#endif /* CONFIG_TUXBOX_NETWORK */
 void netboot_update_env(void)
 {
     char tmp[16] ;
