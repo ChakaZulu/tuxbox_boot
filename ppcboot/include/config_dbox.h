@@ -36,6 +36,7 @@
 #define CONFIG_MPC823		1	/* This is a MPC823 CPU		*/
 #define CONFIG_TQM823L		1	/* ...on a TQM8xxL module	*/
 #define CONFIG_DBOX             1       /* ...on the nokia-device :)    */
+#define CONFIG_I2C
 
 #define CONFIG_ENV_OVERWRITE	1	// Overwrite the environment
 
