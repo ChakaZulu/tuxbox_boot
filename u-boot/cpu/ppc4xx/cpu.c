@@ -51,7 +51,7 @@ int checkcpu (void)
 #if defined(CONFIG_405GP) || \
     defined(CONFIG_405CR) || \
     defined(CONFIG_IOP480) || \
-    defined(CONFIG_440) || defined(CONFIG_405D4) \
+    defined(CONFIG_440) || defined(CONFIG_405D4) || \
     defined(CONFIG_405EP)
 	uint pvr = get_pvr();
 #endif
