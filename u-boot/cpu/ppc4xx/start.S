@@ -304,6 +304,9 @@ _start_440:
  * r4 - 2nd arg to board_init(): boot flag
  */
 	.text
+#ifdef CONFIG_SECONDSTAGE
+	b _start
+#endif
 	.long	0x27051956		/* U-Boot Magic Number			*/
 	.globl	version_string
 version_string:
@@ -504,7 +507,7 @@ _start:
 #endif	/* CONFIG_IOP480 */
 
 /*****************************************************************************/
-#if defined(CONFIG_405GP) || defined(CONFIG_405CR) || defined(CONFIG_405)
+#if defined(CONFIG_405GP) || defined(CONFIG_405CR) || defined(CONFIG_405) || defined(CONFIG_405D4)
 	/*----------------------------------------------------------------------- */
 	/* Clear and set up some registers. */
 	/*----------------------------------------------------------------------- */
