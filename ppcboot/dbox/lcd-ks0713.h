@@ -21,6 +21,9 @@
  *
  *
  *   $Log: lcd-ks0713.h,v $
+ *   Revision 1.2  2001/11/16 20:49:49  ge0rg
+ *   added progress bar (lcd_status()) and text output (lcd_print()) support.
+ *
  *   Revision 1.1  2001/04/23 10:01:06  Jolt
  *   LCD support
  *
@@ -36,7 +39,7 @@
  *   Revision 1.5  2001/01/06 10:06:35  gillem
  *   cvs check
  *
- *   $Revision: 1.1 $
+ *   $Revision: 1.2 $
  *
  */
 
@@ -108,4 +111,7 @@ void lcd_write_byte( int data );
 void lcd_read_dram( unsigned char * dest );
 void lcd_write_dram( unsigned char * dest );
 void lcd_clear(void);
+int lcd_set_pixel( struct lcd_pixel * pix );
+void lcd_status(int y, unsigned char percent);
+
 

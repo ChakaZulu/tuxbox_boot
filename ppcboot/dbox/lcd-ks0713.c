@@ -21,6 +21,9 @@
  *
  *
  *   $Log: lcd-ks0713.c,v $
+ *   Revision 1.8  2001/11/16 20:49:49  ge0rg
+ *   added progress bar (lcd_status()) and text output (lcd_print()) support.
+ *
  *   Revision 1.7  2001/08/31 00:12:07  ge0rg
  *   bootlogo code rewrite
  *
@@ -66,13 +69,14 @@
  *   Revision 1.5  2001/01/06 10:06:35  gillem
  *   cvs check
  *
- *   $Revision: 1.7 $
+ *   $Revision: 1.8 $
  *
  */
 
 #include <ppcboot.h>
 #include "mpc8xx.h"
 #include "lcd-ks0713.h"
+#include "lcd-font.h"
 #include <idxfs.h>
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -403,6 +407,24 @@ void lcd_reset(void)
 	lcd_send_cmd( LCD_CMD_RES, 7 );
 	lcd_send_cmd( LCD_CMD_SIR, 3 );
 	lcd_send_cmd( LCD_CMD_SRV, 50 );
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+void lcd_status(int y, unsigned char percent) {
+	int x;
+	lcd_set_pos(y, 0);
+
+	for (x=0; x<10; x++) {
+		lcd_write_byte(0xFF);
+	}
+	if (percent>0)
+		for (x=0; x<percent; x++) {
+			lcd_write_byte(0x81);
+		}
+	for (x=0; x<110-percent; x++) {
+		lcd_write_byte(0xFF);
+	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////
