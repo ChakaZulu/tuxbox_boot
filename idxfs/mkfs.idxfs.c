@@ -16,8 +16,16 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA
+ *
+ *
+ *
+ *
+ *	Revision   1.4  2001/06/05 12:30:00  derget 
+ *	Some Fixxes
+ *
+ *	Revision   1.3  2001/04/25 19:41:29  Jolt
+ *	Inital Release
  */
-
 #include <stdio.h>
 #include "../ppcboot/include/idxfs.h"
 
@@ -35,7 +43,7 @@ unsigned int swab32(unsigned int w) { return ( swab16(w>>16) | (swab16(w)<<16) )
 #endif
 
 
-void write_file(FILE *image, char *filename, unsigned char last)
+int write_file(FILE *image, char *filename, unsigned char last)
 {
 
   unsigned char buffer[BUFFER_SIZE];
@@ -44,6 +52,12 @@ void write_file(FILE *image, char *filename, unsigned char last)
   unsigned int size;
 
   idxfs_file = fopen(filename, "rb");
+	if (!idxfs_file)
+	  {
+	    perror(filename);
+	    return 0;	
+	  }
+
 
   fseek(idxfs_file, 0, 2);
   size = ftell(idxfs_file);
@@ -67,20 +81,35 @@ void write_file(FILE *image, char *filename, unsigned char last)
 
 }
 
-int main(void)
+int main(int argc, char **argv)
 {
 
   FILE *idxfs_img;
   sIdxFsHdr idxfs_hdr;
-
-  idxfs_img = fopen("image.idx", "wb");
   
+  if (argc!=2)
+  {
+    printf("usage: mkfs.idxfs <image.idx>\n");
+    printf("kernel , logo-lcd and logo-fb musst be in same dir\n");
+    return 0;
+  }
+
+  
+  idxfs_img = fopen(argv[1], "wb");
+  	if(!idxfs_img)
+  {
+    perror(argv[4]);
+    return 0;
+  }
+ 
+	
   idxfs_hdr.Magic = swab32(IDXFS_MAGIC);
   idxfs_hdr.Version = swab32(IDXFS_VERSION);
   idxfs_hdr.FatOffsFirst = swab32(sizeof(sIdxFsHdr));
   
   fwrite(&idxfs_hdr, sizeof(sIdxFsHdr), 1, idxfs_img);
   
+	
   write_file(idxfs_img, "kernel", 0);
   write_file(idxfs_img, "logo-lcd", 0);
   write_file(idxfs_img, "logo-fb", 1);
