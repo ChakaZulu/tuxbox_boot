@@ -1,4 +1,4 @@
-	/*
+/*
  * uncompress.c
  *
  * Copyright (C) 1999 Linus Torvalds
