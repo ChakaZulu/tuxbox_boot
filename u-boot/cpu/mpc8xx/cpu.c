@@ -417,6 +417,7 @@ int do_reset (cmd_tbl_t * cmdtp, bd_t * bd, int flag, int argc,
 	ulong msr, addr;
 
 	volatile immap_t *immap = (immap_t *) CFG_IMMR;
+	volatile unsigned char dummy;
 
 	immap->im_clkrst.car_plprcr |= PLPRCR_CSR;	/* Checkstop Reset enable */
 
@@ -426,6 +427,8 @@ int do_reset (cmd_tbl_t * cmdtp, bd_t * bd, int flag, int argc,
 
 	msr &= ~0x1030;
 	__asm__ volatile ("mtmsr    %0"::"r" (msr));
+
+	dummy = immap->im_clkrst.res[0];
 
 	/*
 	 * Trying to execute the next instruction at a non-existing address
