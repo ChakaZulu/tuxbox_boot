@@ -391,37 +391,66 @@ int flash_real_protect (flash_info_t *info, long sector, int prot)
 
 	if ((info->flash_id & FLASH_VENDMASK) == FLASH_MAN_INTEL)
 	{
+		uchar flashmask=3;
+		int secchk, secchk_first=sector, secchk_last=sector;	// defaults to just actual sector
+
+		if ((info->flash_id & FLASH_TYPEMASK)==FLASH_28F640J3A) flashmask = 1;
+
 		/* clear status register */
 		flash_put (info, addr, 0, 0x00500050);
 		/* read configuration */
-		flash_put (info, addr, 0, 0x00900090);
-		/* configuration setup */
-		flash_put (info, addr, 0, 0x00600060);
+//		flash_put (info, addr, 0, 0x00900090);	// request and no read??? why?
+
 		/* lock/unlock block */
-		if (prot == 0)
-			flash_put (info, addr, 0, 0x00D000D0);
-		else if (prot == 2 && !((info->flash_id & FLASH_TYPEMASK) == FLASH_28F640J3A))
-			flash_put (info, addr, 0, 0x002F002F);
-		else
-			flash_put (info, addr, 0, 0x00010001);
-		/* read configuration */
-		flash_put (info, addr, 0, 0x00900090);
-		switch (flash_get (info, addr, 2) & 3)
-		{
-			case 0:
-				info->protect[sector] = 0;
-				break;
-			case 1:
-				info->protect[sector] = 1;
-				break;
-			case 3:
-				info->protect[sector] = 2;
-				break;
+		if (((info->flash_id & FLASH_TYPEMASK) == FLASH_28F640J3A)&&(prot == 0)){
+			/* this flash clears all lock-bits simultaneously, so
+				check state first to speed up an iterative clear lock-block operation	*/
+			flash_put (info, addr, 0, 0x00900090);
+			if ((flash_get (info, addr, 2) & flashmask) == 1){
+				flash_put (info, addr, 0, 0x00600060);
+				flash_put (info, addr, 0, 0x00D000D0);
+			}
+		} else {
+			/* setup configuration */
+			flash_put (info, addr, 0, 0x00600060);
+			if (prot == 0) 
+				flash_put (info, addr, 0, 0x00D000D0);
+			else if (prot == 2 && !((info->flash_id & FLASH_TYPEMASK) == FLASH_28F640J3A))
+				flash_put (info, addr, 0, 0x002F002F);
+			else
+				flash_put (info, addr, 0, 0x00010001);
+	
 		}
+		/* check status */
+		flash_put (info, addr, 0, 0x00700070);		// actually done automatically for 28F640J3A
+		while (!(flash_get (info, addr, 0)&(1<<7)));	// check SR7 (WSM ready?)
+				/* read configuration */
+		flash_put (info, addr, 0, 0x00900090);
+			
+		if (((info->flash_id & FLASH_TYPEMASK) == FLASH_28F640J3A)&&(prot == 0)){
+			/* since we clear all lock block-bits simultaneously we have to check them all */
+			secchk_first = 0;
+			secchk_last = info->sector_count-1;
+		}
+		for (secchk = secchk_first; secchk <= secchk_last; ++secchk){
+			switch (flash_get (info, info->start[secchk], 2) & flashmask)
+			{
+				case 0:
+					info->protect[secchk] = 0;
+					break;
+				case 1:
+					info->protect[secchk] = 1;
+					break;
+				case 3:
+					info->protect[secchk] = 2;
+					break;
+			}
+		}
+
 		/* read status register */
-		flash_put (info, addr, 0, 0x00700070);
+		flash_put (info, addr, 0, 0x00700070);	// why?
 		/* cancel read status register */
-		flash_put (info, addr, 0, 0x00FF00FF);
+		flash_put (info, addr, 0, 0x00FF00FF);	// actually it also resets to read array
 	}
 	else
 	{
