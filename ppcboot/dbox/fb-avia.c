@@ -20,6 +20,9 @@
  *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *   
  *  $Log: fb-avia.c,v $
+ *  Revision 1.4  2001/06/24 12:54:46  TripleDES
+ *  added eNX support
+ *
  *  Revision 1.3  2001/06/05 11:08:10  derget
  *
  *  completed AVIA-GTX support
@@ -33,7 +36,7 @@
  *  
  *  Reimplementet gtxfb.c
  *
- *  $Revision: 1.3 $
+ *  $Revision: 1.4 $
  *
  */
 #include <stdio.h>
@@ -41,9 +44,12 @@
 #include "i2c.h"
 #include "fb-avia.h"
 #include <idxfs.h>
+#include "enx.h"
 
 static int pal=1;
 unsigned char *gtxmem, *gtxreg;
+unsigned char *enx_mem_addr = (unsigned char*)ENX_MEM_BASE;
+unsigned char *enx_reg_addr = (unsigned char*)ENX_REG_BASE;
 
 static unsigned char SAA7126_INIT[] = {
 
@@ -124,6 +130,25 @@ void gtxcore_init(void)
         rh(CR0)=cr;
 }
 
+unsigned char *enx_get_mem_addr(void) {
+    return enx_mem_addr;
+}
+
+unsigned char *enx_get_reg_addr(void) {
+    return enx_reg_addr;
+}
+
+
+void enxcore_init(void)
+{
+	enx_reg_w(RSTR0) = 0xFCF6BEFF;
+	enx_reg_w(SCSC) = 0x00000000;
+	enx_reg_w(RSTR0) &= ~(1 << 12);
+	enx_reg_w(MC) = 0x00001015;
+	enx_reg_w(RSTR0) &= ~(1 << 11);
+	enx_reg_w(RSTR0) &= ~(1 << 9);
+	enx_reg_w(RSTR0) &= ~(1 << 6);
+}	
 void gtxvideo_init(void)
 {
         int val;
@@ -131,11 +156,11 @@ void gtxvideo_init(void)
         rh(VHT)=pal?858:852;
         rh(VLT)=pal?(623|(21<<11)):(523|(18<<11));
     
-        val=3<<30;
-        val|=3<<24;
-        val|=0<<20;
-        val|=0<<16;
-        val|=720*2;
+        val=3<<30;   //16bit rgb
+        val|=3<<24;  //chroma filter	
+        val|=0<<20;  //BLEV1
+        val|=0<<16;  //BLEV0
+        val|=720*2;  //Stride
   
         rw(GMR)=val;
 
@@ -161,6 +186,42 @@ void gtxvideo_init(void)
         rw(VBR)=(1<<24)|0x123456;               // hier nochmal schwarz einbauen...
 }
 
+void enxvideo_init(void)
+{
+	int val;
+	enx_reg_w(VBR) = (1<<24)|0x123456;
+	enx_reg_h(VCR) = 0x40;
+	enx_reg_h(VHT) = 857|0x5000;
+	enx_reg_h(VLT) = 623|(21<<11);
+
+	val=0;
+	val|=1<<26;  
+	val|=3<<20;  
+	val|=(720*2);		
+	
+        enx_reg_w(GMR1)=val;
+        enx_reg_w(GMR2)=0;
+	enx_reg_h(GBLEV1) = 0;
+	enx_reg_h(GBLEV2) = 0;
+	enx_reg_w(GVSA1) = 0;
+	enx_reg_w(GVP1) = 0;
+	enx_reg_h(G1CFR)=0;
+	enx_reg_h(G2CFR)=0;
+
+#define ENX_VCR_SET_HP(X)    enx_reg_h(VCR) = ((enx_reg_h(VCR)&(~(3<<10))) | ((X&3)<<10))
+#define ENX_VCR_SET_FP(X)    enx_reg_h(VCR) = ((enx_reg_h(VCR)&(~(3<<8 ))) | ((X&3)<<8 ))
+#define ENX_GVP_SET_X(X)     enx_reg_w(GVP1) = ((enx_reg_w(GVP1)&(~(0x3FF<<16))) | ((X&0x3FF)<<16))
+#define ENX_GVP_SET_Y(X)     enx_reg_w(GVP1) = ((enx_reg_w(GVP1)&(~0x3FF))|(X&0x3FF))
+#define ENX_GVP_SET_COORD(X,Y) ENX_GVP_SET_X(X); ENX_GVP_SET_Y(Y)
+#define ENX_GVS_SET_XSZ(X)   enx_reg_w(GVSZ1) = ((enx_reg_w(GVSZ1)&(~(0x3FF<<16))) | ((X&0x3FF)<<16))
+#define ENX_GVS_SET_YSZ(X)   enx_reg_w(GVSZ1) = ((enx_reg_w(GVSZ1)&(~0x3FF))|(X&0x3FF))
+
+	ENX_VCR_SET_HP(0);
+	ENX_VCR_SET_FP(0);
+	ENX_GVP_SET_COORD(113,42);
+	ENX_GVS_SET_XSZ(720);
+	ENX_GVS_SET_YSZ(576);
+}
 #define XRES 720
 #define YRES 576
 extern int decodestillmpg(void *pic, const void *src, int X_RESOLUTION, int Y_RESOLUTION);
@@ -176,9 +237,7 @@ int fb_init(void)
       printf("  FB logo at: none\n");
       return 0;
    }
-
   iframe_logo = (unsigned char*)(IDXFS_OFFSET + offset);
- 
 
   i2c_bus_init();
   saa7126_init();
@@ -196,9 +255,9 @@ int fb_init(void)
       // Philips (eNX + STV6411A)
     case 3:
       // SAGEM (eNX + CXA2126)
-      //enxcore_init();
-      //decodestillmpg(enx_get_mem_addr(), iframe_logo, XRES, YRES);
-      //enxvideo_init();
+     enxcore_init();
+     decodestillmpg(enx_mem_addr, iframe_logo, XRES, YRES);
+     enxvideo_init();
     break;
   }
   
