@@ -17,13 +17,31 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *
- * $Id: avs.c,v 1.2 2003/02/16 22:23:03 alexw Exp $
+ * $Id: avs.c,v 1.3 2003/02/17 13:41:24 alexw Exp $
  */
 
 #include <common.h>
 #include <i2c.h>
 
 #ifdef CONFIG_DBOX2_FB
+
+void avs_blank (int mid)
+{
+	switch (mid)
+	{
+		case 1:
+			i2c_write (0x48, 0, 0, "\x00\x00\x00\x00\x00", 5);
+			break;
+		case 2:
+			i2c_write (0x4a, 0, 0, "\x00\x00\x00\x00\x00\x00\x00\x00", 8);
+			break;
+		case 3:
+			i2c_write (0x48, 0, 0, "\x00\x00\x00\x00\x00\x00\x00", 7);
+			break;
+		default:
+			;
+	}
+}
 
 void avs_init (int mid)
 {
