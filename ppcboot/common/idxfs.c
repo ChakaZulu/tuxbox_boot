@@ -31,12 +31,17 @@ void idxfs_dump_info(unsigned char *mem, unsigned int mem_size)
   sIdxFsFatEntry *fat;
   unsigned int offs;
   
-  // Disable sanity checks if < 0
-  if (mem_size < 0)
+  // Disable sanity checks if = 0
+  if (mem_size == 0)
     mem_size = 0xFFFFFFFF;
 
-  if (sizeof(sIdxFsHdr) > mem_size)
+  if (sizeof(sIdxFsHdr) > mem_size) {
+  
+    printf("Buffer overflow\n");
+  
     return;    
+    
+  }    
 
   hdr = (sIdxFsHdr *)mem;
 
@@ -66,13 +71,8 @@ void idxfs_dump_info(unsigned char *mem, unsigned int mem_size)
   
     printf("Offs->0x%08X Size->0x%08X Next->0x%08X Name->%s\n", offs + sizeof(sIdxFsFatEntry), fat->Size, fat->OffsNext, fat->Name);
     
-    if (!fat->OffsNext) {
-    
-      printf("Done\n");
-    
+    if (!fat->OffsNext)
       return;
-      
-    }  
     
     if (fat->OffsNext + sizeof(sIdxFsFatEntry) > mem_size) {
     
@@ -95,6 +95,10 @@ unsigned int idxfs_file_info(unsigned char *mem, unsigned int mem_size, unsigned
   sIdxFsHdr *hdr = (sIdxFsHdr *)mem;
   sIdxFsFatEntry *fat;
   unsigned int offs;
+
+  // Disable sanity checks if = 0
+  if (mem_size == 0)
+    mem_size = 0xFFFFFFFF;
   
   if ((!hdr) || (!file_name))
     return 0;

@@ -21,6 +21,9 @@
  *
  *
  *   $Log: lcd-ks0713.c,v $
+ *   Revision 1.4  2001/04/25 20:51:43  Jolt
+ *   IdxFs fixes
+ *
  *   Revision 1.3  2001/04/25 19:41:29  Jolt
  *   IdxFs fixes, lcd logo from flash
  *
@@ -51,7 +54,7 @@
  *   Revision 1.5  2001/01/06 10:06:35  gillem
  *   cvs check
  *
- *   $Revision: 1.3 $
+ *   $Revision: 1.4 $
  *
  */
 
@@ -412,7 +415,7 @@ int lcd_init(void)
 //    lcd_reset();
 
 	   
-    idxfs_file_info((unsigned char*)0x10040000, -1, "logo-lcd", &offset, &size);
+    idxfs_file_info((unsigned char*)0x10040000, 0, "logo-lcd", &offset, &size);
     
     if (!offset) {
     
