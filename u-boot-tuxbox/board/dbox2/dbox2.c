@@ -118,6 +118,11 @@ long int initdram (int board_type)
 	if ( memctl->memc_br2 & 0x1 )
 		size += ~(memctl->memc_or2 & 0xffff8000) + 1;
 
+#ifdef CONFIG_DBOX2_IDE
+	// set values for memcontroller for IDE interface  (will crash on boxes with external SDRAM)
+	memctl->memc_br2 = 0x02000001;
+	memctl->memc_or2 = 0xfe000966;
+#endif
 	return size;
 }
 
