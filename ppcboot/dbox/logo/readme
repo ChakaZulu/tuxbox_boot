@@ -28,5 +28,5 @@ ps : mit bootidxfs ladet ihr den Kernel der im idxfs ist
 
 
 TFTP:
-die logos mit den nahmen 
+Die logos mit den Namen 
 logo-fb und logo-lcd müssen in das dir in dem auch ppcboot liegt 
