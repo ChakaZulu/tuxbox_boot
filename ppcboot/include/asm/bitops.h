@@ -42,9 +42,9 @@ extern __inline__ void set_bit(int nr, volatile void * addr)
 	unsigned long *p = ((unsigned long *)addr) + (nr >> 5);
 	
 	__asm__ __volatile__(SMP_WMB "\
-1:	lwarx	%0,0,%3
-	or	%0,%0,%2
-	stwcx.	%0,0,%3
+1:	lwarx	%0,0,%3\n\
+	or	%0,%0,%2\n\
+	stwcx.	%0,0,%3\n\
 	bne	1b"
 	SMP_MB
 	: "=&r" (old), "=m" (*p)
@@ -59,9 +59,9 @@ extern __inline__ void clear_bit(int nr, volatile void *addr)
 	unsigned long *p = ((unsigned long *)addr) + (nr >> 5);
 
 	__asm__ __volatile__(SMP_WMB "\
-1:	lwarx	%0,0,%3
-	andc	%0,%0,%2
-	stwcx.	%0,0,%3
+1:	lwarx	%0,0,%3\n\
+	andc	%0,%0,%2\n\
+	stwcx.	%0,0,%3\n\
 	bne	1b"
 	SMP_MB
 	: "=&r" (old), "=m" (*p)
@@ -76,9 +76,9 @@ extern __inline__ void change_bit(int nr, volatile void *addr)
 	unsigned long *p = ((unsigned long *)addr) + (nr >> 5);
 
 	__asm__ __volatile__(SMP_WMB "\
-1:	lwarx	%0,0,%3
-	xor	%0,%0,%2
-	stwcx.	%0,0,%3
+1:	lwarx	%0,0,%3\n\
+	xor	%0,%0,%2\n\
+	stwcx.	%0,0,%3\n\
 	bne	1b"
 	SMP_MB
 	: "=&r" (old), "=m" (*p)
@@ -93,9 +93,9 @@ extern __inline__ int test_and_set_bit(int nr, volatile void *addr)
 	volatile unsigned int *p = ((volatile unsigned int *)addr) + (nr >> 5);
 
 	__asm__ __volatile__(SMP_WMB "\
-1:	lwarx	%0,0,%4
-	or	%1,%0,%3
-	stwcx.	%1,0,%4
+1:	lwarx	%0,0,%4\n\
+	or	%1,%0,%3\n\
+	stwcx.	%1,0,%4\n\
 	bne	1b"
 	SMP_MB
 	: "=&r" (old), "=&r" (t), "=m" (*p)
@@ -112,9 +112,9 @@ extern __inline__ int test_and_clear_bit(int nr, volatile void *addr)
 	volatile unsigned int *p = ((volatile unsigned int *)addr) + (nr >> 5);
 
 	__asm__ __volatile__(SMP_WMB "\
-1:	lwarx	%0,0,%4
-	andc	%1,%0,%3
-	stwcx.	%1,0,%4
+1:	lwarx	%0,0,%4\n\
+	andc	%1,%0,%3\n\
+	stwcx.	%1,0,%4\n\
 	bne	1b"
 	SMP_MB
 	: "=&r" (old), "=&r" (t), "=m" (*p)
@@ -131,9 +131,9 @@ extern __inline__ int test_and_change_bit(int nr, volatile void *addr)
 	volatile unsigned int *p = ((volatile unsigned int *)addr) + (nr >> 5);
 
 	__asm__ __volatile__(SMP_WMB "\
-1:	lwarx	%0,0,%4
-	xor	%1,%0,%3
-	stwcx.	%1,0,%4
+1:	lwarx	%0,0,%4\n\
+	xor	%1,%0,%3\n\
+	stwcx.	%1,0,%4\n\
 	bne	1b"
 	SMP_MB
 	: "=&r" (old), "=&r" (t), "=m" (*p)
@@ -194,8 +194,7 @@ extern __inline__ int ffs(int x)
  * This implementation of find_{first,next}_zero_bit was stolen from
  * Linus' asm-alpha/bitops.h.
  */
-#define find_first_zero_bit(addr, size) \
-	find_next_zero_bit((addr), (size), 0)
+#define find_first_zero_bit(addr, size) find_next_zero_bit((addr), (size), 0)
 
 extern __inline__ unsigned long find_next_zero_bit(void * addr,
 	unsigned long size, unsigned long offset)
@@ -284,8 +283,7 @@ extern __inline__ int ext2_test_bit(int nr, __const__ void * addr)
  * Linus' asm-alpha/bitops.h and modified for a big-endian machine.
  */
 
-#define ext2_find_first_zero_bit(addr, size) \
-        ext2_find_next_zero_bit((addr), (size), 0)
+#define ext2_find_first_zero_bit(addr, size) ext2_find_next_zero_bit((addr), (size), 0)
 
 extern __inline__ unsigned long ext2_find_next_zero_bit(void *addr,
 	unsigned long size, unsigned long offset)
