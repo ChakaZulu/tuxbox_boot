@@ -744,7 +744,7 @@ void board_init_r (gd_t *id, ulong dest_addr)
 		bd->bi_ethspeed = 0xFFFF;
 #endif
 
-#ifdef CONFIG_NX823
+#if defined(CONFIG_NX823) || defined(CONFIG_DBOX2)
 	load_sernum_ethaddr ();
 #endif
 

@@ -611,9 +611,6 @@ typedef struct scc_enet {
 #define	PC_ENET_CLSN	((ushort)0x0040)	/* PC  9 */
 #define	PC_ENET_RENA	((ushort)0x0080)	/* PC  8 */
 
-/* Control bits in the SICR to route TCLK (CLK3) and RCLK (CLK1) to
- * SCC2.  Also, make sure GR2 (bit 16) and SC2 (bit 17) are zero.
- */
 #define	SICR_ENET_MASK	((uint)0x0000ff00)
 #define	SICR_ENET_CLKRT	((uint)0x00003d00)
 

@@ -22,7 +22,7 @@
 #
 #
 
-SUBDIRS	:= crmafs jffs2 fdos
+SUBDIRS	:= cramfs jffs2 fdos
 
 .depend all:
 	@for dir in $(SUBDIRS) ; do \

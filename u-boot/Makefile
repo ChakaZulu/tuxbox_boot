@@ -114,7 +114,7 @@ endif
 LIBS  =	board/$(BOARDDIR)/lib$(BOARD).a
 LIBS += cpu/$(CPU)/lib$(CPU).a
 LIBS += lib_$(ARCH)/lib$(ARCH).a
-LIBS += fs/jffs2/libjffs2.a fs/fdos/libfdos.a
+LIBS += fs/cramfs/libcramfs.a fs/jffs2/libjffs2.a fs/fdos/libfdos.a
 LIBS += net/libnet.a
 LIBS += disk/libdisk.a
 LIBS += rtc/librtc.a

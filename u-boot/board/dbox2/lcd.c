@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *
- * $Id: lcd.c,v 1.1 2002/12/22 17:38:55 bastian Exp $
+ * $Id: lcd.c,v 1.2 2002/12/22 22:09:56 bastian Exp $
  */
 
 #include <common.h>
@@ -332,8 +332,9 @@ void lcd_status (int y, unsigned char percent)
 		lcd_write_byte (0xFF);
 }
 
-int lcd_init (bd_t *bd)
+int lcd_init (void)
 {
+	DECLARE_GLOBAL_DATA_PTR;
 	volatile immap_t *immr = (immap_t *) CFG_IMMR;
 #ifdef CONFIG_DBOX2_LCD_LOGO
 	unsigned char *lcd_logo = (unsigned char *) 0x100000;
@@ -363,9 +364,9 @@ int lcd_init (bd_t *bd)
 		goto load_logo;
 # endif /* CONFIG_DBOX2_LCD_LOGO_FS */
 # ifdef CONFIG_DBOX2_LCD_LOGO_TFTP
-	NetLoop (bd, BOOTP);
+	NetLoop (BOOTP);
 	copy_filename (BootFile, CONFIG_DBOX2_LCD_LOGO_TFTP, sizeof (BootFile));
-	size = NetLoop (bd, TFTP);
+	size = NetLoop (TFTP);
 
 	if (size <= 0)
 	{
@@ -393,7 +394,7 @@ load_logo:
 
 # ifdef CONFIG_DBOX2_LCD_INFO
 #  if CONFIG_DBOX2_LCD_LOGO_RESERVE >= 1
-	lcd_puts (PPCBOOT_VERSION_SHORT);
+	lcd_puts (U_BOOT_VERSION_SHORT);
 #  endif /* CONFIG_DBOX2_LCD_LOGO_RESERVE */
 # endif /* CONFIG_DBOX2_LCD_INFO */
 #endif /* CONFIG_DBOX2_LCD_LOGO */

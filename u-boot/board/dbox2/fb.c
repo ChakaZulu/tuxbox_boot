@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *
- * $Id: fb.c,v 1.1 2002/12/22 17:38:55 bastian Exp $
+ * $Id: fb.c,v 1.2 2002/12/22 22:09:56 bastian Exp $
  */
 
 #include <common.h>
@@ -36,7 +36,7 @@ extern void saa7126_init (int);
 extern void avs_init (int);
 extern void avia_init (int, unsigned char*, int);
 
-void fb_init (bd_t *bd)
+void fb_init (void)
 {
 #ifdef CONFIG_DBOX2_FB_LOGO
 	unsigned char *hwi = (unsigned char *) (CFG_FLASH_BASE + CFG_HWINFO_OFFSET);
@@ -59,9 +59,9 @@ void fb_init (bd_t *bd)
 		goto load_logo;
 # endif /* CONFIG_DBOX2_FB_LOGO_FS */
 # ifdef CONFIG_DBOX2_FB_LOGO_TFTP
-	NetLoop (bd, BOOTP);
+	NetLoop (BOOTP);
 	copy_filename (BootFile, CONFIG_DBOX2_FB_LOGO_TFTP, sizeof (BootFile));
-	size = NetLoop (bd, TFTP);
+	size = NetLoop (TFTP);
 
 	if (size <= 0)
 	{

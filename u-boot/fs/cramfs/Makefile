@@ -25,13 +25,11 @@ include $(TOPDIR)/config.mk
 
 LIB	= libcramfs.a
 
-AOBJS	=
-COBJS	= cramfs.o uncompress.o
-OBJS	= $(AOBJS) $(COBJS)
+OBJS	= cramfs.o uncompress.o
 
 #CPPFLAGS +=
 
-all:	$(LIB) $(AOBJS)
+all:	$(LIB) $(OBJS)
 
 $(LIB):	.depend $(OBJS)
 	$(AR) crv $@ $(OBJS)
@@ -39,8 +37,8 @@ $(LIB):	.depend $(OBJS)
 
 #########################################################################
 
-.depend:	Makefile $(AOBJS:.o=.S) $(COBJS:.o=.c)
-		$(CC) -M $(CFLAGS) $(AOBJS:.o=.S) $(COBJS:.o=.c) > $@
+.depend:	Makefile $(OBJS:.o=.c)
+		$(CC) -M $(CFLAGS) $(COBJS:.o=.c) > $@
 
 sinclude .depend
 

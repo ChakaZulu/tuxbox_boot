@@ -29,9 +29,15 @@
 #ifndef _LCD_H_
 #define _LCD_H_
 
+#include <config.h>
+
 /* Video functions */
 
+#ifdef CONFIG_LCD_BOARD
+int	lcd_init	(void);
+#else
 int	lcd_init	(void *lcdbase);
+#endif
 void	lcd_putc	(const char c);
 void	lcd_puts	(const char *s);
 void	lcd_printf	(const char *fmt, ...);

@@ -154,4 +154,11 @@
 #define CONFIG_BOOTP_MASK		CONFIG_BOOTP_DEFAULT
 #endif
 
+#define	CFG_FS_CRAMFS			0x00000001
+#define	CFG_FS_JFFS2			0x00000002
+
+#ifndef	CONFIG_FS
+#define	CONFIG_FS			0
+#endif
+
 #endif	/* _CMD_CONFIG_H */

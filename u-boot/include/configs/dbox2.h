@@ -38,11 +38,10 @@
 #define	CONFIG_MPC823		1	/* This is a MPC823 CPU		*/
 #define	CONFIG_DBOX2		1	/* ...on a dbox2 device		*/
 
-#define	CONFIG_LCD_BOARD	1	/* ...with LCD			*/
-#define	CONFIG_DBOX2_FB		1	/* ...with FB			*/
+//#define	CONFIG_LCD_BOARD	1	/* ...with LCD			*/
+//#define	CONFIG_DBOX2_FB		1	/* ...with FB			*/
 
-#define	CONFIG_I2C		1	/* ...and I2C support		*/
-#define	CONFIG_HARD_I2C		1	/*  ...hardware one		*/
+#define	CONFIG_HARD_I2C		1	/* ...and I2C hardware support	*/
 #define	CFG_I2C_SPEED		50000
 #define	CFG_I2C_SLAVE		0xFE
 
@@ -55,8 +54,6 @@
 #else
 #define CONFIG_BOOTDELAY	5	/* autoboot after 5 seconds	*/
 #endif
-
-#define	CONFIG_CLOCKS_IN_MHZ	1	/* clocks passsed to Linux in MHz */
 
 #undef	CONFIG_BOOTARGS
 
@@ -111,19 +108,19 @@
 #define	CONFIG_DBOX2_FB_LOGO_TFTP		"logo-fb"
 #endif	/* CONFIG_DBOX2_FB */
 
-#define	CONFIG_DBOX2_AUTOBOOT_SELECT		1
-#define	CONFIG_DBOX2_AUTOBOOT_SELECT_AUTOBOOT	1
-#define	CONFIG_DBOX2_AUTOBOOT_SELECT_NUMBER	3
-#define	CONFIG_DBOX2_AUTOBOOT_SELECT_1_TEXT	"framebuffer on ttyS0"
-#define	CONFIG_DBOX2_AUTOBOOT_SELECT_1_COMMAND	"setenv console ttyS0"
-#define	CONFIG_DBOX2_AUTOBOOT_SELECT_2_TEXT	"framebuffer on fb0"
-#define	CONFIG_DBOX2_AUTOBOOT_SELECT_2_COMMAND	"setenv console tty"
-#define	CONFIG_DBOX2_AUTOBOOT_SELECT_3_TEXT	"framebuffer on null"
-#define	CONFIG_DBOX2_AUTOBOOT_SELECT_3_COMMAND	"setenv console null"
-//#define	CONFIG_DBOX2_AUTOBOOT_SELECT_4_TEXT	""
-//#define	CONFIG_DBOX2_AUTOBOOT_SELECT_4_COMMAND	""
-//#define	CONFIG_DBOX2_AUTOBOOT_SELECT_5_TEXT	""
-//#define	CONFIG_DBOX2_AUTOBOOT_SELECT_5_COMMAND	""
+#define	CONFIG_AUTOBOOT_SELECT			1
+#define	CONFIG_AUTOBOOT_SELECT_AUTOBOOT		1
+#define	CONFIG_AUTOBOOT_SELECT_NUMBER		3
+#define	CONFIG_AUTOBOOT_SELECT_1_TEXT		"framebuffer on ttyS0"
+#define	CONFIG_AUTOBOOT_SELECT_1_COMMAND	"setenv console ttyS0"
+#define	CONFIG_AUTOBOOT_SELECT_2_TEXT		"framebuffer on fb0"
+#define	CONFIG_AUTOBOOT_SELECT_2_COMMAND	"setenv console tty"
+#define	CONFIG_AUTOBOOT_SELECT_3_TEXT		"framebuffer on null"
+#define	CONFIG_AUTOBOOT_SELECT_3_COMMAND	"setenv console null"
+//#define	CONFIG_AUTOBOOT_SELECT_4_TEXT		""
+//#define	CONFIG_AUTOBOOT_SELECT_4_COMMAND	""
+//#define	CONFIG_AUTOBOOT_SELECT_5_TEXT		""
+//#define	CONFIG_AUTOBOOT_SELECT_5_COMMAND	""
 
 /* this must be included AFTER the definition of CONFIG_COMMANDS (if any) */
 #include <cmd_confdefs.h>
@@ -151,7 +148,7 @@
 #define CFG_BARGSIZE	CFG_CBSIZE	/* Boot Argument Buffer Size	*/
 
 #define CFG_MEMTEST_START	0x0400000	/* memtest works on	*/
-#define CFG_MEMTEST_END		0x0C00000	/* 4 ... 12 MB in DRAM	*/
+#define CFG_MEMTEST_END		0x2000000	/* 4 ... 32 MB in DRAM	*/
 
 #define	CFG_LOAD_ADDR		0x100000	/* default load address	*/
 
@@ -167,13 +164,13 @@
 /*-----------------------------------------------------------------------
  * Internal Memory Mapped Register
  */
-#define CFG_IMMR		0xFFF00000
+#define CFG_IMMR		0xFF000000
 
 /*-----------------------------------------------------------------------
  * Definitions for initial stack pointer and data area (in DPRAM)
  */
 #define CFG_INIT_RAM_ADDR	CFG_IMMR
-#define	CFG_INIT_RAM_END	0x2F00	/* End of used area in DPRAM	*/
+#define	CFG_INIT_RAM_END	0x3000	/* End of used area in DPRAM	*/
 #define	CFG_GBL_DATA_SIZE	64  /* size in bytes reserved for initial data */
 #define CFG_GBL_DATA_OFFSET	(CFG_INIT_RAM_END - CFG_GBL_DATA_SIZE)
 #define	CFG_INIT_SP_OFFSET	CFG_GBL_DATA_OFFSET
@@ -186,7 +183,7 @@
 #define	CFG_SDRAM_BASE		0x00000000
 #define CFG_FLASH_BASE		0x10000000
 #define	CFG_MONITOR_LEN		(256 << 10)	/* Reserve 256 kB for Monitor	*/
-#define CFG_MONITOR_BASE	CFG_FLASH_BASE
+#define CFG_MONITOR_BASE	0x40000
 #define	CFG_MALLOC_LEN		(128 << 10)	/* Reserve 128 kB for malloc()	*/
 
 /*
@@ -205,19 +202,18 @@
 #define CFG_FLASH_ERASE_TOUT	120000	/* Timeout for Flash Erase (in ms)	*/
 #define CFG_FLASH_WRITE_TOUT	500	/* Timeout for Flash Write (in ms)	*/
 
-#define	CFG_ENV_IS_IN_FLASH	1
-#define	CFG_ENV_OFFSET		0x8000	/*   Offset   of Environment Sector	*/
-#define	CFG_ENV_SIZE		0x4000	/* Total Size of Environment Sector	*/
+#define	CFG_FLASH_CFI		1	/* Flash is CFI conformant		*/
+#define	CFG_FLASH_PROTECTION	1	/* need to lock/unlock sectors in hardware */
+#define	CFG_FLASH_USE_BUFFER_WRITE 1	/* use buffered writes (20x faster)	*/
 
-/* Address and size of Redundant Environment Sector	*/
-#define CFG_ENV_OFFSET_REDUND	(CFG_ENV_OFFSET+CFG_ENV_SIZE)
-#define CFG_ENV_SIZE_REDUND	(CFG_ENV_SIZE)
+#define	CFG_ENV_IS_NOWHERE	1
+#define	CFG_ENV_SIZE		0x4000	/* Total Size of Environment Sector	*/
 
 /*-----------------------------------------------------------------------
  * Hardware Information Block
  */
-#define CFG_HWINFO_OFFSET	0x0001FFE0	/* offset of HW Info block */
-#define CFG_HWINFO_SIZE		0x00000020	/* size   of HW Info block */
+#define	CFG_HWINFO_OFFSET	0x0001FFE0	/* offset of HW Info block */
+#define	CFG_HWINFO_SIZE		0x00000020	/* size   of HW Info block */
 
 /*-----------------------------------------------------------------------
  * Cache Configuration
@@ -253,12 +249,6 @@
  * Clear Reference Interrupt Status, Timebase freezing enabled
  */
 #define CFG_TBSCR	(TBSCR_REFA | TBSCR_REFB | TBSCR_TBF)
-
-/*-----------------------------------------------------------------------
- * RTCSC - Real-Time Clock Status and Control Register		11-27
- *-----------------------------------------------------------------------
- */
-#define CFG_RTCSC	(RTCSC_SEC | RTCSC_ALR | RTCSC_RTF| RTCSC_RTE)
 
 /*-----------------------------------------------------------------------
  * PISCR - Periodic Interrupt Status and Control		11-31
@@ -301,65 +291,7 @@
  * BR0/1 and OR0/1 (FLASH)
  */
 
-#define FLASH_BASE0_PRELIM	0x10000000	/* FLASH bank #0	*/
-
-/* used to re-map FLASH both when starting from SRAM or FLASH:
- * restrict access enough to keep SRAM working (if any)
- * but not too much to meddle with FLASH accesses
- */
-#define CFG_REMAP_OR_AM		0x80000000	/* OR addr mask */
-#define CFG_PRELIM_OR_AM	0xE0000000	/* OR addr mask */
-
-/*
- * FLASH timing:
- */
-/* ACS = 11, TRLX = 0, CSNT = 1, SCY = 5, EHTR = 1 */
-#define	CFG_OR_TIMING_FLASH	(OR_ACS_DIV2  | OR_CSNT_SAM | \
-				 OR_SCY_5_CLK | OR_EHTR | OR_BI)
-
-#define CFG_OR0_REMAP	(CFG_REMAP_OR_AM  | CFG_OR_TIMING_FLASH)
-#define CFG_OR0_PRELIM	(CFG_PRELIM_OR_AM | CFG_OR_TIMING_FLASH)
-#define CFG_BR0_PRELIM	((FLASH_BASE0_PRELIM & BR_BA_MSK) | BR_V )
-
-/*
- * BR2/3 and OR2/3 (SDRAM)
- *
- */
-#define SDRAM_BASE2_PRELIM	0x00000000	/* SDRAM bank #0	*/
-#define	SDRAM_MAX_SIZE		0x04000000	/* max 64 MB per bank	*/
-
-/* SDRAM timing: Multiplexed addresses, GPL5 output to GPL5_A (don't care)	*/
-#define CFG_OR_TIMING_SDRAM	0x00000A00
-
-#define CFG_OR2_PRELIM	(CFG_PRELIM_OR_AM | CFG_OR_TIMING_SDRAM )
-#define CFG_BR2_PRELIM	((SDRAM_BASE2_PRELIM & BR_BA_MSK) | BR_MS_UPMA | BR_V )
-
-/*
- * Memory Periodic Timer Prescaler
- */
-#define CFG_MAMR_PTA		 97
-
-/* refresh rate 15.6 us (= 64 ms / 4K = 62.4 / quad bursts) for <= 128 MBit	*/
-#define CFG_MPTPR_2BK_4K	MPTPR_PTP_DIV16		/* setting for 2 banks	*/
-#define CFG_MPTPR_1BK_4K	MPTPR_PTP_DIV32		/* setting for 1 bank	*/
-
-/* refresh rate 7.8 us (= 64 ms / 8K = 31.2 / quad bursts) for 256 MBit		*/
-#define CFG_MPTPR_2BK_8K	MPTPR_PTP_DIV8		/* setting for 2 banks	*/
-#define CFG_MPTPR_1BK_8K	MPTPR_PTP_DIV16		/* setting for 1 bank	*/
-
-/*
- * MAMR settings for SDRAM
- */
-
-/* 8 column SDRAM */
-#define CFG_MAMR_8COL	((CFG_MAMR_PTA << MAMR_PTA_SHIFT)  | MAMR_PTAE	    |	\
-			 MAMR_AMA_TYPE_0 | MAMR_DSA_1_CYCL | MAMR_G0CLA_A11 |	\
-			 MAMR_RLFA_1X	 | MAMR_WLFA_1X	   | MAMR_TLFA_4X)
-/* 9 column SDRAM */
-#define CFG_MAMR_9COL	((CFG_MAMR_PTA << MAMR_PTA_SHIFT)  | MAMR_PTAE	    |	\
-			 MAMR_AMA_TYPE_1 | MAMR_DSA_1_CYCL | MAMR_G0CLA_A10 |	\
-			 MAMR_RLFA_1X	 | MAMR_WLFA_1X	   | MAMR_TLFA_4X)
-
+#define FLASH_BASE_PRELIM	0x10000000	/* FLASH bank #0	*/
 
 /*
  * Internal Definitions

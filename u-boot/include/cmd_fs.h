@@ -31,6 +31,8 @@
 
 #if (CONFIG_COMMANDS & CFG_CMD_FS)
 
+#include <command.h>
+
 #define CMD_TBL_FS_FSLOAD	MK_CMD_TBL_ENTRY(			\
 	"fsload",	5,	3,	0,	do_fs_fsload,		\
 	"fsload  - load binary file from a filesystem image\n",		\
@@ -60,6 +62,7 @@ typedef struct part_info
 	int type;
 	unsigned long offset;
 	unsigned long size;
+	void *jffs2_priv;
 } part_info_t;
 
 int do_fs_fsload (cmd_tbl_t *cmdtp, bd_t *bd, int flag, int argc, char *argv[]);

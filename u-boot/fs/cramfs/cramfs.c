@@ -21,6 +21,7 @@
 
 #if (CONFIG_FS & CFG_FS_CRAMFS)
 
+#include <cmd_fs.h>
 #include "cramfs_fs.h"
 
 /* These two macros may change in future, to provide better st_ino

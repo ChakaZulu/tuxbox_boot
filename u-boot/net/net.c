@@ -117,7 +117,7 @@ volatile uchar *NetTxPacket = 0;	/* THE transmit packet			*/
 static int net_check_prereq (proto_t protocol);
 
 #ifdef CONFIG_DBOX2
-void netboot_update_env(void)
+void netboot_update_env(void);
 #endif /* CONFIG_DBOX2 */
 
 /**********************************************************************/

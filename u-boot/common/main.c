@@ -47,7 +47,7 @@
 static char * delete_char (char *buffer, char *p, int *colp, int *np, int plen);
 static int parse_line (char *, char *[]);
 #if defined(CONFIG_BOOTDELAY) && (CONFIG_BOOTDELAY >= 0)
-static int abortboot(int, bd_t *);
+static int abortboot(int);
 #endif
 
 #undef DEBUG_PARSER
@@ -80,7 +80,7 @@ extern void mdm_init(void); /* defined in board.c */
  */
 #if defined(CONFIG_BOOTDELAY) && (CONFIG_BOOTDELAY >= 0)
 # if defined(CONFIG_AUTOBOOT_KEYED)
-static __inline__ int abortboot(int bootdelay, bd_t *)
+static __inline__ int abortboot(int bootdelay)
 {
 	int abort = 0;
 	uint64_t etime = endtick(bootdelay);
@@ -190,7 +190,7 @@ static __inline__ int abortboot(int bootdelay, bd_t *)
 static int menukey = 0;
 #endif
 
-static __inline__ int abortboot(int bootdelay, bd_t *bd)
+static __inline__ int abortboot(int bootdelay)
 {
 	int abort = 0;
 
@@ -199,19 +199,19 @@ static __inline__ int abortboot(int bootdelay, bd_t *bd)
 
 	puts("\nOptions:\n");
 # if CONFIG_AUTOBOOT_SELECT_NUMBER >= 1
-	printf("  1: " CONFIG_AUTOBOOT_SELECT_1_NAME "\n");
+	printf("  1: " CONFIG_AUTOBOOT_SELECT_1_TEXT "\n");
 # endif /* CONFIG_AUTOBOOT_SELECT_NUMBER >= 1 */
 # if CONFIG_AUTOBOOT_SELECT_NUMBER >= 2
-	printf("  2: " CONFIG_AUTOBOOT_SELECT_2_NAME "\n");
+	printf("  2: " CONFIG_AUTOBOOT_SELECT_2_TEXT "\n");
 # endif /* CONFIG_AUTOBOOT_SELECT_NUMBER >= 2 */
 # if CONFIG_AUTOBOOT_SELECT_NUMBER >= 3
-	printf("  3: " CONFIG_AUTOBOOT_SELECT_3_NAME "\n");
+	printf("  3: " CONFIG_AUTOBOOT_SELECT_3_TEXT "\n");
 # endif /* CONFIG_AUTOBOOT_SELECT_NUMBER >= 3 */
 # if CONFIG_AUTOBOOT_SELECT_NUMBER >= 4
-	printf("  4: " CONFIG_AUTOBOOT_SELECT_4_NAME "\n");
+	printf("  4: " CONFIG_AUTOBOOT_SELECT_4_TEXT "\n");
 # endif /* CONFIG_AUTOBOOT_SELECT_NUMBER >= 4 */
 # if CONFIG_AUTOBOOT_SELECT_NUMBER >= 5
-	printf("  5: " CONFIG_AUTOBOOT_SELECT_5_NAME "\n");
+	printf("  5: " CONFIG_AUTOBOOT_SELECT_5_TEXT "\n");
 # endif /* CONFIG_AUTOBOOT_SELECT_NUMBER >= 5 */
 	printf("Select option (1-%d), other keys to stop autoboot: %2d ", CONFIG_AUTOBOOT_SELECT_NUMBER, bootdelay);
 #else /* CONFIG_AUTOBOOT_SELECT */
@@ -280,27 +280,27 @@ static __inline__ int abortboot(int bootdelay, bd_t *bd)
 	{
 # if CONFIG_AUTOBOOT_SELECT_NUMBER >= 1
 		case '1':
-			run_command (CONFIG_AUTOBOOT_SELECT_1_COMMAND, bd, 0);
+			run_command (CONFIG_AUTOBOOT_SELECT_1_COMMAND, 0);
 			break;
 # endif /* CONFIG_AUTOBOOT_SELECT_NUMBER >= 1 */
 # if CONFIG_AUTOBOOT_SELECT_NUMBER >= 2
 		case '2':
-			run_command (CONFIG_AUTOBOOT_SELECT_2_COMMAND, bd, 0);
+			run_command (CONFIG_AUTOBOOT_SELECT_2_COMMAND, 0);
 			break;
 # endif /* CONFIG_AUTOBOOT_SELECT_NUMBER >= 2 */
 # if CONFIG_AUTOBOOT_SELECT_NUMBER >= 3
 		case '3':
-			run_command (CONFIG_AUTOBOOT_SELECT_3_COMMAND, bd, 0);
+			run_command (CONFIG_AUTOBOOT_SELECT_3_COMMAND, 0);
 			break;
 # endif /* CONFIG_AUTOBOOT_SELECT_NUMBER >= 3 */
 # if CONFIG_AUTOBOOT_SELECT_NUMBER >= 4
 		case '4':
-			run_command (CONFIG_AUTOBOOT_SELECT_4_COMMAND, bd, 0);
+			run_command (CONFIG_AUTOBOOT_SELECT_4_COMMAND, 0);
 			break;
 # endif /* CONFIG_AUTOBOOT_SELECT_NUMBER >= 4 */
 # if CONFIG_AUTOBOOT_SELECT_NUMBER >= 5
 		case '5':
-			run_command (CONFIG_AUTOBOOT_SELECT_5_COMMAND, bd, 0);
+			run_command (CONFIG_AUTOBOOT_SELECT_5_COMMAND, 0);
 			break;
 # endif /* CONFIG_AUTOBOOT_SELECT_NUMBER >= 5 */
 # ifndef CONFIG_AUTOBOOT_SELECT_AUTOBOOT
@@ -313,7 +313,7 @@ static __inline__ int abortboot(int bootdelay, bd_t *bd)
 
 	putc ('\n');
 #ifdef CONFIG_DBOX2_LCD_INFO
-	lcd_puts ("\n\n" PPCBOOT_VERSION_SHORT "\n");
+	lcd_puts ("\n\n" U_BOOT_VERSION_SHORT "\n");
 #endif /* CONFIG_DBOX2_LCD_INFO */
 
 	return abort;
@@ -405,7 +405,7 @@ void main_loop (void)
 
 	debug ("### main_loop: bootcmd=\"%s\"\n", s ? s : "<UNDEFINED>");
 
-	if (bootdelay >= 0 && s && !abortboot (bootdelay, bd)) {
+	if (bootdelay >= 0 && s && !abortboot (bootdelay)) {
 # ifdef CONFIG_AUTOBOOT_KEYED
 		int prev = disable_ctrlc(1);	/* disable Control C checking */
 # endif

@@ -172,7 +172,7 @@ uLong ZEXPORT crc32(crc, buf, len)
     return crc ^ 0xffffffffL;
 }
 
-#if (CONFIG_COMMANDS & CFG_CMD_JFFS2)
+#if (CONFIG_COMMANDS & CFG_CMD_JFFS2) || (CONFIG_FS & CFG_FS_JFFS2)
 
 /* No ones complement version. JFFS2 (and other things ?)
  * don't use ones compliment in their CRC calculations.

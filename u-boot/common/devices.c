@@ -186,6 +186,9 @@ int devices_init (void)
 #ifdef CONFIG_LOGBUFFER
 	drv_logbuff_init ();
 #endif
+#ifdef CONFIG_DBOX2
+	drv_dbox2_init ();
+#endif
 	drv_system_init ();
 
 	gd-> flags |= GD_FLG_DEVINIT;	/* device initialization done */

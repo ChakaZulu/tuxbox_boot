@@ -72,23 +72,23 @@ int checkboard (void)
 		case 1:
 		case 2:
 		case 3:
-			printf ("DBOX2, ");
+			puts ("       DBOX2, ");
 			break;
 		default:
-			printf ("unknown board (0x%02x)\n", k);
+			printf ("       unknown board (0x%02x)\n", k);
 			return -1;
 	}
 
 	switch (k)
 	{
 		case 1:
-			printf ("Nokia\n");
+			puts ("Nokia\n");
 			break;
 		case 2:
-			printf ("Phillips\n");
+			puts ("Phillips\n");
 			break;
 		case 3:
-			printf ("Sagem\n");
+			puts ("Sagem\n");
 			break;
 	}
 
@@ -124,7 +124,7 @@ long int initdram (int board_type)
  * Process Hardware Information Block:
  */
 
-void load_sernum_ethaddr (bd_t *bd)
+void load_sernum_ethaddr (void)
 {
 	int i;
 	unsigned char *hwi;

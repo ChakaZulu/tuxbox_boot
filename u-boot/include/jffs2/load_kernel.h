@@ -25,6 +25,16 @@
  *
  */
 
+#if (CONFIG_COMMANDS & CFG_CMD_FS)
+#ifndef _CMD_FS_H
+struct part_info {
+	int type;
+	unsigned long offset;
+	unsigned long size;
+	void *jffs2_priv;
+};
+#endif
+#else
 /* this struct is very similar to mtd_info */
 struct part_info {
 	u32 size;	 /* Total size of the Partition */
@@ -44,6 +54,7 @@ struct part_info {
 	/* private filed used by user */
 	void *usr_priv;
 };
+#endif
 
 struct part_info*
 jffs2_part_info(int part_num);

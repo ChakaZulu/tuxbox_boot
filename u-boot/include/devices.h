@@ -105,5 +105,8 @@ int	drv_video_init (void);
 #ifdef CONFIG_WL_4PPM_KEYBOARD
 int	drv_wlkbd_init (void);
 #endif
+#ifdef CONFIG_DBOX2
+int	drv_dbox2_init (void);
+#endif
 
 #endif	/* _DEVICES_H_ */

@@ -23,8 +23,6 @@
 
 OUTPUT_ARCH(powerpc)
 SEARCH_DIR(/lib); SEARCH_DIR(/usr/lib); SEARCH_DIR(/usr/local/lib); SEARCH_DIR(/usr/local/powerpc-any-elf/lib);
-/* Do we need any of these for elf?
-   __DYNAMIC = 0;    */
 SECTIONS
 {
   /* Read-only sections, merged into text segment: */
@@ -66,7 +64,7 @@ SECTIONS
     lib_ppc/cache.o		(.text)
     lib_ppc/time.o		(.text)
 
-    . = env_offset;
+    . = DEFINED(env_offset) ? env_offset : .;
     common/environment.o	(.ppcenv)
 
     *(.text)

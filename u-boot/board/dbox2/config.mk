@@ -27,4 +27,4 @@
 # dbox2 boards
 #
 
-TEXT_BASE = 0x40000000
+TEXT_BASE = 0x40000

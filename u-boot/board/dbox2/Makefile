@@ -24,12 +24,11 @@
 include $(TOPDIR)/config.mk
 
 all:
-	make -C fb
 	make $(LIB)
 
 LIB	= lib$(BOARD).a
 
-OBJS	= $(BOARD).o flash.o lcd.o avia.o avs.o fb.o mpgstill.o saa7126.o
+OBJS	= $(BOARD).o devices.o flash.o lcd.o avia.o avs.o fb.o mpgstill.o saa7126.o
 
 $(LIB):	.depend $(OBJS)
 	$(AR) crv $@ $^
@@ -37,7 +36,6 @@ $(LIB):	.depend $(OBJS)
 #########################################################################
 
 .depend:	Makefile $(SOBJS:.o=.S) $(OBJS:.o=.c)
-		make -C fb .depend
 		$(CC) -M $(CFLAGS) $(SOBJS:.o=.S) $(OBJS:.o=.c) > $@
 
 sinclude .depend

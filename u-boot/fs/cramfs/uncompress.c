@@ -20,7 +20,9 @@
  * then is used by multiple filesystems.
  */
 
+#include <common.h>
 #include <malloc.h>
+#include <watchdog.h>
 #include <zlib.h>
 
 #if (CONFIG_FS & CFG_FS_CRAMFS)
