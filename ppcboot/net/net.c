@@ -27,6 +27,7 @@ IPaddr_t	NetOurDNSIP=0;			/* Our DNS IP address		*/
 char		NetOurNISDomain[32]={0,};	/* Our NIS domain		*/
 char		NetOurHostName[32]={0,};	/* Our hostname			*/
 char		NetOurRootPath[32]={0,};	/* Our bootpath			*/
+char		NetOurBootPath[128]={0,};	/* Our bootpath			*/
 ushort		NetBootFileSize=0;		/* Out bootfile size in blocks	*/
 
 /** END OF BOOTP EXTENTIONS **/

@@ -203,9 +203,13 @@ TftpTimeout (void)
 }
 
 
+void process_macros (char *input, char *output, char delim);
+
 void
 TftpStart (ulong loadAdr)
 {
+char BootFile2[CFG_CBSIZE];
+
 #ifdef ET_DEBUG
 	printf ("\nServer ethernet address %02x:%02x:%02x:%02x:%02x:%02x\n",
 		NetServerEther[0],
@@ -247,6 +251,9 @@ TftpStart (ulong loadAdr)
 
 		printf ("No file name; using '%s'.", BootFile);
 	} else {
+                process_macros (BootFile, BootFile2, '%');
+                strncpy(BootFile, BootFile2, sizeof(BootFile));
+		BootFile[sizeof(BootFile)-1]=0;
 		printf ("Filename '%s'.", BootFile);
 	}
 

@@ -45,7 +45,8 @@ image_header_t header;
 
 ulong load_addr = CFG_LOAD_ADDR;		/* Default Load Address */
 
-static void process_macros (char *input, char *output)
+//static void process_macros (char *input, char *output)
+void process_macros (char *input, char *output, char delim)
 {
 	char c, prev, *varname_start;
 	int inputcnt  = strlen (input);
@@ -76,7 +77,8 @@ static void process_macros (char *input, char *output)
 
 	    switch (state) {
 	    case 0:			/* Waiting for (unescaped) $	*/
-		if ((c == '$') && (prev != '\\')) {
+		if ((c == delim) && (prev != '\\')) {
+//		if ((c == '$') && (prev != '\\')) {
 			state++;
 		} else {
 			*(output++) = c;
@@ -89,7 +91,8 @@ static void process_macros (char *input, char *output)
 			varname_start = input;
 		} else {
 			state = 0;
-			*(output++) = '$';
+			*(output++) = delim;
+//			*(output++) = '$';
 			outputcnt--;
 
 			if (outputcnt) {
@@ -304,7 +307,7 @@ void do_bootm (cmd_tbl_t *cmdtp, bd_t *bd, int flag, int argc, char *argv[])
 	if ((s = getenv("bootargs")) == NULL)
 		s = "";
 
-        process_macros(s, cmdline);
+        process_macros(s, cmdline, '$');
 //	strcpy (cmdline, s);
 	
 	cmd_start    = (ulong)&cmdline[0];

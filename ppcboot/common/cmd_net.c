@@ -50,7 +50,7 @@ void do_rarpb (cmd_tbl_t *cmdtp, bd_t *bd, int flag, int argc, char *argv[])
 	netboot_common (RARP, cmdtp, bd, argc, argv);
 }
 
-static void netboot_update_env(void)
+void netboot_update_env(void)
 {
     char tmp[12] ;
 
@@ -69,6 +69,9 @@ static void netboot_update_env(void)
 
     if (NetOurRootPath[0])
 	setenv("rootpath", NetOurRootPath);
+
+    if (NetOurBootPath[0])
+	setenv("bootpath", NetOurBootPath);
 
     if (NetOurIP) {
 	NetIPaddr (NetOurIP, tmp);

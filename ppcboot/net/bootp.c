@@ -147,13 +147,13 @@ static void BootpVendorProcess(u8 *ext, int size)
 	NetPrintIPaddr (NetOurSubnetMask);
 	putc('\n');
     }
-    
+/*    
     if (NetOurGatewaysIP[0]) {
 	puts ("NetOurGatewaysIP	: ");
 	NetPrintIPaddr (NetOurGatewaysIP[0]);
 	putc('\n');
     }
-    
+*/    
     if (NetBootFileSize) {
 	printf("NetBootFileSize : %d\n", NetBootFileSize);
     }
@@ -166,11 +166,17 @@ static void BootpVendorProcess(u8 *ext, int size)
 	printf("NetOurRootPath  : %s\n", NetOurRootPath);
     }
     
+    if (NetOurBootPath[0]) {
+	printf("NetOurBootPath  : %s\n", NetOurBootPath);
+    }
+    
     if (NetOurNISDomain[0]) {
         printf("NetOurNISDomain : %s\n", NetOurNISDomain);
     }
 #endif
 }
+
+void netboot_update_env(void); // quick'n dirty proto
 
 /*
  *	Handle a BOOTP received packet.
@@ -179,6 +185,7 @@ static void
 BootpHandler(uchar * pkt, unsigned dest, unsigned src, unsigned len)
 {
 	Bootp_t *	bp;
+	char *s;
 
 #ifdef DEBUG
 	printf("got BOOTP packet (src=%d, dst=%d, len=%d want_len=%d)\n",
@@ -209,13 +216,26 @@ BootpHandler(uchar * pkt, unsigned dest, unsigned src, unsigned len)
 	NetOurIP = bp->bp_yiaddr;
 	NetServerIP = bp->bp_siaddr;
 	NetCopyEther(NetServerEther, ((Ethernet_t *)NetRxPkt)->et_src);
-	if (!*BootFile)
+	if(*BootFile) {
+	    /* if we have send a bootfile name we asume we've got bootfile+normal bootfile back */
+	    memcpy(NetOurBootPath, bp->bp_file+(strrchr(BootFile, '/')-BootFile+1), sizeof(bp->bp_file)-(strrchr(BootFile, '/')-BootFile+1));
+	}
+	else {
 	    memcpy(BootFile, bp->bp_file, sizeof bp->bp_file);
-
+	    memcpy(NetOurBootPath, bp->bp_file, sizeof(bp->bp_file));
+	}
+	NetOurBootPath[sizeof(NetOurBootPath)-1]=0;
+	s=strrchr(NetOurBootPath, '/');
+	if(s) {
+	    *s=0;
+	    s=strrchr(NetOurBootPath, '/');
+	    if(s)
+		*s=0;
+	}
 	/* Retrieve extended informations (we must parse the vendor area) */
 	if ((*(uint *)bp->bp_vend) == BOOTP_VENDOR_MAGIC)
 	    BootpVendorProcess(&bp->bp_vend[4], len);
-	
+	netboot_update_env();	
 	NetSetTimeout(0, (thand_f *)0);
 
 #ifdef DEBUG

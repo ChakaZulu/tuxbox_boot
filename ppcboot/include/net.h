@@ -174,6 +174,7 @@ extern IPaddr_t		NetOurDNSIP;	 /* Our Domain Name Server (0 = unknown)*/
 extern char		NetOurNISDomain[32];	/* Our NIS domain		*/
 extern char		NetOurHostName[32];	/* Our hostname			*/
 extern char		NetOurRootPath[32];	/* Our root path		*/
+extern char		NetOurBootPath[128];	/* directory from bootfile one up (/test/tftfpboot/ppcboot -> /test */
 extern ushort		NetBootFileSize;	/* Our boot file size in blocks	*/
 /** END OF BOOTP EXTENTIONS **/
 extern uchar		NetOurEther[6];		/* Our ethernet address		*/
