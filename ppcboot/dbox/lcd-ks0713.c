@@ -21,6 +21,9 @@
  *
  *
  *   $Log: lcd-ks0713.c,v $
+ *   Revision 1.9  2002/01/23 18:57:47  gillem
+ *   - add lcd reset function
+ *
  *   Revision 1.8  2001/11/16 20:49:49  ge0rg
  *   added progress bar (lcd_status()) and text output (lcd_print()) support.
  *
@@ -69,7 +72,7 @@
  *   Revision 1.5  2001/01/06 10:06:35  gillem
  *   cvs check
  *
- *   $Revision: 1.8 $
+ *   $Revision: 1.9 $
  *
  */
 
@@ -392,21 +395,25 @@ void lcd_clear(void)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-void lcd_reset(void)
+void lcd_reset_init(void)
 {
-    // TODO: not work :-/
-    lcd_send_cmd( LCD_CMD_RESET, 0 );
-    udelay(1000*100);
+	// i hope it works now
+	lcd_send_cmd( LCD_CMD_RESET, 0 );
+
+	udelay(1000*100);
+
 	lcd_send_cmd( LCD_CMD_ON, 1 );
-	lcd_send_cmd( LCD_CMD_EON, 0 );
-	lcd_send_cmd( LCD_CMD_REVERSE, 0 );
+	lcd_send_cmd( LCD_CMD_RES, 7 );
+	lcd_send_cmd( LCD_CMD_SRV, 1 );
+	lcd_send_cmd( 0x00, 15 );
 	lcd_send_cmd( LCD_CMD_BIAS, 1 );
+	lcd_send_cmd( LCD_CMD_POWERC, 7 );
+	lcd_send_cmd( LCD_CMD_SIR, 3 );
 	lcd_send_cmd( LCD_CMD_ADC, 0 );
 	lcd_send_cmd( LCD_CMD_SHL, 0 );
-	lcd_send_cmd( LCD_CMD_POWERC, 7 );
-	lcd_send_cmd( LCD_CMD_RES, 7 );
-	lcd_send_cmd( LCD_CMD_SIR, 3 );
-	lcd_send_cmd( LCD_CMD_SRV, 50 );
+	lcd_send_cmd( LCD_CMD_EON, 0 );
+	lcd_send_cmd( LCD_CMD_REVERSE, 0 );
+	lcd_send_cmd( LCD_CMD_IDL, 0 );
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -431,78 +438,70 @@ void lcd_status(int y, unsigned char percent) {
 
 int lcd_init(void)
 {
-    immap_t	*immap;
-    int i;
-    //lcd_pixel p;
-    unsigned char *lcd_logo;
-    unsigned int size, offset = 0;
+	immap_t *immap;
+	int i;
+	unsigned char *lcd_logo;
+	unsigned int size, offset = 0;
+	int have_logo = 0;
+	unsigned char lcd_logo_packed[LCD_ROWS][LCD_COLS];
+	int x, y, y2, pix;
 
-    int have_logo = 0;
-    unsigned char lcd_logo_packed[LCD_ROWS][LCD_COLS];
-    int x, y, y2, pix;
+	printf("  LCD driver (KS0713) initialized\n");
 
-
-   printf("  LCD driver (KS0713) initialized\n");
-
-  if ( ( immap = ( immap_t * ) CFG_IMMR ) == NULL )
-    return -1;
+	if ( ( immap = ( immap_t * ) CFG_IMMR ) == NULL )
+		return -1;
 
 	iop = (iop8xx_t *)&immap->im_ioport;
 
-    /* reset lcd todo ;-) */
-//    lcd_reset();
+	/* reset lcd */
+	lcd_reset_init();
 
-	   
-    have_logo = 0;
-    idxfs_file_info((unsigned char*)IDXFS_OFFSET, 0, "logo-lcd", &offset, &size);
+	have_logo = 0;
+
+	idxfs_file_info((unsigned char*)IDXFS_OFFSET, 0, "logo-lcd", &offset, &size);
     
-    if (!offset) {
-        printf("  No LCD Logo in Flash , trying tftp\n");
-        if (1==NetLoop(33161152, "TFTP","%(bootpath)/tftpboot/logo-lcd", 0x130000)) {
-            have_logo = 1;
-            lcd_logo = (unsigned char*)(0x130000);
-            printf("  LCD logo at: 0x130000 (0x%X bytes)\n", size);
-        } else printf("  LCD logo not found\n");
-    }
-    else { 
-        have_logo = 1;
+	if (!offset)
+	{
+		printf("  No LCD Logo in Flash , trying tftp\n");
 
-        lcd_logo = (unsigned char*)(IDXFS_OFFSET + offset); 
-        printf("  LCD logo at: 0x%X (0x%X bytes)\n", offset, size);
-    }
+		if (1==NetLoop(33161152, "TFTP","%(bootpath)/tftpboot/logo-lcd", 0x130000))
+		{
+			have_logo = 1;
+			lcd_logo = (unsigned char*)(0x130000);
+			printf("  LCD logo at: 0x130000 (0x%X bytes)\n", size);
+        	}
+		else
+			printf("  LCD logo not found\n");
+	}
+	else
+	{
+		have_logo = 1;
+		lcd_logo = (unsigned char*)(IDXFS_OFFSET + offset);
+		printf("  LCD logo at: 0x%X (0x%X bytes)\n", offset, size);
+	}
 
-    if (have_logo)
-        for (y=0; y<8; y++) {
-            lcd_set_pos(y, 0);
-            for (x=0; x<120; x++) {
-                pix = 0;
-                for (y2=7; y2>=0; y2--) {
-                    pix = pix<<1;
-                    if (lcd_logo[(y*8+y2)*LCD_COLS + x]) pix++;
-                }
-                lcd_write_byte(pix);
-            }
-        }
-    /*p.x = 0;
-    p.y = 0;
+	if (have_logo)
+	{
+		for (y=0; y<8; y++)
+		{
+			lcd_set_pos(y, 0);
 
-    for (i=0; i<7200; i++) {
+			for (x=0; x<120; x++)
+			{
+				pix = 0;
 
-      p.v = lcd_logo[i] & 1;
-      lcd_set_pixel(&p);
+				for (y2=7; y2>=0; y2--)
+				{
+					pix = pix<<1;
 
-      p.x++;
-      if (p.x >= 120) {
-        p.x = 0;
-       p.y++;
-      }
+					if (lcd_logo[(y*8+y2)*LCD_COLS + x])
+						pix++;
+				}
 
-    }*/
+				lcd_write_byte(pix);
+			}
+		}
+	}
 
-
-   return 0;
-   
+	return 0;
 }
-
-///////////////////////////////////////////////////////////////////////////////
-
