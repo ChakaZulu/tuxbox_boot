@@ -27,7 +27,7 @@ BINS	= img2srec mkimage
 
 OBJS	= img2srec.o mkimage.o crc32.o
 
-TOOLSUBDIRS = gdb
+#TOOLSUBDIRS = gdb
 
 #
 # Use native tools and options
@@ -52,7 +52,7 @@ mkimage.o:	mkimage.c
 		$(CC) -g $(CFLAGS) -c $<
 
 subdirs:
-		@for dir in $(TOOLSUBDIRS) ; do $(MAKE) -C $$dir || exit 1 ; done
+#		@for dir in $(TOOLSUBDIRS) ; do $(MAKE) -C $$dir || exit 1 ; done
 
 crc32.c:
 		ln -s ../ppc/crc32.c crc32.c
