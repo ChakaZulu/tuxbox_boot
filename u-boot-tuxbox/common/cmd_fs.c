@@ -195,6 +195,7 @@ static void fsinfo (int number)
 #if !(CONFIG_FS & CFG_FS_CRAMFS)
 			puts (" (unsupported)");
 #endif
+			break;
 		case CFG_FS_SQUASHFS:
 			puts ("squashfs");
 #if !(CONFIG_FS & CFG_FS_SQUASHFS)
