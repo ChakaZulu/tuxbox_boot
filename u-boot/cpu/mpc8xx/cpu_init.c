@@ -41,7 +41,7 @@ void cpm_load_patch (volatile immap_t * immr);
 void cpu_init_f (volatile immap_t * immr)
 {
 #ifndef CONFIG_MBX
-	volatile memctl8xx_t *memctl = &immr->im_memctl;
+	volatile memctl8xx_t *memctl = &(immr->im_memctl);
 #endif
 	ulong reg;
 

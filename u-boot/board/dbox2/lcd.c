@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *
- * $Id: lcd.c,v 1.3 2002/12/24 15:54:51 bastian Exp $
+ * $Id: lcd.c,v 1.4 2003/04/23 16:41:43 homar Exp $
  */
 
 #include <common.h>
@@ -437,7 +437,7 @@ static void console_scrollup (void)
 
 static inline void console_back (void)
 {
-	unsigned char *w = ' ';
+	unsigned char *w = (unsigned char *)' ';
 
 	if (--console_col < 0) {
 		console_col = CONSOLE_COLS-1 ;

@@ -285,8 +285,8 @@ static int compare_dirents(struct b_node *new, struct b_node *old)
 static u32
 jffs2_scan_empty(u32 start_offset, struct part_info *part)
 {
-	char *max = part->offset + part->size - sizeof(struct jffs2_raw_inode);
-	char *offset = part->offset + start_offset;
+	char *max = (char *)(part->offset + part->size - sizeof(struct jffs2_raw_inode));
+	char *offset = (char *)(part->offset + start_offset);
 
 	while (offset < max && *(u32 *)offset == 0xFFFFFFFF) {
 		offset += sizeof(u32);
@@ -294,7 +294,7 @@ jffs2_scan_empty(u32 start_offset, struct part_info *part)
 		if (((u32)offset & ((1 << SPIN_BLKSIZE)-1)) == 0) break;
 	}
 
-	return offset - part->offset;
+	return (u32)(offset - part->offset);
 }
 
 static u32
@@ -761,7 +761,7 @@ jffs2_1pass_rescan_needed(struct part_info *part)
 	}
 
 	/* or if we are scanning a new partition */
-	if (pL->partOffset != part->offset) {
+	if (pL->partOffset != (char *)part->offset) {
 		DEBUGF ("rescan: different partition\n");
 		return 1;
 	}
@@ -858,7 +858,7 @@ jffs2_1pass_build_lists(struct part_info * part)
 	/* if we are building a list we need to refresh the cache. */
 	jffs_init_1pass_list(part);
 	pL = (struct b_lists *)part->jffs2_priv;
-	pL->partOffset = part->offset;
+	pL->partOffset = (char *)part->offset;
 	offset = 0;
 	printf("Scanning JFFS2 FS:   ");
 

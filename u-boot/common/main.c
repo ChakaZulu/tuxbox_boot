@@ -195,7 +195,7 @@ static __inline__ int abortboot(int bootdelay)
 	int abort = 0;
 
 #ifdef CONFIG_AUTOBOOT_SELECT
-	char option;
+	char option = '2';
 
 	puts("\nOptions:\n");
 # if CONFIG_AUTOBOOT_SELECT_NUMBER >= 1
