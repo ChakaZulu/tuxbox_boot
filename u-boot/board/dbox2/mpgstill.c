@@ -395,7 +395,7 @@ int decodestillmpg(void *pic, const void *src, int X_RESOLUTION, int Y_RESOLUTIO
 
 	int i,j, owid, ohgt, mb_width, mb_height;
 	int dctpred[3];
-	int qscale;
+	int qscale = 0;
 #if 0
 	int x,y,c;
 #endif
@@ -413,7 +413,6 @@ int decodestillmpg(void *pic, const void *src, int X_RESOLUTION, int Y_RESOLUTIO
 
 	bitpos=0;
 	bitrdbfr=(const unsigned char*)src;
-	//for (i=0;i<10;i++) printf("%02x",bitrdbfr[i]); //ausgabe im ppcboot als test
 
 	if (getbits(32)!=0x1B3)
 		return 0;
