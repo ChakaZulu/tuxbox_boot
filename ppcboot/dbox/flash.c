@@ -21,12 +21,16 @@
  *
  *
  *   $Log: flash.c,v $
+ *   Revision 1.4  2001/11/13 01:34:00  derget
+ *   strata Protect und unprotect implementiert
+ *   protect und unprotect debug messages rausgenommen ==> schneller ...
+ *
  *   Revision 1.3  2001/11/11 22:40:42  derget
  *   added FAST Strata flash write
  *   thanks to Marko
  *
  *
- *   $Revision: 1.3 $
+ *   $Revision: 1.4 $
  *   
  */
 
@@ -128,7 +132,7 @@ unsigned long flash_init (void)
 	flash_get_offsets (CFG_FLASH_BASE, &flash_info[0]);
 
 	/* monitor protection ON by default */
-	(void)flash_protect(FLAG_PROTECT_SET,
+	   (void)flash_protect(FLAG_PROTECT_SET,
 			    CFG_FLASH_BASE,
 			    CFG_FLASH_BASE+CFG_MONITOR_LEN-1,
 			    &flash_info[0]);
@@ -138,7 +142,7 @@ unsigned long flash_init (void)
 
 	flash_info[0].size = size_b0;
 	flash_info[1].size = 0;
-
+	
 	return (size_b0);
 }
 
@@ -487,6 +491,7 @@ static ulong flash_get_size (vu_long *addr, flash_info_t *info)
 		/* D0 = 1 if protected */
 		addr = (volatile unsigned long *)(info->start[i]);
 		info->protect[i] = flash_get(addr, 2) & 1;
+		//printf("\n bla %d",flash_get(addr, 2));
 	}
 
 	/*
@@ -948,7 +953,7 @@ static int strata_buffer_write (flash_info_t *info, uchar *src, ulong addr, ulon
     /*  confirm buffer write */
     /* flash_put(cmd_adr, 0, 0x00D000D0); */
     flash_put(write_adr-1, 0, 0x00D000D0);
-
+    //flash_put(write_adr-1, 0, 0x00010001);
     z=0;
     flash_put(cmd_adr, 0, 0x00700070);
     for(;;) {
@@ -992,10 +997,25 @@ static int strata_buffer_write (flash_info_t *info, uchar *src, ulong addr, ulon
   return 0;
 }
 
-  
+void flash_protect_sector(flash_info_t *info, int i, int p)  /* is nur für 28f540j3 strata flash */ 
+{
+                        volatile unsigned long *addr = (volatile unsigned long *)info->start[i];
+                        flash_put(addr, 0, 0x00500050);
+                        flash_put(addr, 0, 0x00900090);
+			flash_put(addr, 0, 0x00600060);
+			switch (p) {	   
+				case 1:		
+                        		flash_put(addr, 0, 0x00010001); /* protekten */
+					break;
+				case 0:
+                                        flash_put(addr, 0, 0x00D000D0);	/* unprotekten */
+					break;
+				default:      
+					break;
+				   }
 
-
-
-
-
-
+                         flash_put(addr, 0, 0x00900090);               /* read configuration einschalten */
+                         for(;;) { if (flash_get(addr, 7)) printf("*wart*"); break; }  /* warte bis das flash wieder bereit ist */
+                         							      /* *wart* ist als zeitverzögerung da ! */
+			 flash_put(addr, 0, 0x00FF00FF);	      /* in normalen modus schalten */
+}
