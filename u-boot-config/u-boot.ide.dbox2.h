@@ -64,7 +64,7 @@
 	"dhcp; tftp \"$(bootfile)\"; "						\
         "setenv bootargs root=/dev/nfs rw nfsroot=$(serverip):$(rootpath) "	\
 	"ip=$(ipaddr):$(serverip):$(gatewayip):$(netmask):$(hostname)::off "	\
-	"console=$(console); "							\
+	"console=$(console) idebus=66; "					\
 	"protect off 10020000 107fffff; "					\
 	"bootm"
 
@@ -72,7 +72,7 @@
 	"setenv bootcmd ;"								\
 	"fsload; "									\
 	"protect off 10020000 107fffff; "						\
-	"setenv bootargs root=/dev/mtdblock2 console=$(console) rootfstype=cramfs; "	\
+	"setenv bootargs root=/dev/mtdblock2 console=$(console) rootfstype=cramfs idebus=66; "	\
 	"bootm"
 
 #define	CONFIG_BOOTCOMMAND_DISK							\
