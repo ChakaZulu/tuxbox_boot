@@ -21,9 +21,9 @@
 # MA 02111-1307 USA
 #
 
-BINS	= img2srec$(SFX) mkimage$(SFX) envcrc$(SFX) gen_eth_addr$(SFX) bmp_logo$(SFX)
+BINS	= img2srec$(SFX) mkimage$(SFX) envcrc$(SFX) gen_eth_addr$(SFX) bmp_logo$(SFX) mktree$(SFX)
 
-OBJS	= environment.o img2srec.o mkimage.o crc32.o envcrc.o gen_eth_addr.o bmp_logo.o
+OBJS	= environment.o img2srec.o mkimage.o crc32.o envcrc.o gen_eth_addr.o bmp_logo.o mktree.o
 
 LOGO_H	= $(TOPDIR)/include/bmp_logo.h
 
@@ -130,6 +130,10 @@ gen_eth_addr$(SFX):	gen_eth_addr.o
 		$(STRIP) $@
 
 bmp_logo$(SFX):	bmp_logo.o
+		$(CC) $(CFLAGS) $(HOST_LDFLAGS) -o $@ $^
+		$(STRIP) $@
+
+mktree$(SFX):	mktree.o
 		$(CC) $(CFLAGS) $(HOST_LDFLAGS) -o $@ $^
 		$(STRIP) $@
 
