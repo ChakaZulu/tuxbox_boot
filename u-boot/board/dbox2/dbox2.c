@@ -107,28 +107,19 @@ long int initdram (int board_type)
 	return size;
 }
 
-/*-----------------------------------------------------------------------
- * Process Hardware Information Block:
- */
+/* ----------------------------------------------------------------------- */
 
-void load_sernum_ethaddr (void)
+int misc_init_r (void)
 {
+	DECLARE_GLOBAL_DATA_PTR;
 	int i;
-	unsigned char  ethaddr[18];
-	static char byte_to_hex[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
-	
-	if (getenv ("ethaddr") != NULL)
-		return;
+	char tmp[32];
 
-	for (i = 0; i < 6; i++)
-	{
-		ethaddr[i*3] = byte_to_hex [ hwi[i+3] >> 4 ];
-		ethaddr[i*3+1] = byte_to_hex [ hwi[i+3] & 0xf ];
-		ethaddr[i*3+2] = ':';
-	}
-	ethaddr[17] = '\0';
+	sprintf (tmp, "%02x:%02x:%02x:%02x:%02x:%02x",
+			hwi[3], hwi[4], hwi[5], hwi[6], hwi[7], hwi[8]);
+	setenv("ethaddr", tmp);
 
-	setenv ("ethaddr", ethaddr);
+	return 0;
 }
 
 /* ------------------------------------------------------------------------- */

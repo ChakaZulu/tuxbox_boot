@@ -40,7 +40,7 @@ extern int pcnet_initialize(bd_t*);
 extern int fec_initialize(bd_t*);
 extern int scc_initialize(bd_t*);
 
-static struct eth_device *eth_devices, *eth_current;
+static struct eth_device *eth_devices = NULL, *eth_current = NULL;
 
 struct eth_device *eth_get_dev(void)
 {
@@ -206,6 +206,7 @@ void eth_set_enetaddr(int num, char *addr) {
 	}
 
 #ifdef DEBUG
+	printf("name: %x\n", dev->name);
 	printf("Setting new HW address on %s\n", dev->name);
 	printf("New Address is             "
 	       "%02X:%02X:%02X:%02X:%02X:%02X\n",

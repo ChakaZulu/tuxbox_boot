@@ -58,7 +58,7 @@
 #undef	CONFIG_BOOTARGS
 
 #define	CONFIG_BOOTCOMMAND							\
-	"bootp; tftp \"kernel-cdk\"; "						\
+	"dhcp; tftp \"$(bootfile)\"; "						\
 	"protect off 10040000 107fffff; "					\
         "setenv bootargs root=/dev/nfs rw nfsroot=$(serverip):$(rootpath),v3 "	\
 	"ip=$(ipaddr):$(serverip):$(gatewayip):$(netmask):$(hostname)::off "	\
@@ -127,6 +127,7 @@
 #if defined(CONFIG_DBOX2_LCD_LOGO) || defined(CONFIG_DBOX2_FB_LOGO)
 #define	CONFIG_LAST_STAGE_INIT
 #endif
+#define	CONFIG_MISC_INIT_R
 
 
 /* this must be included AFTER the definition of CONFIG_COMMANDS (if any) */
