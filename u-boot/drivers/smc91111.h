@@ -144,7 +144,7 @@ typedef unsigned long int 		dword;
  */
 
 #define	SMC_inw(r) 	(*((volatile word *)(SMC_BASE_ADDRESS+(r))))
-#define  SMC_inb(r)	(((r)&1) ? SMC_inw((r)&~1)>>8 : SMC_inw(r)&0xFF)
+#define	SMC_inb(r)	(((r)&1) ? SMC_inw((r)&~1)>>8 : SMC_inw(r)&0xFF)
 
 #define	SMC_outw(d,r)	(*((volatile word *)(SMC_BASE_ADDRESS+(r))) = d)
 #define	SMC_outb(d,r)	({	word __d = (byte)(d);  \
@@ -160,7 +160,7 @@ typedef unsigned long int 		dword;
 					word *__b2; \
 					__b2 = (word *) b; \
 					for (__i = 0; __i < l; __i++) { \
-					    SMC_outw( *(__b2 + __i), r); \
+					    SMC_outw( le16_to_cpu(*(__b2 + __i)), r); \
 					} \
 				})
 #endif
@@ -172,7 +172,7 @@ typedef unsigned long int 		dword;
 					word *__b2;  \
 			    		__b2 = (word *) b;  \
 			    		for (__i = 0; __i < l; __i++) {  \
-					  *(__b2 + __i) = SMC_inw(r);  \
+					  *(__b2 + __i) = le16_to_cpu(SMC_inw(r));  \
 					  SMC_inw(0);  \
 					};  \
 				})
