@@ -33,7 +33,7 @@ COBJS	= board.o main.o command.o \
 	  cmd_console.o cmd_flash.o cmd_ide.o \
 	  cmd_mem.o cmd_net.o cmd_nvedit.o \
 	  s_record.o dlmalloc.o kgdb.o \
-	  console.o lists.o devices.o
+	  console.o lists.o devices.o idxfs.o
 
 OBJS	= $(AOBJS) $(COBJS)
 

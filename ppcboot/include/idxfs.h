@@ -21,4 +21,6 @@ typedef struct {
 
 } sIdxFsFatEntry;
 
+unsigned int idxfs_file_info(unsigned char *mem, unsigned int mem_size, unsigned char *file_name, unsigned int *file_offset, unsigned int *file_size);
+
 #endif

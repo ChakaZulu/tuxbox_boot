@@ -30,6 +30,7 @@
 #include <image.h>
 #include <malloc.h>
 #include <zlib.h>
+#include <idxfs.h>
 
 int  gunzip (void *, int, unsigned char *, int *);
 void run_default_command (int len, cmd_tbl_t *cmdtp, bd_t *bd, int flag);
@@ -371,6 +372,9 @@ void do_bootm (cmd_tbl_t *cmdtp, bd_t *bd, int flag, int argc, char *argv[])
 #if (CONFIG_COMMANDS & CFG_CMD_BOOTIDXFS)
 void do_bootidxfs (cmd_tbl_t *cmdtp, bd_t *bd, int flag, int argc, char *argv[])
 {
+	unsigned int size, offset;
+
+	idxfs_file_info((unsigned char*)0x100000, 0x100, "kernel", &offset, &size);
         do_bootm (cmdtp, bd, flag, argc, argv);
 }
 #endif
