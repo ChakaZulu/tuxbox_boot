@@ -266,7 +266,7 @@ int serial_tstc ()
 
 
 /*****************************************************************************/
-#if defined(CONFIG_405GP) || defined(CONFIG_405CR) || defined(CONFIG_440)
+#if defined(CONFIG_405GP) || defined(CONFIG_405CR) || defined(CONFIG_440) || defined(CONFIG_405D4)
 
 #if defined(CONFIG_440)
 #define UART0_BASE  CFG_PERIPHERAL_BASE + 0x00000200
@@ -274,12 +274,19 @@ int serial_tstc ()
 #define CR0_MASK        0x3fff0000
 #define CR0_EXTCLK_ENA  0x00600000
 #define CR0_UDIV_POS    16
+#elif defined(CONFIG_405D4)
+#define UART_BASE_PTR   0x40040000;	/* pointer to uart base */
+#define UART0_BASE      0x40040000
+#define UART1_BASE      0x40000000
+#define CR0_MASK        0x00001fff
+#define CR0_EXTCLK_ENA  0x00000c00
+#define CR0_UDIV_POS    1
 #else
 #define UART_BASE_PTR   0xF800FFFC;	/* pointer to uart base */
 #define UART0_BASE      0xef600300
 #define UART1_BASE      0xef600400
 #define CR0_MASK        0x00001fff
-#define CR0_EXTCLK_ENA  0x00000c00
+#define CR0_EXTCLK_ENA  0x000000c0
 #define CR0_UDIV_POS    1
 #endif
 
@@ -432,13 +439,16 @@ int serial_init (void)
 {
 	DECLARE_GLOBAL_DATA_PTR;
 
+#ifndef CONFIG_405D4
 	unsigned long reg;
+#endif
 	unsigned long tmp;
 	unsigned long clk;
 	unsigned long udiv;
 	unsigned short bdiv;
 	volatile char val;
 
+#ifndef CONFIG_405D4
 	reg = mfdcr(cntrl0) & ~CR0_MASK;
 #ifdef CFG_EXT_SERIAL_CLOCK
 	clk = CFG_EXT_SERIAL_CLOCK;
@@ -451,11 +461,17 @@ int serial_init (void)
 #else
 	tmp = CFG_BASE_BAUD * 16;
 	udiv = (clk + tmp / 2) / tmp;
+	if (udiv > 32)                          /* max. 5 bits for udiv */
+		udiv = 32;
 #endif
 #endif
 
 	reg |= (udiv - 1) << CR0_UDIV_POS;	/* set the UART divisor */
 	mtdcr (cntrl0, reg);
+#else /* !CONFIG_405D4 */
+	clk = 21000000;
+	udiv = 1;
+#endif /* !CONFIG_405D4 */
 
 	tmp = gd->baudrate * udiv * 16;
 	bdiv = (clk + tmp / 2) / tmp;
@@ -463,6 +479,9 @@ int serial_init (void)
 	out8 (UART0_BASE + UART_LCR, 0x80);	/* set DLAB bit */
 	out8 (UART0_BASE + UART_DLL, bdiv);	/* set baudrate divisor */
 	out8 (UART0_BASE + UART_DLM, bdiv >> 8);/* set baudrate divisor */
+#ifdef CONFIG_405D4
+	out8 (UART0_BASE + UART_IIR, 0x06);	/* set voodoo register */
+#endif
 	out8 (UART0_BASE + UART_LCR, 0x03);	/* clear DLAB; set 8 bits, no parity */
 	out8 (UART0_BASE + UART_FCR, 0x00);	/* disable FIFO */
 	out8 (UART0_BASE + UART_MCR, 0x00);	/* no modem control DTR RTS */
@@ -490,7 +509,11 @@ void serial_setbrg (void)
 #else
 	clk = gd->cpu_clk;
 #endif
+#ifndef CONFIG_405D4
 	udiv = ((mfdcr (cntrl0) & 0x3e) >> 1) + 1;
+#else
+	udiv = 1;
+#endif
 	tmp = gd->baudrate * udiv * 16;
 	bdiv = (clk + tmp / 2) / tmp;
 

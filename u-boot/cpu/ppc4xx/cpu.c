@@ -48,17 +48,17 @@ static int do_chip_reset( unsigned long sys0, unsigned long sys1 );
 
 int checkcpu (void)
 {
-#if defined(CONFIG_405GP) || defined(CONFIG_405CR) || defined(CONFIG_IOP480) || defined(CONFIG_440)
+#if defined(CONFIG_405GP) || defined(CONFIG_405CR) || defined(CONFIG_IOP480) || defined(CONFIG_440) || defined(CONFIG_405D4) 
 	uint pvr = get_pvr();
 #endif
-#if defined(CONFIG_405GP) || defined(CONFIG_405CR) || defined(CONFIG_IOP480)
+#if defined(CONFIG_405GP) || defined(CONFIG_405CR) || defined(CONFIG_IOP480) || defined(CONFIG_405D4)
 	DECLARE_GLOBAL_DATA_PTR;
 
 	ulong clock = gd->cpu_clk;
 	char buf[32];
 #endif
 
-#if defined(CONFIG_405GP) || defined(CONFIG_405CR)
+#if defined(CONFIG_405GP) || defined(CONFIG_405CR) || defined(CONFIG_405D4)
 	PPC405_SYS_INFO sys_info;
 
 	puts ("CPU:   ");
@@ -74,6 +74,9 @@ int checkcpu (void)
 #endif
 #if CONFIG_405CR
 	puts("IBM PowerPC 405CR Rev. ");
+#endif
+#if CONFIG_405D4
+	puts("IBM PowerPC 405D4");
 #endif
 	switch (pvr) {
 	case PVR_405GP_RB:
@@ -99,6 +102,8 @@ int checkcpu (void)
 		break;
 	case PVR_405CR_RB:
 		putc('B');
+		break;
+	case PVR_405D4:
 		break;
 	default:
 		printf("? (PVR=%08x)", pvr);
@@ -129,7 +134,7 @@ int checkcpu (void)
 	}
 
 
-#endif  /* defined(CONFIG_405GP) || defined(CONFIG_405CR) */
+#endif  /* defined(CONFIG_405GP) || defined(CONFIG_405CR) || defined(CONFIG_405D4) */
 
 #ifdef CONFIG_IOP480
 	printf("PLX IOP480 (PVR=%08x)", pvr);
@@ -213,7 +218,7 @@ unsigned long get_tbclk (void)
 	get_sys_info(&sys_info);
 	return (sys_info.freqProcessor);
 
-#elif defined(CONFIG_405GP) || defined(CONFIG_405CR) || defined(CONFIG_405)
+#elif defined(CONFIG_405GP) || defined(CONFIG_405CR) || defined(CONFIG_405) || defined(CONFIG_405D4)
 
 	PPC405_SYS_INFO sys_info;
 

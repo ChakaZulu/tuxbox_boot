@@ -103,7 +103,11 @@
 /******************************************************************************
  * Universal interrupt controller
  ******************************************************************************/
+#ifdef CONFIG_405D4
+#define UIC_DCR_BASE 0x40
+#else
 #define UIC_DCR_BASE 0xc0
+#endif
 #define uicsr        (UIC_DCR_BASE+0x0)  /* UIC status                       */
 #define uicsrs       (UIC_DCR_BASE+0x1)  /* UIC status set                   */
 #define uicer        (UIC_DCR_BASE+0x2)  /* UIC enable                       */
@@ -144,6 +148,7 @@
 #define UIC_EXT5      0x00000002      /* External  interrupt 5              */
 #define UIC_EXT6      0x00000001      /* External  interrupt 6              */
 
+#ifndef CONFIG_405D4
 /******************************************************************************
  * SDRAM Controller
  ******************************************************************************/
@@ -236,6 +241,7 @@
 #define cntrl1  (CNTRL_DCR_BASE+0x2)  /* Control 1 register		     */
 #define reset   (CNTRL_DCR_BASE+0x3)  /* reset register			     */
 #define strap   (CNTRL_DCR_BASE+0x4)  /* strap register		   	     */
+#define ecr     (0xAA)                /* edge conditioning register (405GPr) */
 
 /* Bit definitions */
 #define PLLMR_FWD_DIV_MASK      0xE0000000     /* Forward Divisor */
@@ -320,6 +326,7 @@
 #define maltxctp1r (MAL_DCR_BASE+0x21)  /* TX 1 Channel table pointer reg    */
 #define malrxctp0r (MAL_DCR_BASE+0x40)  /* RX 0 Channel table pointer reg    */
 #define malrcbs0   (MAL_DCR_BASE+0x60)  /* RX 0 Channel buffer size reg      */
+#endif /* CONFIG_405D4 */
 
 /*-----------------------------------------------------------------------------
 | IIC Register Offsets
@@ -364,6 +371,189 @@
 #define ocmdscntl  (OCM_DCR_BASE+0x03)  /* OCM D-side control reg            */
 
 
+#ifdef CONFIG_405D4
+/*----------------------------------------------------------------------------+
+| Device Control Register Numbers.
++----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------+
+| Intelligent Cross-Bar switch (ICBS)
++----------------------------------------------------------------------------*/
+#define icbs0_cntl16    0x016
+#define icbs0_amap0     0x018               /* ICBS address map 0          RW*/
+#define icbs0_amap1     0x019               /* ICBS address map 1          RW*/
+
+/*----------------------------------------------------------------------------+
+| External processor interface (EPI)
++----------------------------------------------------------------------------*/
+#define epi0_cr         0x020              /* External processor control   RW*/
+#define epi0_sr         0x021              /* External processor status    RW*/
+#define epi0_epba       0x022              /* External base processor addr RW*/
+#define epi0_ipba       0x023              /* Internal base processor addr RW*/
+
+
+/*----------------------------------------------------------------------------+
+| Chip control
++----------------------------------------------------------------------------*/
+#define cic0_cr         0x030               /* CIC control register        RW*/
+
+/*----------------------------------------------------------------------------+
+| Direct memory access (DMA)
++----------------------------------------------------------------------------*/
+
+#define dma0_s1         0x031               /* DMA select 1 reg            RW*/
+#define dma0_s2         0x032               /* DMA select 2 reg            RW*/
+
+/*----------------------------------------------------------------------------+
+| Chip Control
++----------------------------------------------------------------------------*/
+#define cic0_vcr        0x033               /* CIC video control reg       RW*/
+#define cic0_sel3       0x035               /* CIC select 3 reg            RW*/
+#define cic0_muxo       0x036               /* simplified GPIO output      RW*/
+#define cic0_muxod      0x037               /* simplified GPIO open drain  RW*/
+#define cic0_muxtc      0x038               /* simplified GPIO tristate cntRW*/
+#define cic0_muxi       0x039               /* simplified GPIO input        R*/
+
+/*----------------------------------------------------------------------------+
+| Direct memory access (DMA)
++----------------------------------------------------------------------------*/
+
+#define dma1_s1         0x03a               /* DMA select 1 reg            RW*/
+#define dma1_s2         0x03b               /* DMA select 2 reg            RW*/
+
+/*----------------------------------------------------------------------------+
+| Universal interrupt controller.
++----------------------------------------------------------------------------*/
+#define uic0_sr         0x040               /* status register             RW*/
+#define uic0_srs        0x041               /* status register set          W*/
+#define uic0_er         0x042               /* enable register             RW*/
+#define uic0_cr         0x043               /* critical register           RW*/
+#define uic0_pr         0x044               /* parity register             RW*/
+#define uic0_tr         0x045               /* triggering register         RW*/
+#define uic0_msr        0x046               /* masked status register       R*/
+#define uic0_vr         0x047               /* vector register              R*/
+#define uic0_vcr        0x048               /* enable config register       W*/
+
+/*----------------------------------------------------------------------------+
+| EBIU DCR registers.
++----------------------------------------------------------------------------*/
+#define ebiu0_brcrh0    0x070               /* bus region register 0 high  RW*/
+#define ebiu0_brcrh1    0x071               /* bus region register 1 high  RW*/
+#define ebiu0_brcrh2    0x072               /* bus region register 2 high  RW*/
+#define ebiu0_brcrh3    0x073               /* bus region register 3 high  RW*/
+#define ebiu0_brcrh4    0x074               /* bus region register 4 high  RW*/
+#define ebiu0_brcrh5    0x075               /* bus region register 5 high  RW*/
+#define ebiu0_brcrh6    0x076               /* bus region register 6 high  RW*/
+#define ebiu0_brcrh7    0x077               /* bus region register 7 high  RW*/
+#define ebiu0_brcr0     0x080               /* bus region register 0       RW*/
+#define ebiu0_brcr1     0x081               /* bus region register 1       RW*/
+#define ebiu0_brcr2     0x082               /* bus region register 2       RW*/
+#define ebiu0_brcr3     0x083               /* bus region register 3       RW*/
+#define ebiu0_brcr4     0x084               /* bus region register 4       RW*/
+#define ebiu0_brcr5     0x085               /* bus region register 5       RW*/
+#define ebiu0_brcr6     0x086               /* bus region register 6       RW*/
+#define ebiu0_brcr7     0x087               /* bus region register 7       RW*/
+#define ebiu0_bear      0x090               /* bus error address register   R*/
+#define ebiu0_besr      0x091               /* bus error syndrome reg      RW*/
+#define ebiu0_biucr     0x09a               /* bus interface control reg   RW*/
+
+/*----------------------------------------------------------------------------+
+| OPB bridge.
++----------------------------------------------------------------------------*/
+#define opbw0_gesr      0x0b0               /* error status reg            RW*/
+#define opbw0_gear      0x0b2               /* error address reg            R*/
+
+/*----------------------------------------------------------------------------+
+| USB OHCI
++----------------------------------------------------------------------------*/
+#define usb0_hc_memerr  0x0b5               /* USB host controller memory  RW*/
+
+/*----------------------------------------------------------------------------+
+| DMA.
++----------------------------------------------------------------------------*/
+#define dma0_cr0        0x0c0               /* DMA channel control reg 0   RW*/
+#define dma0_ct0        0x0c1               /* DMA count register 0        RW*/
+#define dma0_da0        0x0c2               /* DMA destination addr reg 0  RW*/
+#define dma0_sa0        0x0c3               /* DMA source addr register 0  RW*/
+#define dma0_cc0        0x0c4               /* DMA chained count 0         RW*/
+#define dma0_cr1        0x0c8               /* DMA channel control reg 1   RW*/
+#define dma0_ct1        0x0c9               /* DMA count register 1        RW*/
+#define dma0_da1        0x0ca               /* DMA destination addr reg 1  RW*/
+#define dma0_sa1        0x0cb               /* DMA source addr register 1  RW*/
+#define dma0_cc1        0x0cc               /* DMA chained count 1         RW*/
+#define dma0_cr2        0x0d0               /* DMA channel control reg 2   RW*/
+#define dma0_ct2        0x0d1               /* DMA count register 2        RW*/
+#define dma0_da2        0x0d2               /* DMA destination addr reg 2  RW*/
+#define dma0_sa2        0x0d3               /* DMA source addr register 2  RW*/
+#define dma0_cc2        0x0d4               /* DMA chained count 2         RW*/
+#define dma0_cr3        0x0d8               /* DMA channel control reg 3   RW*/
+#define dma0_ct3        0x0d9               /* DMA count register 3        RW*/
+#define dma0_da3        0x0da               /* DMA destination addr reg 3  RW*/
+#define dma0_sa3        0x0db               /* DMA source addr register 3  RW*/
+#define dma0_cc3        0x0dc               /* DMA chained count 3         RW*/
+#define dma0_sr0        0x0e0               /* DMA status register         RW*/
+
+/*---------------------------------------------------------------------------+
+| Clock and power management.
++----------------------------------------------------------------------------*/
+#define cpm0_fr         0x102               /* force register              RW*/
+
+/*----------------------------------------------------------------------------+
+| Serial Clock Control.
++----------------------------------------------------------------------------*/
+#define cic0_sccr       0x120               /* serial clock control registeRW*/
+
+/*----------------------------------------------------------------------------+
+| High speed memory controller 0 and 1.
++----------------------------------------------------------------------------*/
+#define sdram1_besr     0x1c1               /* bus error status register   RW*/
+#define sdram1_bear     0x1c2               /* bus error address register  RW*/
+#define sdram1_br0      0x1c4               /* SDRAM sub-ctrl bank reg 0   RW*/
+#define sdram1_cr0      0x1c5               /* SDRAM sub-ctrl ctrl reg 0   RW*/
+#define sdram1_br1      0x1c7               /* SDRAM sub-ctrl bank reg 1   RW*/
+#define sdram1_cr1      0x1c8               /* SDRAM sub-ctrl ctrl reg 1   RW*/
+#define sdram1_br2      0x1ca               /* SDRAM sub-ctrl bank reg 2   RW*/
+#define sdram1_cr2      0x1cb               /* SDRAM sub-ctrl ctrl reg 2   RW*/
+#define sdram1_br3      0x1cd               /* SDRAM sub-ctrl bank reg 3   RW*/
+#define sdram1_cr3      0x1ce               /* SDRAM sub-ctrl ctrl reg 3   RW*/
+
+#define sdram0_besr     0x1e1               /* bus error status register   RW*/
+#define sdram0_bear     0x1e2               /* bus error address register  RW*/
+#define sdram0_br0      0x1e4               /* SDRAM sub-ctrl bank reg 0   RW*/
+#define sdram0_cr0      0x1e5               /* SDRAM sub-ctrl ctrl reg 0   RW*/
+#define sdram0_br1      0x1e7               /* SDRAM sub-ctrl bank reg 1   RW*/
+#define sdram0_cr1      0x1e8               /* SDRAM sub-ctrl ctrl reg 1   RW*/
+#define sdram0_br2      0x1ea               /* SDRAM sub-ctrl bank reg 2   RW*/
+#define sdram0_cr2      0x1eb               /* SDRAM sub-ctrl ctrl reg 2   RW*/
+#define sdram0_br3      0x1ed               /* SDRAM sub-ctrl bank reg 3   RW*/
+#define sdram0_cr3      0x1ee               /* SDRAM sub-ctrl ctrl reg 3   RW*/
+
+/*----------------------------------------------------------------------------+
+| Direct Memory access
++----------------------------------------------------------------------------*/
+#define dma1_cr0        0x200               /* DMA1 channel control reg 0  RW*/
+#define dma1_ct0        0x201               /* DMA1 count register 0       RW*/
+#define dma1_da0        0x202               /* DMA1 destination addr reg 0 RW*/
+#define dma1_sa0        0x203               /* DMA1 source addr register 0 RW*/
+#define dma1_cc0        0x204               /* DMA1 chained count 0        RW*/
+#define dma1_cr1        0x208               /* DMA1 channel control reg 1  RW*/
+#define dma1_ct1        0x209               /* DMA1 count register 1       RW*/
+#define dma1_da1        0x20a               /* DMA1 destination addr reg 1 RW*/
+#define dma1_sa1        0x20b               /* DMA1 source addr register 1 RW*/
+#define dma1_cc1        0x20c               /* DMA1 chained count 1        RW*/
+#define dma1_cr2        0x210               /* DMA1 channel control reg 2  RW*/
+#define dma1_ct2        0x211               /* DMA1 count register 2       RW*/
+#define dma1_da2        0x212               /* DMA1 destination addr reg 2 RW*/
+#define dma1_sa2        0x213               /* DMA1 source addr register 2 RW*/
+#define dma1_cc2        0x214               /* DMA1 chained count 2        RW*/
+#define dma1_cr3        0x218               /* DMA1 channel control reg 3  RW*/
+#define dma1_ct3        0x219               /* DMA1 count register 3       RW*/
+#define dma1_da3        0x21a               /* DMA1 destination addr reg 3 RW*/
+#define dma1_sa3        0x21b               /* DMA1 source addr register 3 RW*/
+#define dma1_cc3        0x21c               /* DMA1 chained count 3        RW*/
+#define dma1_sr0        0x220               /* DMA1 status register        RW*/
+#endif /* CONFIG_405D4 */
+
+ 
 /*
  * Macro for accessing the indirect EBC register
  */

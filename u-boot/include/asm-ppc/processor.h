@@ -463,6 +463,7 @@
 #define	PVR_405CR_RB	0x401100C5
 #define	PVR_405CR_RC	0x40110145  /* same as pc405gp rev e */
 #define	PVR_405GPR_RA	0x50910951
+#define	PVR_405D4	0x418108d1
 #define	PVR_440GP_RB	0x40120440
 #define	PVR_440GP_RC	0x40120481
 #define	PVR_601		0x00010000
@@ -519,6 +520,7 @@
 #define _MACH_sandpoint 0x00004000	/* Motorola SPS Processor eval board */
 #define _MACH_tqm860	0x00008000	/* TQM860/L */
 #define _MACH_tqm8xxL	0x00010000	/* TQM8xxL */
+#define _MACH_dreambox	0x00020000	/* dreambox/redwood/... */
 
 
 /* see residual.h for these */
@@ -737,6 +739,9 @@ void _nmask_and_or_msr(unsigned long nmask, unsigned long or_val);
 #define have_of 0
 #elif defined(CONFIG_SANDPOINT)
 #define _machine _MACH_sandpoint
+#define have_of 0
+#elif defined(CONFIG_DREAMBOX)
+#define _machine _MACH_dreambox
 #define have_of 0
 #else
 #error "Machine not defined correctly"

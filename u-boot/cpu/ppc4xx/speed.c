@@ -257,11 +257,23 @@ void get_sys_info (sys_info_t * sysInfo) {
 
 }
 
+#elif defined(CONFIG_405D4)
+
+void get_sys_info (sys_info_t * sysInfo)
+{
+	sysInfo->freqVCOMhz = 3125000;
+	sysInfo->freqProcessor = 252*1000*1000;
+	sysInfo->freqPLB = 27*1000*1000;
+	sysInfo->freqPCI = 66*1000*1000;
+	// XXX: seems to work
+	sysInfo->pllOpbDiv = 4;
+}
+
 #endif
 
 int get_clocks (void)
 {
-#if defined(CONFIG_405GP) || defined(CONFIG_405CR) || defined(CONFIG_440) || defined(CONFIG_405)
+#if defined(CONFIG_405GP) || defined(CONFIG_405CR) || defined(CONFIG_440) || defined(CONFIG_405) || defined(CONFIG_405D4)
 	DECLARE_GLOBAL_DATA_PTR;
 
 	sys_info_t sys_info;
@@ -290,7 +302,7 @@ ulong get_bus_freq (ulong dummy)
 {
 	ulong val;
 
-#if defined(CONFIG_405GP) || defined(CONFIG_405CR) || defined(CONFIG_405) || defined(CONFIG_440)
+#if defined(CONFIG_405GP) || defined(CONFIG_405CR) || defined(CONFIG_405) || defined(CONFIG_440) || defined(CONFIG_405D4)
 	sys_info_t sys_info;
 
 	get_sys_info (&sys_info);

@@ -74,7 +74,7 @@ int do_bdinfo ( cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 	print_num ("immr_base",	    bd->bi_immr_base	);
 #endif
 	print_num ("bootflags",	    bd->bi_bootflags	);
-#if defined(CONFIG_405GP) || defined(CONFIG_405CR)
+#if defined(CONFIG_405GP) || defined(CONFIG_405CR) || defined(CONFIG_405D4)
 	print_str ("procfreq",	    strmhz(buf, bd->bi_procfreq));
 	print_str ("plb_busfreq",	    strmhz(buf, bd->bi_plb_busfreq));
 #if defined(CONFIG_405GP)
