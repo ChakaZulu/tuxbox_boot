@@ -240,7 +240,7 @@ static void flash_get_offsets (ulong base, flash_info_t *info)
 			break;
 		default:		
 			i = info->sector_count - 1;
-    		info->start[i--] = base + info->size - 0x4000;
+			info->start[i--] = base + info->size - 0x4000;
 			info->start[i--] = base + info->size - 0x8000;
 			info->start[i--] = base + info->size - 0xC000;
 			info->start[i--] = base + info->size - 0x10000;
