@@ -20,12 +20,20 @@
  *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *   
  *  $Log: fb-avia.c,v $
+ *  Revision 1.3  2001/06/05 11:08:10  derget
+ *
+ *  completed AVIA-GTX support
+ *  implemented IDXFS_OFFSET
+ *
  *  Revision 1.2  2001/06/05 11:02:11  derget
  *
  *  test import
  *
+ *  Revision 1.1  2001/04/25 Jolt 
+ *  
+ *  Reimplementet gtxfb.c
  *
- *  $Revision: 1.2 $
+ *  $Revision: 1.3 $
  *
  */
 #include <stdio.h>
