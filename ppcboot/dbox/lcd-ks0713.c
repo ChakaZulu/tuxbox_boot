@@ -21,6 +21,10 @@
  *
  *
  *   $Log: lcd-ks0713.c,v $
+ *   Revision 1.5  2001/06/05 11:10:13  derget
+ *
+ *   implemented IDXFS_OFFSET
+ *
  *   Revision 1.4  2001/04/25 20:51:43  Jolt
  *   IdxFs fixes
  *
@@ -54,7 +58,7 @@
  *   Revision 1.5  2001/01/06 10:06:35  gillem
  *   cvs check
  *
- *   $Revision: 1.4 $
+ *   $Revision: 1.5 $
  *
  */
 
@@ -415,7 +419,7 @@ int lcd_init(void)
 //    lcd_reset();
 
 	   
-    idxfs_file_info((unsigned char*)0x10040000, 0, "logo-lcd", &offset, &size);
+    idxfs_file_info((unsigned char*)IDXFS_OFFSET, 0, "logo-lcd", &offset, &size);
     
     if (!offset) {
     
@@ -427,7 +431,7 @@ int lcd_init(void)
       
     printf("  LCD logo at: 0x%X (0x%X bytes)\n", offset, size);
     
-    lcd_logo = (unsigned char*)(0x10040000 + offset);
+    lcd_logo = (unsigned char*)(IDXFS_OFFSET + offset);
 
     p.x = 0;
     p.y = 0;
