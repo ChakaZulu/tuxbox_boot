@@ -96,6 +96,7 @@ void cpu_init_f (volatile immap_t * immr)
 	reg |= CFG_SCCR;
 	immr->im_clkrst.car_sccr = reg;
 
+#ifndef CONFIG_DBOX2
 	/*
 	 * Memory Controller:
 	 */
@@ -201,8 +202,10 @@ void cpu_init_f (volatile immap_t * immr)
 	memctl->memc_br7 = CFG_BR7_PRELIM;
 #endif
 
+#endif /* ! CONFIG_DBOX2 */
 #endif /* ! CONFIG_MBX */
 
+#ifndef CONFIG_DBOX2
 	/*
 	 * Reset CPM
 	 */
@@ -210,6 +213,7 @@ void cpu_init_f (volatile immap_t * immr)
 	do {			/* Spin until command processed     */
 		__asm__ ("eieio");
 	} while (immr->im_cpm.cp_cpcr & CPM_CR_FLG);
+#endif /* ! CONFIG_DBOX2 */
 
 #ifdef CONFIG_MBX
 	/*

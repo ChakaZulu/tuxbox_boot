@@ -199,6 +199,9 @@ CCM_config:		unconfig
 cogent_mpc8xx_config:	unconfig
 	@./mkconfig $(@:_config=) ppc mpc8xx cogent
 
+dbox2_config:		unconfig
+	@./mkconfig $(@:_config=) ppc mpc8xx dbox2
+
 ESTEEM192E_config:	unconfig
 	@./mkconfig $(@:_config=) ppc mpc8xx esteem192e
 

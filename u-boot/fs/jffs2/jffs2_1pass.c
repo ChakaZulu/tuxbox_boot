@@ -81,7 +81,7 @@
 #include <linux/stat.h>
 #include <linux/time.h>
 
-#if (CONFIG_COMMANDS & CFG_CMD_JFFS2)
+#if (CONFIG_COMMANDS & CFG_CMD_JFFS2) || (CONFIG_FS & CFG_FS_JFFS2)
 
 #include <jffs2/jffs2.h>
 #include <jffs2/jffs2_1pass.h>
@@ -992,4 +992,4 @@ jffs2_1pass_info(struct part_info * part)
 	return 1;
 }
 
-#endif /* CFG_CMD_JFFS2 */
+#endif /* CFG_CMD_JFFS2 || CFG_FS_JFFS2 */

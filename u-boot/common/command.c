@@ -60,6 +60,7 @@
 #include <cmd_doc.h>
 #include <cmd_jffs2.h>
 #include <cmd_fpga.h>
+#include <cmd_fs.h>
 
 #include <cmd_bsp.h>		/* board special functions */
 
@@ -268,6 +269,8 @@ cmd_tbl_t cmd_tbl[] = {
 	CMD_TBL_FPGA
 	CMD_TBL_JFFS2_FSINFO
 	CMD_TBL_JFFS2_FSLOAD
+	CMD_TBL_FS_FSINFO
+	CMD_TBL_FS_FSLOAD
 	CMD_TBL_GETDCR
 	CMD_TBL_GO
 	CMD_TBL_HELP
@@ -296,6 +299,7 @@ cmd_tbl_t cmd_tbl[] = {
 	CMD_TBL_LOG
 	CMD_TBL_LOOP
 	CMD_TBL_JFFS2_LS
+	CMD_TBL_FS_LS
 	CMD_TBL_MCCINFO
 	CMD_TBL_MD
 	CMD_TBL_MEMCINFO

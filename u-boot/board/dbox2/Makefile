@@ -1,5 +1,5 @@
 #
-# (C) Copyright 2000, 2001
+# (C) Copyright 2000
 # Wolfgang Denk, DENX Software Engineering, wd@denx.de.
 #
 # See file CREDITS for list of people who contributed to this
@@ -20,11 +20,26 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston,
 # MA 02111-1307 USA
 #
-#
 
-SUBDIRS	:= crmafs jffs2 fdos
+include $(TOPDIR)/config.mk
 
-.depend all:
-	@for dir in $(SUBDIRS) ; do \
-		$(MAKE) -C $$dir $@ ; done
+all:
+	make -C fb
+	make $(LIB)
 
+LIB	= lib$(BOARD).a
+
+OBJS	= $(BOARD).o flash.o lcd.o avia.o avs.o fb.o mpgstill.o saa7126.o
+
+$(LIB):	.depend $(OBJS)
+	$(AR) crv $@ $^
+
+#########################################################################
+
+.depend:	Makefile $(SOBJS:.o=.S) $(OBJS:.o=.c)
+		make -C fb .depend
+		$(CC) -M $(CFLAGS) $(SOBJS:.o=.S) $(OBJS:.o=.c) > $@
+
+sinclude .depend
+
+#########################################################################

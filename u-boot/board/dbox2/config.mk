@@ -1,6 +1,8 @@
 #
-# (C) Copyright 2000, 2001
+# (C) Copyright 2000
 # Wolfgang Denk, DENX Software Engineering, wd@denx.de.
+#
+# Copyright (C) 2002 Bastian Blank <waldi@tuxbox.org>
 #
 # See file CREDITS for list of people who contributed to this
 # project.
@@ -20,11 +22,9 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston,
 # MA 02111-1307 USA
 #
+
+#
+# dbox2 boards
 #
 
-SUBDIRS	:= crmafs jffs2 fdos
-
-.depend all:
-	@for dir in $(SUBDIRS) ; do \
-		$(MAKE) -C $$dir $@ ; done
-
+TEXT_BASE = 0x40000000

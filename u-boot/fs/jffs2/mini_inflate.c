@@ -25,7 +25,7 @@
 
 #include <config.h>
 
-#if (CONFIG_COMMANDS & CFG_CMD_JFFS2)
+#if (CONFIG_COMMANDS & CFG_CMD_JFFS2) || (CONFIG_FS & CFG_FS_JFFS2)
 
 #include <jffs2/mini_inflate.h>
 
@@ -393,4 +393,4 @@ long decompress_block(unsigned char *dest, unsigned char *source,
 	return stream.error ? -stream.error : stream.decoded;
 }
 
-#endif /* CFG_CMD_JFFS2 */
+#endif /* CFG_CMD_JFFS2 || CFG_FS_JFFS2 */
