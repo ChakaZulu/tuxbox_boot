@@ -248,7 +248,18 @@ static void flash_get_protect (flash_info_t *info)
 			addr = (volatile unsigned long *) (info->start[i]);
 			/* read configuration */
 			flash_put (info, addr, 0, 0x00900090);
-			info->protect[i] = addr[2] & 1;
+			switch (flash_get (info, addr, 2) & 3)
+		{
+			case 0:
+				info->protect[i] = 0;
+				break;
+			case 1:
+				info->protect[i] = 1;
+				break;
+			case 3:
+				info->protect[i] = 2;
+				break;
+		}
 			/* read array */
 			flash_put (info, addr, 0, 0x00FF00FF);
 		}
