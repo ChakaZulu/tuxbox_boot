@@ -333,14 +333,14 @@ BootpHandler(uchar * pkt, unsigned dest, unsigned src, unsigned len)
 		return;
 	}
 
-#ifdef CONFIG_DBOX2_NETWORK
+#ifdef CONFIG_TUXBOX_NETWORK
 	NetState = NETLOOP_SUCCESS;
-#else /* CONFIG_DBOX2_NETWORK */
+#else /* CONFIG_TUXBOX_NETWORK */
 	/* Send ARP request to get TFTP server ethernet address.
 	 * This automagically starts TFTP, too.
 	 */
 	ArpRequest();
-#endif /* CONFIG_DBOX2_NETWORK */
+#endif /* CONFIG_TUXBOX_NETWORK */
 }
 #endif	/* !CFG_CMD_DHCP */
 
@@ -868,14 +868,14 @@ DhcpHandler(uchar * pkt, unsigned dest, unsigned src, unsigned len)
 				NetState = NETLOOP_SUCCESS;
 				return;
 			}
-#ifdef CONFIG_DBOX2_NETWORK
+#ifdef CONFIG_TUXBOX_NETWORK
 			NetState = NETLOOP_SUCCESS;
-#else /* CONFIG_DBOX2_NETWORK */
+#else /* CONFIG_TUXBOX_NETWORK */
 			/* Send ARP request to get TFTP server ethernet address.
 			 * This automagically starts TFTP, too.
 			 */
 			ArpRequest();
-#endif /* CONFIG_DBOX2_NETWORK */
+#endif /* CONFIG_TUXBOX_NETWORK */
 			return;
 		}
 		break;

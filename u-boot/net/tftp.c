@@ -233,8 +233,12 @@ TftpHandler (uchar * pkt, unsigned dest, unsigned src, unsigned len)
 	case TFTP_ERROR:
 		printf ("\nTFTP error: '%s' (%d)\n",
 					pkt + 2, ntohs(*(ushort *)pkt));
+#ifdef CONFIG_TUXBOX_NETWORK
+		NetState = NETLOOP_SUCCESS;
+#else /* CONFIG_TUXBOX_NETWORK */
 		puts ("Starting again\n\n");
 		NetStartAgain ();
+#endif /* CONFIG_TUXBOX_NETWORK */
 		break;
 	}
 }

@@ -116,9 +116,9 @@ volatile uchar *NetTxPacket = 0;	/* THE transmit packet			*/
 
 static int net_check_prereq (proto_t protocol);
 
-#ifdef CONFIG_DBOX2_NETWORK
+#ifdef CONFIG_TUXBOX_NETWORK
 void netboot_update_env(void);
-#endif /* CONFIG_DBOX2_NETWORK */
+#endif /* CONFIG_TUXBOX_NETWORK */
 
 /**********************************************************************/
 /*
@@ -287,10 +287,10 @@ restart:
 			goto restart;
 
 		case NETLOOP_SUCCESS:
-#ifdef CONFIG_DBOX2_NETWORK
+#ifdef CONFIG_TUXBOX_NETWORK
 			if (protocol == BOOTP || protocol == DHCP)
 				netboot_update_env ();
-#endif /* CONFIG_DBOX2_NETWORK */
+#endif /* CONFIG_TUXBOX_NETWORK */
 			if (NetBootFileXferSize > 0) {
 				char buf[10];
 				printf("Bytes transferred = %ld (%lx hex)\n",
