@@ -38,6 +38,7 @@ void write_file(FILE *image, char *filename, unsigned char last)
   fseek(idxfs_file, 0, 0);
   
   idxfs_fat.Size = size;
+  strncpy(idxfs_fat.Name, filename, IDXFS_MAX_NAME_LEN);
   
   if (last)
     idxfs_fat.OffsNext = 0;
@@ -74,6 +75,7 @@ int main(void)
   printf("sizeof(sIdxFsHdr): %d\n", sizeof(sIdxFsHdr));
   
   write_file(idxfs_img, "kernel", 0);
+  write_file(idxfs_img, "logo-lcd", 0);
   write_file(idxfs_img, "logo-fb", 1);
   
   fclose(idxfs_img);

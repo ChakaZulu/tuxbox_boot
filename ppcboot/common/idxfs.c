@@ -18,9 +18,49 @@
  * MA 02111-1307 USA
  */
 
+#ifndef IDXFSTOOLS
 #include <ppcboot.h>
 #include "mpc8xx.h"
 #include "idxfs.h"
+#endif
+
+void idxfs_dump_info(unsigned char *mem, unsigned int mem_size)
+{
+
+  sIdxFsHdr *hdr;
+  sIdxFsFatEntry *fat;
+  unsigned int offs;
+
+  if (sizeof(sIdxFsHdr) > mem_size)
+    return;    
+
+  hdr = (sIdxFsHdr *)mem;
+
+  if (hdr->Magic != IDXFS_MAGIC)
+    return;
+
+  if (hdr->Version != IDXFS_VERSION)
+    return;
+
+  if ((!hdr->FatOffsFirst) || (hdr->FatOffsFirst + sizeof(sIdxFsFatEntry) > mem_size))
+    return;
+    
+  offs = hdr->FatOffsFirst;
+  fat = (sIdxFsFatEntry *)&mem[offs];
+
+  while (1) {
+  
+    printf("IdxFs entry: Offset->0x%08X Next->0x%08X Filename->%s\n", offs + sizeof(sIdxFsFatEntry), fat->OffsNext, fat->Name);
+    
+    if ((!fat->OffsNext) || (fat->OffsNext + sizeof(sIdxFsFatEntry) > mem_size))
+      return;
+      
+    offs = fat->OffsNext;
+    fat = (sIdxFsFatEntry *)&mem[offs];  
+  
+  }
+  
+}
 
 unsigned int idxfs_file_info(unsigned char *mem, unsigned int mem_size, unsigned char *file_name, unsigned int *file_offset, unsigned int *file_size) 
 {
@@ -69,3 +109,4 @@ unsigned int idxfs_file_info(unsigned char *mem, unsigned int mem_size, unsigned
   return 0;
   
 }
+
