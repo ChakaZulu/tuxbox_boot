@@ -98,7 +98,7 @@ int main(int argc, char **argv)
   idxfs_img = fopen(argv[1], "wb");
   	if(!idxfs_img)
   {
-    perror(argv[4]);
+    perror(argv[1]);
     return 0;
   }
  
