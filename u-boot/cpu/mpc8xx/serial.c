@@ -24,6 +24,7 @@
 #include <common.h>
 #include <commproc.h>
 #include <command.h>
+#include <watchdog.h>
 
 #if !defined(CONFIG_8xx_CONS_NONE)	/* No Console at all */
 
@@ -245,6 +246,20 @@ serial_setbrg (void)
 		(((gd->cpu_clk / 16 / gd->baudrate)-1) << 1) | CPM_BRG_EN;
 }
 
+#ifdef CONFIG_MODEM_SUPPORT
+void disable_putc(void)
+{
+	DECLARE_GLOBAL_DATA_PTR;
+	gd->be_quiet = 1;
+}
+
+void enable_putc(void)
+{
+	DECLARE_GLOBAL_DATA_PTR;
+	gd->be_quiet = 0;
+}
+#endif
+
 void
 serial_putc(const char c)
 {
@@ -253,6 +268,13 @@ serial_putc(const char c)
 	volatile smc_uart_t	*up;
         volatile immap_t	*im = (immap_t *)CFG_IMMR;
 	volatile cpm8xx_t	*cpmp = &(im->im_cpm);
+
+#ifdef CONFIG_MODEM_SUPPORT
+	DECLARE_GLOBAL_DATA_PTR;
+
+	if (gd->be_quiet)
+		return;
+#endif
 
 	if (c == '\n')
 		serial_putc ('\r');
@@ -265,20 +287,16 @@ serial_putc(const char c)
 	*/
 
 	buf = (char *)tbdf->cbd_bufaddr;
-#if 0
-	__asm__("eieio");
-	while (tbdf->cbd_sc & BD_SC_READY)
-		__asm__("eieio");
-#endif
 
 	*buf = c;
 	tbdf->cbd_datlen = 1;
 	tbdf->cbd_sc |= BD_SC_READY;
 	__asm__("eieio");
-#if 1
-	while (tbdf->cbd_sc & BD_SC_READY)
+
+	while (tbdf->cbd_sc & BD_SC_READY) {
+		WATCHDOG_RESET ();
 		__asm__("eieio");
-#endif
+	}
 }
 
 int
@@ -298,8 +316,10 @@ serial_getc(void)
 	/* Wait for character to show up.
 	*/
 	buf = (unsigned char *)rbdf->cbd_bufaddr;
+
 	while (rbdf->cbd_sc & BD_SC_EMPTY)
-		;
+		WATCHDOG_RESET ();
+
 	c = *buf;
 	rbdf->cbd_sc |= BD_SC_EMPTY;
 
@@ -524,20 +544,16 @@ serial_putc(const char c)
 	*/
 
 	buf = (char *)tbdf->cbd_bufaddr;
-#if 0
-	__asm__("eieio");
-	while (tbdf->cbd_sc & BD_SC_READY)
-		__asm__("eieio");
-#endif
 
 	*buf = c;
 	tbdf->cbd_datlen = 1;
 	tbdf->cbd_sc |= BD_SC_READY;
 	__asm__("eieio");
-#if 1
-	while (tbdf->cbd_sc & BD_SC_READY)
+
+	while (tbdf->cbd_sc & BD_SC_READY) {
 		__asm__("eieio");
-#endif
+		WATCHDOG_RESET ();
+	}
 }
 
 int
@@ -557,8 +573,10 @@ serial_getc(void)
 	/* Wait for character to show up.
 	*/
 	buf = (unsigned char *)rbdf->cbd_bufaddr;
+
 	while (rbdf->cbd_sc & BD_SC_EMPTY)
-		;
+		WATCHDOG_RESET ();
+
 	c = *buf;
 	rbdf->cbd_sc |= BD_SC_EMPTY;
 

@@ -14,6 +14,7 @@
 
 
 #########################################################################
+# PowerPC Systems:							#
 #									#
 # Maintainer Name, Email Address					#
 #	Board			CPU					#
@@ -27,9 +28,13 @@ Pantelis Antoniou <panto@intracom.gr>
 
 	NETVIA			MPC8xx
 
-Jerry Van Baren <vanbaren_gerald@si.com>
+Jerry Van Baren <gerald.vanbaren@smiths-aerospace.com>
 
 	sacsng			MPC8260
+
+Rick Bronson <rick@efn.org>
+
+	AT91RM9200DK		at91rm9200
 
 Oliver Brown <obrown@adventnetworks.com>
 
@@ -58,6 +63,9 @@ Wolfgang Denk <wd@denx.de>
 	IVMS8_128		MPC860
 	IVMS8_256		MPC860
 	LANTEC			MPC850
+	LWMON			MPC823
+	R360MPI			MPC823
+	RMU			MPC850
 	RRvision		MPC823
 	SM850			MPC850
 	SPD823TS		MPC823
@@ -67,6 +75,7 @@ Wolfgang Denk <wd@denx.de>
 	TQM855L			MPC855
 	TQM860L			MPC860
 	TQM860L_FEC		MPC860
+	TTTech			MPC823
 	c2mon			MPC855
 	hermes			MPC860
 	lwmon			MPC823
@@ -75,6 +84,11 @@ Wolfgang Denk <wd@denx.de>
 	CU824			MPC8240
 	Sandpoint8240		MPC8240
 
+	ATC			MPC8250
+	PM825			MPC8250
+
+	TQM8255			MPC8255
+
 	CPU86			MPC8260
 	PM826			MPC8260
 	TQM8260			MPC8260
@@ -82,7 +96,7 @@ Wolfgang Denk <wd@denx.de>
 	PCIPPC2			MPC750
 	PCIPPC6			MPC750
 
-Jon Diekema <diekema_jon@si.com>
+Jon Diekema <jon.diekema@smiths-aerospace.com>
 
 	sbc8260			MPC8260
 
@@ -136,9 +150,17 @@ Thomas Lange <thomas@corelatus.com>
 
 	GTH			MPC860
 
+The LEOX team <team@leox.org>
+
+	ELPT860			MPC860T
+
 Eran Man <eran@nbase.co.il>
 
 	EVB64260_750CX		MPC750CX
+
+Reinhard Meyer <r.meyer@emk-elektronik.de>
+
+	TOP860			MPC860
 
 Scott McNutt <smcnutt@artesyncp.com>
 
@@ -147,6 +169,7 @@ Scott McNutt <smcnutt@artesyncp.com>
 Keith Outwater <Keith_Outwater@mvis.com>
 
 	GEN860T			MPC860T
+	GEN860T_SC		MPC860T
 
 Frank Panno <fpanno@delphintech.com>
 
@@ -161,14 +184,19 @@ Stefan Roese <stefan.roese@esd-electronics.com>
 
 	ADCIOP			IOP480 (PPC401)
 	AR405			PPC405GP
+	ASH405			PPC405EP
 	CANBT			PPC405CR
 	CPCI405			PPC405GP
+	CPCI4052		PPC405GP
+	CPCI405AB		PPC405GP
 	CPCI440			PPC440GP
 	CPCIISER4		PPC405GP
 	DASA_SIM		IOP480 (PPC401)
 	DU405			PPC405GP
 	OCRTC			PPC405GP
 	ORSG			PPC405GP
+	PCI405			PPC405GP
+	PMC405			PPC405GP
 
 Peter De Schrijver <p2@mind.be>
 
@@ -183,6 +211,14 @@ Jim Thompson <jim@musenki.com>
 
 	MUSENKI			MPC8245/8241
 	Sandpoint8245		MPC8245
+
+Rune Torgersen <runet@innovsys.com>
+
+	MPC8266ADS		MPC8266
+
+John Zhan <zhanz@sinovee.com>
+
+	svm_sc8xx		MPC8xx
 
 -------------------------------------------------------------------------
 
@@ -220,6 +256,10 @@ Unknown / orphaned boards:
 #	Board			CPU					#
 #########################################################################
 
+Peter Figuli <peposh@etc.sk>
+
+	wepep250		xscale
+
 Marius Gröger <mag@sysgo.de>
 
 	impa7			ARM720T (EP7211)
@@ -238,6 +278,7 @@ Gary Jennejohn <gj@denx.de>
 David Müller <d.mueller@elsoft.ch>
 
 	smdk2410		ARM920T
+	VCMA9			ARM920T
 
 Rolf Offermanns <rof@sysgo.de>
 
@@ -246,6 +287,7 @@ Rolf Offermanns <rof@sysgo.de>
 Robert Schwebel <r.schwebel@pengutronix.de>
 
 	csb226			xscale
+	innokom			xscale
 
 Alex Züpke <azu@sysgo.de>
 
@@ -262,6 +304,18 @@ Alex Züpke <azu@sysgo.de>
 Daniel Engström <daniel@omicron.se>
 
 	sc520_cdp		x86
+
+#########################################################################
+# MIPS Systems:								#
+#									#
+# Maintainer Name, Email Address					#
+#	Board			CPU					#
+#########################################################################
+
+Wolfgang Denk <wd@denx.de>
+
+	incaip			MIPS32 4Kc
+	purple			MIPS64 5Kc
 
 #########################################################################
 # End of MAINTAINERS list						#

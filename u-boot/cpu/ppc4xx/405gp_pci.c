@@ -78,7 +78,7 @@
 #include <asm/processor.h>
 #include <pci.h>
 
-#if defined(CONFIG_405GP)
+#if defined(CONFIG_405GP) || defined(CONFIG_405EP)
 
 #ifdef CONFIG_PCI
 
@@ -177,7 +177,7 @@ void pci_405gp_init(struct pci_controller *hose)
 	 * PLB address 0x80000000-0xBFFFFFFF ==> PCI address 0x80000000-0xBFFFFFFF
 	 * Use byte reversed out routines to handle endianess.
 	 *--------------------------------------------------------------------------*/
-	out32r(PMM0MA,    pmmma[0]);          /* ensure disabled b4 setting PMM0LA */
+	out32r(PMM0MA,    (pmmma[0]&~0x1)); /* disable, configure PMMxLA, PMMxPCILA first */
 	out32r(PMM0LA,    pmmla[0]);
 	out32r(PMM0PCILA, pmmpcila[0]);
 	out32r(PMM0PCIHA, pmmpciha[0]);
@@ -186,7 +186,7 @@ void pci_405gp_init(struct pci_controller *hose)
 	/*--------------------------------------------------------------------------+
 	 * PMM1 is not used.  Initialize them to zero.
 	 *--------------------------------------------------------------------------*/
-	out32r(PMM1MA,    pmmma[1]);          /* ensure disabled b4 setting PMM2LA */
+	out32r(PMM1MA,    (pmmma[1]&~0x1));
 	out32r(PMM1LA,    pmmla[1]);
 	out32r(PMM1PCILA, pmmpcila[1]);
 	out32r(PMM1PCIHA, pmmpciha[1]);
@@ -195,7 +195,7 @@ void pci_405gp_init(struct pci_controller *hose)
 	/*--------------------------------------------------------------------------+
 	 * PMM2 is not used.  Initialize them to zero.
 	 *--------------------------------------------------------------------------*/
-	out32r(PMM2MA,    pmmma[2]);          /* ensure disabled b4 setting PMM2LA */
+	out32r(PMM2MA,    (pmmma[2]&~0x1)); 
 	out32r(PMM2LA,    pmmla[2]);
 	out32r(PMM2PCILA, pmmpcila[2]);
 	out32r(PMM2PCIHA, pmmpciha[2]);
@@ -376,7 +376,7 @@ static struct pci_controller hose = {
 	config_table: pci_405gp_config_table,
 };
 
-void pci_init(void)
+void pci_init_board(void)
 {
 	/*we want the ptrs to RAM not flash (ie don't use init list)*/
 	hose.fixup_irq    = pci_405gp_fixup_irq;
@@ -494,7 +494,7 @@ void pci_440_init (struct pci_controller *hose)
 }
 
 
-void pci_init(void)
+void pci_init_board(void)
 {
 	pci_440_init (&ppc440_hose);
 }

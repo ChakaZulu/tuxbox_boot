@@ -38,7 +38,7 @@ typedef struct bd_info {
 	unsigned long	bi_flashoffset; /* reserved area for startup monitor */
 	unsigned long	bi_sramstart;	/* start of SRAM memory */
 	unsigned long	bi_sramsize;	/* size	 of SRAM memory */
-#if defined(CONFIG_8xx) || defined(CONFIG_8260)
+#if defined(CONFIG_5xx) || defined(CONFIG_8xx) || defined(CONFIG_8260)
 	unsigned long	bi_immr_base;	/* base of IMMR register */
 #endif
 	unsigned long	bi_bootflags;	/* boot / reboot flag (for LynxOS) */
@@ -54,11 +54,12 @@ typedef struct bd_info {
 	unsigned long	bi_vco;		/* VCO Out from PLL, in MHz */
 #endif
 	unsigned long	bi_baudrate;	/* Console Baudrate */
-#if defined(CONFIG_405GP) || \
-    defined(CONFIG_405CR) || \
-    defined(CONFIG_440)   || \
-    defined(CONFIG_405)   || \
-    defined(CONFIG_405D4)
+#if defined(CONFIG_405GP)	|| \
+	defined(CONFIG_405CR)	|| \
+	defined(CONFIG_440)	|| \
+	defined(CONFIG_405)	|| \
+	defined(CONFIG_405D4)	|| \
+	defined(CONFIG_405EP)
 	unsigned char	bi_s_version[4];	/* Version of this structure */
 	unsigned char	bi_r_version[32];	/* Version of the ROM (IBM) */
 	unsigned int	bi_procfreq;	/* CPU (Internal) Freq, in Hz */
@@ -69,11 +70,14 @@ typedef struct bd_info {
 #if defined(CONFIG_HYMOD)
 	hymod_conf_t	bi_hymod_conf;	/* hymod configuration information */
 #endif
-#if defined(CONFIG_EVB64260) || defined(CONFIG_PN62)
+#if defined(CONFIG_EVB64260)	|| \
+    defined(CONFIG_PN62)	|| \
+    defined(CONFIG_SXNI855T)	|| \
+    defined(CONFIG_SVM_SC8xx)
 	/* second onboard ethernet port */
 	unsigned char   bi_enet1addr[6];
 #endif
-#if defined(CONFIG_EVB64260)
+#if defined(CONFIG_EVB64260) || defined(CONFIG_SVM_SC8xx)
 	/* third onboard ethernet port */
 	unsigned char	bi_enet2addr[6];
 #endif

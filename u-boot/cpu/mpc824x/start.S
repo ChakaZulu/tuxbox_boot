@@ -73,8 +73,9 @@
 	GOT_ENTRY(_end_of_vectors)
 	GOT_ENTRY(transfer_to_handler)
 
+	GOT_ENTRY(__init_end)
 	GOT_ENTRY(_end)
-	GOT_ENTRY(.bss)
+	GOT_ENTRY(__bss_start)
 #if defined(CONFIG_FADS)
 	GOT_ENTRY(environment)
 #endif
@@ -336,7 +337,7 @@ _end_back:
 	STD_EXCEPTION(EXC_OFF_ITME, InstructionTransMiss, UnknownException)
 	STD_EXCEPTION(EXC_OFF_DLTME, DataLoadTransMiss, UnknownException)
 	STD_EXCEPTION(EXC_OFF_DSTME, DataStoreTransMiss, UnknownException)
-	STD_EXCEPTION(EXC_OFF_IABE, InstructionBreakpoint, UnknownException)
+	STD_EXCEPTION(EXC_OFF_IABE, InstructionBreakpoint, DebugException)
 	STD_EXCEPTION(EXC_OFF_SMIE, SysManageInt, UnknownException)
 	STD_EXCEPTION(0x1500, Reserved5, UnknownException)
 	STD_EXCEPTION(0x1600, Reserved6, UnknownException)
@@ -542,15 +543,15 @@ relocate_code:
 	mr	r10, r5		/* Save copy of Destination Address	*/
 
 	mr	r3,  r5				/* Destination Address	*/
-#ifdef DEBUG
+#ifdef CFG_RAMBOOT
 	lis	r4, CFG_SDRAM_BASE@h		/* Source      Address	*/
 	ori	r4, r4, CFG_SDRAM_BASE@l
 #else
 	lis	r4, CFG_MONITOR_BASE@h		/* Source      Address	*/
 	ori	r4, r4, CFG_MONITOR_BASE@l
 #endif
-	lis	r5, CFG_MONITOR_LEN@h		/* Length in Bytes	*/
-	ori	r5, r5, CFG_MONITOR_LEN@l
+	lwz	r5, GOT(__init_end)
+	sub	r5, r5, r4
 	li	r6, CFG_CACHELINE_SIZE		/* Cache Line Size	*/
 
 	/*
@@ -665,7 +666,7 @@ clear_bss:
 	/*
 	 * Now clear BSS segment
 	 */
-	lwz	r3,GOT(.bss)
+	lwz	r3,GOT(__bss_start)
 	lwz	r4,GOT(_end)
 
 	cmplw	0, r3, r4
@@ -683,12 +684,6 @@ clear_bss:
 	mr	r4, r10		/* Destination Address		*/
 	bl	board_init_r
 
-	/* Problems accessing "end" in C, so do it here */
-	.globl	get_endaddr
-get_endaddr:
-	lwz	r3,GOT(_end)
-	blr
-
 	/*
 	 * Copy exception vector code to low memory
 	 *
@@ -700,7 +695,7 @@ trap_init:
 	lwz	r7, GOT(_start)
 	lwz	r8, GOT(_end_of_vectors)
 
-	rlwinm	r9, r7, 0, 18, 31	/* _start & 0x3FFF	*/
+	li	r9, 0x100		/* reset vector always at 0x100 */
 
 	cmplw	0, r7, r8
 	bgelr				/* return if r7>=r8 - just in case */

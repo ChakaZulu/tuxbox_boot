@@ -47,8 +47,16 @@ int board_init (void)
 	/* adress of boot parameters */
 	gd->bd->bi_boot_params = 0xa0000100;
 
-	return 1;
+	return 0;
 }
+
+int board_post_init(void)
+{
+   setenv("stdout", "serial");
+   setenv("stderr", "serial");
+	return 0;
+}
+
 
 int dram_init (void)
 {
@@ -62,6 +70,6 @@ int dram_init (void)
 	gd->bd->bi_dram[2].size = PHYS_SDRAM_3_SIZE;
 	gd->bd->bi_dram[3].start = PHYS_SDRAM_4;
 	gd->bd->bi_dram[3].size = PHYS_SDRAM_4_SIZE;
-	return PHYS_SDRAM_1_SIZE + PHYS_SDRAM_2_SIZE + PHYS_SDRAM_3_SIZE +
-			PHYS_SDRAM_4_SIZE;
+
+   return 0;
 }

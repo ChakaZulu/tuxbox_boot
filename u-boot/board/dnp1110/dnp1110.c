@@ -23,7 +23,7 @@
  */
 
 #include <common.h>
-
+#include <SA-1100.h>
 /* ------------------------------------------------------------------------- */
 
 
@@ -41,8 +41,9 @@ int board_init (void)
 	/* arch number of DNP1110-Board */
 	gd->bd->bi_arch_number = 255;
 
-	/* adress of boot parameters */
-	gd->bd->bi_boot_params = 0xc0000100;
+    /* flash vpp on */
+    PPDR |= 0x80;	/* assumes LCD controller is off */
+    PPSR |= 0x80;
 
 	return 0;
 }

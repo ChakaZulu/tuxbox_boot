@@ -27,25 +27,41 @@
 
 #include <config.h>
 #include <common.h>
+#include <watchdog.h>
 #include <version.h>
 #include <stdarg.h>
 #include <lcdvideo.h>
 #include <linux/types.h>
 #include <devices.h>
-
+#if defined(CONFIG_POST)
+#include <post.h>
+#endif
+#include <lcd.h>
 
 #ifdef CONFIG_LCD
 
 /************************************************************************/
 /* ** CONFIG STUFF -- should be moved to board config file		*/
 /************************************************************************/
-#ifndef CONFIG_EDT32F10
 #define CONFIG_LCD_LOGO
 #define LCD_INFO		/* Display Logo, (C) and system info	*/
+
+#if defined(CONFIG_V37) || defined(CONFIG_EDT32F10)
+#undef CONFIG_LCD_LOGO
+#undef LCD_INFO
 #endif
+
 /* #define LCD_TEST_PATTERN */	/* color backgnd for frame/color adjust */
 /* #define CFG_INVERT_COLORS */	/* Not needed - adjust vl_dp instead 	*/
 /************************************************************************/
+
+/************************************************************************/
+/* ** BITMAP DISPLAY SUPPORT  -- should probably be moved elsewhere	*/
+/************************************************************************/
+
+#if (CONFIG_COMMANDS & CFG_CMD_BMP)
+#include <bmp_layout.h>
+#endif /* (CONFIG_COMMANDS & CFG_CMD_BMP) */
 
 /************************************************************************/
 /* ** FONT AND LOGO DATA						*/
@@ -119,6 +135,19 @@ static vidinfo_t panel_info = {
 /*----------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------*/
+#ifdef CONFIG_HITACHI_SP19X001_Z1A
+/*
+ *  Hitachi SP19X001-. Active, color, single scan.
+ */
+static vidinfo_t panel_info = {
+    640, 480, 154, 116, CFG_HIGH, CFG_HIGH, CFG_HIGH, CFG_HIGH, CFG_HIGH,
+    LCD_COLOR8, 1, 0, 1, 0, 0, 0, 0, 0
+		/* wbl, vpw, lcdac, wbf */
+};
+#endif /* CONFIG_HITACHI_SP19X001_Z1A */
+/*----------------------------------------------------------------------*/
+
+/*----------------------------------------------------------------------*/
 #ifdef CONFIG_NEC_NL6648AC33
 /*
  *  NEC NL6648AC33-18. Active, color, single scan.
@@ -171,6 +200,8 @@ static vidinfo_t panel_info = {
 /*
  * Sharp LQ057Q3DC02 display. Active, color, single scan.
  */
+#define LCD_DF 12
+
 static vidinfo_t panel_info = {
     320, 240, 0, 0, CFG_HIGH, CFG_HIGH, CFG_LOW, CFG_LOW, CFG_HIGH,
     3, 0, 0, 1, 1, 15, 4, 0, 3
@@ -190,6 +221,18 @@ static vidinfo_t panel_info = {
 		/* wbl, vpw, lcdac, wbf */
 };
 #endif /* CONFIG_SHARP_LQ64D341 */
+
+#ifdef CONFIG_SHARP_LQ084V1DG21
+/*
+ * Sharp LQ084V1DG21 display, 640x480. Active, color, single scan.
+ */
+static vidinfo_t panel_info = {
+    640, 480, 171, 129, CFG_HIGH, CFG_HIGH, CFG_LOW, CFG_LOW, CFG_LOW,
+    3, 0, 0, 1, 1, 160, 3, 0, 48
+		/* wbl, vpw, lcdac, wbf */
+};
+#endif /* CONFIG_SHARP_LQ084V1DG21 */
+
 /*----------------------------------------------------------------------*/
 
 #ifdef CONFIG_HLD1045
@@ -242,11 +285,11 @@ static vidinfo_t panel_info = {
  * Emerging Display Technologies 320x240. Passive, monochrome, single scan.
  */
 #define LCD_BPP		LCD_MONOCHROME
-#define LCD_DF		20
+#define LCD_DF		10
 
 static vidinfo_t panel_info = {
     320, 240, 0, 0, CFG_HIGH, CFG_HIGH, CFG_HIGH, CFG_HIGH, CFG_LOW,
-    LCD_BPP,  0, 0, 0, 0, 0, 15, 0, 0
+    LCD_BPP,  0, 0, 0, 0, 33, 0, 0, 0
 };
 #endif
 /*----------------------------------------------------------------------*/
@@ -277,7 +320,7 @@ static int lcd_line_length;
 static int lcd_color_fg;
 static int lcd_color_bg;
 
-static char lcd_is_enabled = 0;		/* Indicate that LCD is enabled	*/
+char lcd_is_enabled = 0;		/* Indicate that LCD is enabled	*/
 
 /*
  * Frame buffer memory information
@@ -365,7 +408,8 @@ static void	lcd_drawchars  (ushort x, ushort y, uchar *str, int count);
 static inline void lcd_puts_xy (ushort x, ushort y, uchar *s);
 static inline void lcd_putc_xy (ushort x, ushort y, uchar  c);
 
-static int	lcd_init (void *lcdbase);
+int	lcd_init (void *lcdbase);
+
 static void	lcd_ctrl_init (void *lcdbase);
 static void	lcd_enable (void);
 static void    *lcd_logo (void);
@@ -380,8 +424,11 @@ static int	lcd_getbgcolor (void);
 static void	lcd_setfgcolor (int color);
 static void	lcd_setbgcolor (int color);
 
+#if defined(CONFIG_RBC823)
+void	lcd_disable (void);
+#endif
+
 #ifdef	NOT_USED_SO_FAR
-static void	lcd_disable (void);
 static void	lcd_getcolreg (ushort regno,
 				ushort *red, ushort *green, ushort *blue);
 static int	lcd_getfgcolor (void);
@@ -645,7 +692,7 @@ int drv_lcd_init (void)
 
 /*----------------------------------------------------------------------*/
 
-static int lcd_init (void *lcdbase)
+int lcd_init (void *lcdbase)
 {
 	/* Initialize the lcd controller */
 	debug ("[LCD] Initializing LCD frambuffer at %p\n", lcdbase);
@@ -748,6 +795,7 @@ static void lcd_ctrl_init (void *lcdbase)
 	volatile lcd823_t *lcdp = &immr->im_lcd;
 
 	uint lccrtmp;
+	uint lchcr_hpc_tmp;
 
 	/* Initialize the LCD control register according to the LCD
 	 * parameters defined.  We do everything here but enable
@@ -778,6 +826,9 @@ static void lcd_ctrl_init (void *lcdbase)
 
 	/* Initialize LCD controller bus priorities.
 	 */
+#ifdef CONFIG_RBC823
+	immr->im_siu_conf.sc_sdcr = (immr->im_siu_conf.sc_sdcr & ~0x0f) | 1;	/* RAID = 01, LAID = 00 */
+#else
 	immr->im_siu_conf.sc_sdcr &= ~0x0f;	/* RAID = LAID = 0 */
 
 	/* set SHFT/CLOCK division factor 4
@@ -791,7 +842,21 @@ static void lcd_ctrl_init (void *lcdbase)
 	immr->im_clkrst.car_sccr &= ~0x1F;
 	immr->im_clkrst.car_sccr |= LCD_DF;	/* was 8 */
 
-#ifndef CONFIG_EDT32F10
+#endif /* CONFIG_RBC823 */
+
+#if defined(CONFIG_RBC823)
+	/* Enable LCD on port D.
+	 */
+	immr->im_ioport.iop_pddat &= 0x0300;
+	immr->im_ioport.iop_pdpar |= 0x1CFF;
+	immr->im_ioport.iop_pddir |= 0x1CFF;
+
+	/* Configure LCD_ON, VEE_ON, CCFL_ON on port B.
+	 */
+	immr->im_cpm.cp_pbdat &= ~0x00005001;
+	immr->im_cpm.cp_pbpar &= ~0x00005001;
+	immr->im_cpm.cp_pbdir |=  0x00005001;
+#elif !defined(CONFIG_EDT32F10)
 	/* Enable LCD on port D.
 	 */
 	immr->im_ioport.iop_pdpar |= 0x1FFF;
@@ -820,18 +885,22 @@ static void lcd_ctrl_init (void *lcdbase)
 
 	/* MORE HACKS...This must be updated according to 823 manual
 	 * for different panels.
+	 * Udi Finkelstein - done - see below:
+	 * Note: You better not try unsupported combinations such as
+	 * 4-bit wide passive dual scan LCD at 4/8 Bit color.
 	 */
-#ifndef CONFIG_EDT32F10
+	lchcr_hpc_tmp =
+	       	(panel_info.vl_col *
+		 (panel_info.vl_tft ? 8 :
+			(((2 - panel_info.vl_lbw) << /* 4 bit=2, 8-bit = 1 */
+			 /* use << to mult by: single scan = 1, dual scan = 2 */
+			  panel_info.vl_splt) *
+			 (panel_info.vl_bpix | 1)))) >> 3; /* 2/4 BPP = 1, 8/16 BPP = 3 */
+
 	lcdp->lcd_lchcr = LCHCR_BO |
 			  LCDBIT (LCHCR_AT_BIT, 4) |
-			  LCDBIT (LCHCR_HPC_BIT, panel_info.vl_col) |
+			  LCDBIT (LCHCR_HPC_BIT, lchcr_hpc_tmp) |
 			  panel_info.vl_wbl;
-#else
-	lcdp->lcd_lchcr = LCHCR_BO |
-			  LCDBIT (LCHCR_AT_BIT, 4) |
-			  LCDBIT (LCHCR_HPC_BIT, panel_info.vl_col/4) |
-			  panel_info.vl_wbl;
-#endif
 
 	lcdp->lcd_lcvcr = LCDBIT (LCVCR_VPW_BIT, panel_info.vl_vpw) |
 			  LCDBIT (LCVCR_LCD_AC_BIT, panel_info.vl_lcdac) |
@@ -945,28 +1014,55 @@ static void lcd_enable (void)
 	volatile lcd823_t *lcdp = &immr->im_lcd;
 
 	/* Enable the LCD panel */
+#ifndef CONFIG_RBC823
 	immr->im_siu_conf.sc_sdcr |= (1 << (31 - 25));		/* LAM = 1 */
+#endif
 	lcdp->lcd_lccr |= LCCR_PON;
+
+#ifdef CONFIG_V37
+	/* Turn on display backlight */
+	immr->im_cpm.cp_pbpar |= 0x00008000;
+	immr->im_cpm.cp_pbdir |= 0x00008000;
+#elif defined(CONFIG_RBC823)
+	/* Turn on display backlight */
+	immr->im_cpm.cp_pbdat |= 0x00004000;
+#endif
+
 #if defined(CONFIG_LWMON)
     {	uchar c = pic_read (0x60);
+#if defined(CONFIG_LCD) && defined(CONFIG_LWMON) && (CONFIG_POST & CFG_POST_SYSMON)
+    	c |= 0x04;	/* Chip Enable LCD */
+#else
     	c |= 0x07;	/* Power on CCFL, Enable CCFL, Chip Enable LCD */
+#endif
 	pic_write (0x60, c);
     }
-#elif defined(CONFIG_R360MPI)
-    {
-	extern void r360_pwm_write (uchar reg, uchar val);
-
-	r360_pwm_write(8, 1);
-	r360_pwm_write(0, 4);
-	r360_pwm_write(1, 6);
-    }
 #endif /* CONFIG_LWMON */
+
+#if defined(CONFIG_R360MPI)
+    {
+	extern void r360_i2c_lcd_write (uchar data0, uchar data1);
+
+	r360_i2c_lcd_write(0x10, 0x01);
+	r360_i2c_lcd_write(0x20, 0x01);
+	r360_i2c_lcd_write(0x3F, 0xFF);
+	r360_i2c_lcd_write(0x47, 0xFF);
+    }
+#endif /* CONFIG_R360MPI */
+#ifdef CONFIG_RBC823
+	udelay(200000); /* wait 200ms */
+	/* Turn VEE_ON first */
+	immr->im_cpm.cp_pbdat |= 0x00000001;
+	udelay(200000); /* wait 200ms */
+	/* Now turn on LCD_ON */
+	immr->im_cpm.cp_pbdat |= 0x00001000;
+#endif
 }
 
 /*----------------------------------------------------------------------*/
 
-#ifdef	NOT_USED_SO_FAR
-static void lcd_disable (void)
+#if defined (CONFIG_RBC823)
+void lcd_disable (void)
 {
 	volatile immap_t *immr = (immap_t *) CFG_IMMR;
 	volatile lcd823_t *lcdp = &immr->im_lcd;
@@ -978,17 +1074,24 @@ static void lcd_disable (void)
     }
 #elif defined(CONFIG_R360MPI)
     {
-	extern void r360_pwm_write (uchar reg, uchar val);
+	extern void r360_i2c_lcd_write (uchar data0, uchar data1);
 
-	r360_pwm_write(0, 0);
-	r360_pwm_write(1, 0);
+	r360_i2c_lcd_write(0x10, 0x00);
+	r360_i2c_lcd_write(0x20, 0x00);
+	r360_i2c_lcd_write(0x30, 0x00);
+	r360_i2c_lcd_write(0x40, 0x00);
     }
 #endif /* CONFIG_LWMON */
 	/* Disable the LCD panel */
 	lcdp->lcd_lccr &= ~LCCR_PON;
+#ifdef CONFIG_RBC823
+	/* Turn off display backlight, VEE and LCD_ON */
+	immr->im_cpm.cp_pbdat &= ~0x00005001;
+#else
 	immr->im_siu_conf.sc_sdcr &= ~(1 << (31 - 25));	/* LAM = 0 */
+#endif /* CONFIG_RBC823 */
 }
-#endif	/* NOT_USED_SO_FAR */
+#endif	/* NOT_USED_SO_FAR || CONFIG_RBC823 */
 
 
 /************************************************************************/
@@ -1014,6 +1117,8 @@ static void bitmap_plot (int x, int y)
 	/* Leave room for default color map */
 	cmap = (ushort *)&(cp->lcd_cmap[BMP_LOGO_OFFSET*sizeof(ushort)]);
 
+	WATCHDOG_RESET();
+
 	/* Set color map */
 	for (i=0; i<(sizeof(bmp_logo_palette)/(sizeof(ushort))); ++i) {
 		ushort colreg = bmp_logo_palette[i];
@@ -1026,13 +1131,116 @@ static void bitmap_plot (int x, int y)
 	bmap = &bmp_logo_bitmap[0];
 	fb   = (char *)(lcd_base + y * lcd_line_length + x);
 
+	WATCHDOG_RESET();
+
 	for (i=0; i<BMP_LOGO_HEIGHT; ++i) {
 		memcpy (fb, bmap, BMP_LOGO_WIDTH);
 		bmap += BMP_LOGO_WIDTH;
 		fb   += panel_info.vl_col;
 	}
+
+	WATCHDOG_RESET();
 }
 #endif /* CONFIG_LCD_LOGO */
+
+#if (CONFIG_COMMANDS & CFG_CMD_BMP)
+/*
+ * Display the BMP file located at address bmp_image.
+ * Only uncompressed
+ */
+int lcd_display_bitmap(ulong bmp_image)
+{
+	volatile immap_t *immr = (immap_t *) CFG_IMMR;
+	volatile cpm8xx_t *cp = &(immr->im_cpm);
+	ushort *cmap;
+	ushort i, j;
+	uchar *fb;
+	bmp_image_t *bmp=(bmp_image_t *)bmp_image;
+	uchar *bmap;
+	ushort padded_line;
+	unsigned long width, height;
+	unsigned colors,bpix;
+	unsigned long compression;
+
+	WATCHDOG_RESET();
+
+	if (!((bmp->header.signature[0]=='B') &&
+	      (bmp->header.signature[1]=='M'))) {
+		printf ("Error: no valid bmp image at %lx\n", bmp_image);
+		return 1;
+	}
+
+	width = le32_to_cpu (bmp->header.width);
+	height = le32_to_cpu (bmp->header.height);
+	colors = 1<<le16_to_cpu (bmp->header.bit_count);
+	compression = le32_to_cpu (bmp->header.compression);
+
+	bpix = NBITS(panel_info.vl_bpix);
+
+	if ((bpix != 1) && (bpix != 8)) {
+		printf ("Error: %d bit/pixel mode not supported by U-Boot\n",
+			bpix);
+		return 1;
+	}
+
+	if (bpix != le16_to_cpu(bmp->header.bit_count)) {
+		printf ("Error: %d bit/pixel mode, but BMP has %d bit/pixel\n",
+			bpix,
+			le16_to_cpu(bmp->header.bit_count));
+		return 1;
+	}
+
+	if (compression!=BMP_BI_RGB) {
+		printf ("Error: compression type %ld not supported\n",
+			compression);
+		return 1;
+	}
+
+	debug ("Display-bmp: %d x %d  with %d colors\n",
+	       width, height, colors);
+
+	if (bpix==8) {
+		/* Fill the entire color map */
+		cmap = (ushort *)&(cp->lcd_cmap[255*sizeof(ushort)]);
+
+		/* Set color map */
+		for (i = 0; i < colors; ++i) {
+			bmp_color_table_entry_t cte = bmp->color_table[i];
+			ushort colreg =
+				((cte.red>>4)   << 8) |
+				((cte.green>>4) << 4) |
+				(cte.blue>>4) ;
+#ifdef	CFG_INVERT_COLORS
+			colreg ^= 0xFFF;
+#endif
+			*cmap-- = colreg;
+		}
+
+		WATCHDOG_RESET();
+	}
+
+	padded_line = (width&0x3) ? ((width&~0x3)+4) : (width);
+	if (width>panel_info.vl_col)
+		width = panel_info.vl_col;
+	if (height>panel_info.vl_row)
+		height = panel_info.vl_row;
+
+	bmap = (uchar *)bmp + le32_to_cpu (bmp->header.data_offset);
+	fb   = (uchar *)
+		(lcd_base +
+		 (((height>=panel_info.vl_row) ? panel_info.vl_row : height)-1)
+		 * lcd_line_length);
+	for (i = 0; i < height; ++i) {
+		WATCHDOG_RESET();
+		for (j = 0; j < width ; j++)
+			*(fb++)=255-*(bmap++);
+		bmap += (width - padded_line);
+		fb   -= (width + lcd_line_length);
+	}
+
+	return (0);
+}
+#endif /* (CONFIG_COMMANDS & CFG_CMD_BMP) */
 
 /*----------------------------------------------------------------------*/
 
@@ -1045,6 +1253,19 @@ static void *lcd_logo (void)
 	char temp[32];
 #endif /* LCD_INFO */
 
+#ifdef CONFIG_SPLASH_SCREEN
+	char *s;
+	ulong addr;
+
+	if ((s = getenv("splashimage")) != NULL) {
+		addr = simple_strtoul(s, NULL, 16);
+
+		if (lcd_display_bitmap (addr) == 0) {
+			return ((void *)lcd_base);
+		}
+	}
+#endif	/* CONFIG_SPLASH_SCREEN */
+
 #ifdef CONFIG_LCD_LOGO
 	bitmap_plot (0, 0);
 #endif /* CONFIG_LCD_LOGO */
@@ -1054,7 +1275,7 @@ static void *lcd_logo (void)
 	sprintf (info, "%s (%s - %s) ", U_BOOT_VERSION, __DATE__, __TIME__);
 	lcd_drawchars (LCD_INFO_X, LCD_INFO_Y, info, strlen(info));
 
-	sprintf (info, "(C) 2002 DENX Software Engineering");
+	sprintf (info, "(C) 2003 DENX Software Engineering");
 	lcd_drawchars (LCD_INFO_X, LCD_INFO_Y + VIDEO_FONT_HEIGHT,
 					info, strlen(info));
 

@@ -31,6 +31,10 @@ SECTIONS
   {
     *(.resetvec)
   } = 0xffff
+  .bootpg 0xFFFFF000 :
+  {
+    board/mpl/mip405/init.o	(.bootpg)
+  } = 0xffff
 
   /* Read-only sections, merged into text segment: */
   . = + SIZEOF_HEADERS;
@@ -88,6 +92,7 @@ SECTIONS
   {
     *(.rodata)
     *(.rodata1)
+    *(.rodata.str1.4)
   }
   .fini      : { *(.fini)    } =0
   .ctors     : { *(.ctors)   }

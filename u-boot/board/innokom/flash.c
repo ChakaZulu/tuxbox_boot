@@ -9,6 +9,10 @@
  * (C) Copyright 2002
  * Robert Schwebel, Pengutronix, <r.schwebel@pengutronix.de>
  *
+ * (C) Copyright 2002
+ * Auerswald GmbH & Co KG, Germany 
+ * Kai-Uwe Bloem <kai-uwe.bloem@auerswald.de>
+ *
  * See file CREDITS for list of people who contributed to this
  * project.
  *

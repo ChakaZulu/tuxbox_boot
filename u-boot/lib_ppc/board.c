@@ -30,6 +30,9 @@
 #ifdef CONFIG_8xx
 #include <mpc8xx.h>
 #endif
+#ifdef CONFIG_5xx
+#include <mpc5xx.h>
+#endif
 #if (CONFIG_COMMANDS & CFG_CMD_IDE)
 #include <ide.h>
 #endif
@@ -47,7 +50,9 @@
 #include <cmd_bedbug.h>
 #endif
 #ifdef CFG_ALLOC_DPRAM
+#if !defined(CONFIG_8260)
 #include <commproc.h>
+#endif
 #endif
 #include <version.h>
 #if defined(CONFIG_BAB7xx)
@@ -68,6 +73,9 @@ void doc_init (void);
     defined(CONFIG_SOFT_I2C)
 #include <i2c.h>
 #endif
+#if (CONFIG_COMMANDS & CFG_CMD_NAND)
+void nand_init (void);
+#endif
 
 static char *failed = "*** failed ***\n";
 
@@ -84,6 +92,11 @@ extern flash_info_t flash_info[];
 #else
 #define	TOTAL_MALLOC_LEN	CFG_MALLOC_LEN
 #endif
+
+extern ulong __init_end;
+extern ulong _end;
+
+ulong monitor_flash_len;
 
 /*
  * Begin and End of memory area for malloc(), and current "brk"
@@ -160,12 +173,15 @@ static void syscalls_init (void)
 	*addr++ |= NR_SYSCALLS >> 16;
 	*addr++ |= NR_SYSCALLS & 0xFFFF;
 
+#ifndef CONFIG_5XX
 	flush_cache (0x0C00, 0x10);
-
+#endif
 	/* Initialize syscalls stack pointer                                 */
 	addr = (ulong *) 0xCFC;
 	*addr = (ulong)addr;
+#ifndef CONFIG_5xx
 	flush_cache ((ulong)addr, 0x10);
+#endif
 }
 
 /*
@@ -199,7 +215,6 @@ static int init_baudrate (void)
 	gd->baudrate = (i > 0)
 			? (int) simple_strtoul (tmp, NULL, 10)
 			: CONFIG_BAUDRATE;
-
 	return (0);
 }
 
@@ -272,7 +287,9 @@ init_fnc_t *init_sequence[] = {
 	get_clocks,		/* get CPU and bus clocks (etc.) */
 	init_timebase,
 #ifdef CFG_ALLOC_DPRAM
+#if !defined(CONFIG_8260)
 	dpram_init,
+#endif
 #endif
 #if defined(CONFIG_BOARD_POSTCLK_INIT)
 	board_postclk_init,
@@ -302,6 +319,9 @@ init_fnc_t *init_sequence[] = {
 #endif
 #if defined(CONFIG_DTT)		/* Digital Thermometers and Thermostats */
 	dtt_init,
+#endif
+#ifdef CONFIG_POST
+	post_init_f,
 #endif
 	INIT_FUNC_WATCHDOG_RESET
 	init_func_ram,
@@ -368,16 +388,7 @@ void board_init_f (ulong bootflag)
 	 *  - monitor code
 	 *  - board info struct
 	 */
-	len = get_endaddr () - CFG_MONITOR_BASE;
-
-	if (len > CFG_MONITOR_LEN) {
-		printf ("*** U-Boot size %ld > reserved memory (%d)\n",
-				len, CFG_MONITOR_LEN);
-		hang ();
-	}
-
-	if (CFG_MONITOR_LEN > len)
-		len = CFG_MONITOR_LEN;
+	len = (ulong)&_end - CFG_MONITOR_BASE;
 
 #ifndef	CONFIG_VERY_BIG_RAM
 	addr = CFG_SDRAM_BASE + gd->ram_size;
@@ -496,7 +507,7 @@ void board_init_f (ulong bootflag)
 	bd->bi_sramsize  = 0;		/* FIXME */ /* size  of  SRAM memory      */
 #endif
 
-#if defined(CONFIG_8xx) || defined(CONFIG_8260)
+#if defined(CONFIG_8xx) || defined(CONFIG_8260) || defined(CONFIG_5xx)
 	bd->bi_immr_base = CFG_IMMR;	/* base  of IMMR register     */
 #endif
 
@@ -520,7 +531,7 @@ void board_init_f (ulong bootflag)
 
 	bd->bi_procfreq = gd->cpu_clk;	/* Processor Speed, In Hz */
 	bd->bi_plb_busfreq = gd->bus_clk;
-#ifdef CONFIG_405GP
+#if defined(CONFIG_405GP) || defined(CONFIG_405EP)
 	bd->bi_pci_busfreq = get_PCI_freq ();
 #endif
 #endif
@@ -585,6 +596,8 @@ void board_init_r (gd_t *id, ulong dest_addr)
 	WATCHDOG_RESET ();
 
 	gd->reloc_off = dest_addr - CFG_MONITOR_BASE;
+	
+	monitor_flash_len = (ulong)&__init_end - dest_addr;
 
 	/*
 	 * We have to relocate the command table manually
@@ -690,7 +703,7 @@ void board_init_r (gd_t *id, ulong dest_addr)
 #if defined(CONFIG_PCU_E) || defined(CONFIG_OXC)
 	bd->bi_flashoffset = 0;
 #elif CFG_MONITOR_BASE == CFG_FLASH_BASE
-	bd->bi_flashoffset = CFG_MONITOR_LEN;	/* reserved area for startup monitor  */
+	bd->bi_flashoffset = monitor_flash_len;	/* reserved area for startup monitor  */
 #else
 	bd->bi_flashoffset = 0;
 #endif
@@ -747,7 +760,7 @@ void board_init_r (gd_t *id, ulong dest_addr)
 		bd->bi_ethspeed = 0xFFFF;
 #endif
 
-#if defined(CONFIG_NX823)
+#ifdef CONFIG_NX823
 	load_sernum_ethaddr ();
 #endif
 
@@ -807,7 +820,6 @@ void board_init_r (gd_t *id, ulong dest_addr)
     defined(CONFIG_COGENT)	|| \
     defined(CONFIG_CPCI405)	|| \
     defined(CONFIG_EVB64260)	|| \
-    defined(CONFIG_HYMOD)	|| \
     defined(CONFIG_KUP4K)	|| \
     defined(CONFIG_LWMON)	|| \
     defined(CONFIG_PCU_E)	|| \
@@ -831,6 +843,7 @@ void board_init_r (gd_t *id, ulong dest_addr)
     defined(CONFIG_IVMS8)	|| \
     defined(CONFIG_LWMON)	|| \
     defined(CONFIG_MPC8260ADS)	|| \
+    defined(CONFIG_MPC8266ADS)	|| \
     defined(CONFIG_PCU_E)	|| \
     defined(CONFIG_RPXSUPER)	|| \
     defined(CONFIG_SPD823TS)	)
@@ -896,6 +909,11 @@ void board_init_r (gd_t *id, ulong dest_addr)
 	WATCHDOG_RESET ();
 	puts ("DOC:   ");
 	doc_init ();
+#endif
+
+#if (CONFIG_COMMANDS & CFG_CMD_NAND)
+	WATCHDOG_RESET ();
+	nand_init();		/* go init the NAND */
 #endif
 
 #if (CONFIG_COMMANDS & CFG_CMD_NET) && defined(CONFIG_NET_MULTI)
@@ -971,6 +989,13 @@ void board_init_r (gd_t *id, ulong dest_addr)
 	}
 #endif
 
+#ifdef CONFIG_MODEM_SUPPORT
+ {
+	 extern int do_mdm_init;
+	 do_mdm_init = gd->do_mdm_init;
+ }
+#endif
+
 	/* Initialization complete - start the monitor */
 
 	/* main_loop() can return to retry autoboot, if so just run it again. */
@@ -987,6 +1012,104 @@ void hang (void)
 	puts ("### ERROR ### Please RESET the board ###\n");
 	for (;;);
 }
+
+#ifdef CONFIG_MODEM_SUPPORT
+/* called from main loop (common/main.c) */
+extern void  dbg(const char *fmt, ...);
+int mdm_init (void)
+{
+	char env_str[16];
+	char *init_str;
+	int i;
+	extern char console_buffer[];
+	static inline void mdm_readline(char *buf, int bufsiz);
+	extern void enable_putc(void);
+	extern int hwflow_onoff(int);
+
+	enable_putc(); /* enable serial_putc() */
+
+#ifdef CONFIG_HWFLOW
+	init_str = getenv("mdm_flow_control");
+	if (init_str && (strcmp(init_str, "rts/cts") == 0))
+		hwflow_onoff (1);
+	else
+		hwflow_onoff(-1);
+#endif
+
+	for (i = 1;;i++) {
+		sprintf(env_str, "mdm_init%d", i);
+		if ((init_str = getenv(env_str)) != NULL) {
+			serial_puts(init_str);
+			serial_puts("\n");
+			for(;;) {
+				mdm_readline(console_buffer, CFG_CBSIZE);
+				dbg("ini%d: [%s]", i, console_buffer);
+
+				if ((strcmp(console_buffer, "OK") == 0) ||
+					(strcmp(console_buffer, "ERROR") == 0)) {
+					dbg("ini%d: cmd done", i);
+					break;
+				} else /* in case we are originating call ... */
+					if (strncmp(console_buffer, "CONNECT", 7) == 0) {
+						dbg("ini%d: connect", i);
+						return 0;
+					}
+			}
+		} else
+			break; /* no init string - stop modem init */
+
+		udelay(100000);
+	}
+
+	udelay(100000);
+
+	/* final stage - wait for connect */
+	for(;i > 1;) { /* if 'i' > 1 - wait for connection
+				  message from modem */
+		mdm_readline(console_buffer, CFG_CBSIZE);
+		dbg("ini_f: [%s]", console_buffer);
+		if (strncmp(console_buffer, "CONNECT", 7) == 0) {
+			dbg("ini_f: connected");
+			return 0;
+		}
+	}
+
+	return 0;
+}
+
+/* 'inline' - We have to do it fast */
+static inline void mdm_readline(char *buf, int bufsiz)
+{
+	char c;
+	char *p;
+	int n;
+
+	n = 0;
+	p = buf;
+	for(;;) {
+		c = serial_getc();
+
+		/*		dbg("(%c)", c); */
+
+		switch(c) {
+		case '\r':
+			break;
+		case '\n':
+			*p = '\0';
+			return;
+
+		default:
+			if(n++ > bufsiz) {
+				*p = '\0';
+				return; /* sanity check */
+			}
+			*p = c;
+			p++;
+			break;
+		}
+	}
+}
+#endif
 
 #if 0 /* We could use plain global data, but the resulting code is bigger */
 /*

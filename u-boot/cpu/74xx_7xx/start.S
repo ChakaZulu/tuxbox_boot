@@ -68,8 +68,9 @@
 	GOT_ENTRY(_end_of_vectors)
 	GOT_ENTRY(transfer_to_handler)
 
+	GOT_ENTRY(__init_end)
 	GOT_ENTRY(_end)
-	GOT_ENTRY(.bss)
+	GOT_ENTRY(__bss_start)
 	END_GOT
 
 /*
@@ -378,11 +379,23 @@ invalidate_bats:
 	mtspr	IBAT1U, r0
 	mtspr	IBAT2U, r0
 	mtspr	IBAT3U, r0
+#ifdef CONFIG_750FX
+	mtspr   IBAT4U, r0
+	mtspr   IBAT5U, r0
+	mtspr   IBAT6U, r0
+	mtspr   IBAT7U, r0
+#endif
 	isync
 	mtspr	DBAT0U, r0
 	mtspr	DBAT1U, r0
 	mtspr	DBAT2U, r0
 	mtspr	DBAT3U, r0
+#ifdef CONFIG_750FX
+        mtspr   DBAT4U, r0
+        mtspr   DBAT5U, r0
+        mtspr   DBAT6U, r0
+        mtspr   DBAT7U, r0
+#endif
 	isync
 	sync
 	blr
@@ -463,6 +476,80 @@ setup_bats:
 	mtspr	DBAT3L, r4
 	mtspr	DBAT3U, r3
 	isync
+
+#ifdef CONFIG_750FX
+	/* IBAT 4 */
+        addis   r4, r0, CFG_IBAT4L@h
+        ori     r4, r4, CFG_IBAT4L@l
+        addis   r3, r0, CFG_IBAT4U@h
+        ori     r3, r3, CFG_IBAT4U@l
+        mtspr   IBAT4L, r4
+        mtspr   IBAT4U, r3
+        isync
+
+	/* DBAT 4 */
+        addis   r4, r0, CFG_DBAT4L@h
+        ori     r4, r4, CFG_DBAT4L@l
+        addis   r3, r0, CFG_DBAT4U@h
+        ori     r3, r3, CFG_DBAT4U@l
+        mtspr   DBAT4L, r4
+        mtspr   DBAT4U, r3
+        isync
+
+        /* IBAT 5 */
+        addis   r4, r0, CFG_IBAT5L@h
+        ori     r4, r4, CFG_IBAT5L@l
+        addis   r3, r0, CFG_IBAT5U@h
+        ori     r3, r3, CFG_IBAT5U@l
+        mtspr   IBAT5L, r4
+        mtspr   IBAT5U, r3
+        isync
+
+	/* DBAT 5 */
+        addis   r4, r0, CFG_DBAT5L@h
+        ori     r4, r4, CFG_DBAT5L@l
+        addis   r3, r0, CFG_DBAT5U@h
+        ori     r3, r3, CFG_DBAT5U@l
+        mtspr   DBAT5L, r4
+        mtspr   DBAT5U, r3
+        isync
+
+        /* IBAT 6 */
+        addis   r4, r0, CFG_IBAT6L@h
+        ori     r4, r4, CFG_IBAT6L@l
+        addis   r3, r0, CFG_IBAT6U@h
+        ori     r3, r3, CFG_IBAT6U@l
+        mtspr   IBAT6L, r4
+        mtspr   IBAT6U, r3
+        isync
+
+	/* DBAT 6 */
+        addis   r4, r0, CFG_DBAT6L@h
+        ori     r4, r4, CFG_DBAT6L@l
+        addis   r3, r0, CFG_DBAT6U@h
+        ori     r3, r3, CFG_DBAT6U@l
+        mtspr   DBAT6L, r4
+        mtspr   DBAT6U, r3
+        isync
+
+        /* IBAT 7 */
+        addis   r4, r0, CFG_IBAT7L@h
+        ori     r4, r4, CFG_IBAT7L@l
+        addis   r3, r0, CFG_IBAT7U@h
+        ori     r3, r3, CFG_IBAT7U@l
+        mtspr   IBAT7L, r4
+        mtspr   IBAT7U, r3
+        isync
+
+	/* DBAT 7 */
+        addis   r4, r0, CFG_DBAT7L@h
+        ori     r4, r4, CFG_DBAT7L@l
+        addis   r3, r0, CFG_DBAT7U@h
+        ori     r3, r3, CFG_DBAT7U@l
+        mtspr   DBAT7L, r4
+        mtspr   DBAT7U, r3
+        isync
+#endif
 
 	/* bats are done, now invalidate the TLBs */
 
@@ -590,8 +677,8 @@ relocate_code:
 	mr	r3,  r5				/* Destination Address	*/
 	lis	r4, CFG_MONITOR_BASE@h		/* Source      Address	*/
 	ori	r4, r4, CFG_MONITOR_BASE@l
-	lis	r5, CFG_MONITOR_LEN@h		/* Length in Bytes	*/
-	ori	r5, r5, CFG_MONITOR_LEN@l
+	lwz	r5, GOT(__init_end)
+	sub	r5, r5, r4
 	li	r6, CFG_CACHELINE_SIZE		/* Cache Line Size	*/
 
 	/*
@@ -617,8 +704,8 @@ relocate_code:
 	mr	r3, r10				/* Destination Address	*/
 	lis	r4, CFG_MONITOR_BASE@h		/* Source      Address	*/
 	ori	r4, r4, CFG_MONITOR_BASE@l
-	lis	r5, CFG_MONITOR_LEN@h		/* Length in Bytes	*/
-	ori	r5, r5, CFG_MONITOR_LEN@l
+	lwz	r5, GOT(__init_end)
+	sub	r5, r5, r4
 	li	r6, CFG_CACHELINE_SIZE		/* Cache Line Size	*/
 #else
 	cmplw	cr1,r3,r4
@@ -716,7 +803,7 @@ in_ram:
 	/*
 	 * Now clear BSS segment
 	 */
-	lwz	r3,GOT(.bss)
+	lwz	r3,GOT(__bss_start)
 	lwz	r4,GOT(_end)
 
 	cmplw	0, r3, r4
@@ -738,12 +825,6 @@ in_ram:
 	/* not reached - end relocate_code */
 /*-----------------------------------------------------------------------*/
 
-	/* Problems accessing "end" in C, so do it here */
-	.globl	get_endaddr
-get_endaddr:
-	lwz	r3,GOT(_end)
-	blr
-
 	/*
 	 * Copy exception vector code to low memory
 	 *
@@ -755,7 +836,7 @@ trap_init:
 	lwz	r7, GOT(_start)
 	lwz	r8, GOT(_end_of_vectors)
 
-	rlwinm	r9, r7, 0, 18, 31	/* _start & 0x3FFF	*/
+	li	r9, 0x100		/* reset vector always at 0x100 */
 
 	cmplw	0, r7, r8
 	bgelr				/* return if r7>=r8 - just in case */

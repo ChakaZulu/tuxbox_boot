@@ -232,6 +232,20 @@ void printf (const char *fmt, ...)
 	puts (printbuffer);
 }
 
+void vprintf (const char *fmt, va_list args)
+{
+	uint i;
+	char printbuffer[CFG_PBSIZE];
+
+	/* For this to work, printbuffer must be larger than
+	 * anything we ever want to print.
+	 */
+	i = vsprintf (printbuffer, fmt, args);
+
+	/* Print the string */
+	puts (printbuffer);
+}
+
 /* test if ctrl-c was pressed */
 static int ctrlc_disabled = 0;	/* see disable_ctrl() */
 static int ctrlc_was_pressed = 0;
@@ -355,7 +369,7 @@ int console_init_f (void)
 	return (0);
 }
 
-#ifdef CFG_CONSOLE_IS_IN_ENV
+#if defined(CFG_CONSOLE_IS_IN_ENV) || defined(CONFIG_SPLASH_SCREEN)
 /* search a device */
 device_t *search_device (int flags, char *name)
 {
@@ -374,7 +388,7 @@ device_t *search_device (int flags, char *name)
 	}
 	return dev;
 }
-#endif /* CFG_CONSOLE_IS_IN_ENV */
+#endif /* CFG_CONSOLE_IS_IN_ENV || CONFIG_SPLASH_SCREEN */
 
 #ifdef CFG_CONSOLE_IS_IN_ENV
 /* Called after the relocation - use desired console functions */
@@ -469,6 +483,11 @@ int console_init_r (void)
 	device_t *inputdev = NULL, *outputdev = NULL;
 	int i, items = ListNumItems (devlist);
 
+#ifdef CONFIG_SPLASH_SCREEN
+	/* suppress all output if splash screen is enabled */
+	outputdev = search_device (DEV_FLAGS_OUTPUT, "nulldev");
+#endif
+
 	/* Scan devices looking for input and output devices */
 	for (i = 1;
 	     (i <= items) && ((inputdev == NULL) || (outputdev == NULL));
@@ -496,7 +515,7 @@ int console_init_r (void)
 	}
 
 #ifndef CFG_CONSOLE_INFO_QUIET
-	/* Print informations */
+	/* Print information */
 	printf ("In:    ");
 	if (stdio_devices[stdin] == NULL) {
 		printf ("No input devices available!\n");

@@ -53,7 +53,7 @@
 #if 0
 #define CONFIG_BOOTDELAY	-1	/* autoboot disabled		*/
 #else
-#define CONFIG_BOOTDELAY	5	/* autoboot after 5 seconds	*/
+#define CONFIG_BOOTDELAY	1	/* autoboot after 5 seconds	*/
 #endif
 
 #undef	CONFIG_BOOTARGS
@@ -80,9 +80,9 @@
 
 #define	CONFIG_WATCHDOG		1	/* watchdog enabled		*/
 
-#define CONFIG_BOOTP_MASK	( CONFIG_BOOTP_DEFAULT | CONFIG_BOOTP_VENDOREX )
+#define	CONFIG_BOOTP_MASK	( CONFIG_BOOTP_DEFAULT | CONFIG_BOOTP_VENDOREX )
 
-#define CONFIG_COMMANDS		( CONFIG_CMD_DFL | CFG_CMD_FS | CFG_CMD_DHCP )
+#define	CONFIG_COMMANDS		( CONFIG_CMD_DFL | CFG_CMD_FS | CFG_CMD_DHCP )
 
 #define	CONFIG_FS		( CFG_FS_CRAMFS | CFG_FS_JFFS2 )
 

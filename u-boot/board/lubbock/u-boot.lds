@@ -31,7 +31,7 @@ SECTIONS
         . = ALIGN(4);
 	.text      :
 	{
-	  cpu/xscale/start.o	(.text)
+	  cpu/pxa/start.o	(.text)
 	  *(.text)
 	}
 
@@ -47,7 +47,9 @@ SECTIONS
 	armboot_end_data = .;
 
         . = ALIGN(4);
+	bss_start = .;
         .bss : { *(.bss) }
+	bss_end = .;
 
 	armboot_end = .;
 }

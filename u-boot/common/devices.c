@@ -37,6 +37,11 @@ list_t devlist = 0;
 device_t *stdio_devices[] = { NULL, NULL, NULL };
 char *stdio_names[MAX_FILES] = { "stdin", "stdout", "stderr" };
 
+#if defined(CONFIG_SPLASH_SCREEN) && !defined(CFG_DEVICE_NULLDEV)
+#define	CFG_DEVICE_NULLDEV	1
+#endif
+
+
 #ifdef CFG_DEVICE_NULLDEV
 void nulldev_putc(const char c)
 {
@@ -155,14 +160,16 @@ int devices_init (void)
 {
 	DECLARE_GLOBAL_DATA_PTR;
 
-	int i;
+#ifndef CONFIG_ARM     /* already relocated for current ARM implementation */
 	ulong relocation_offset = gd->reloc_off;
+	int i;
 
 	/* relocate device name pointers */
 	for (i = 0; i < (sizeof (stdio_names) / sizeof (char *)); ++i) {
 		stdio_names[i] = (char *) (((ulong) stdio_names[i]) +
 						relocation_offset);
 	}
+#endif
 
 	/* Initialize the list */
 	devlist = ListCreate (sizeof (device_t));
@@ -180,8 +187,8 @@ int devices_init (void)
 #if defined(CONFIG_VIDEO) || defined(CONFIG_CFB_CONSOLE)
 	drv_video_init ();
 #endif
-#ifdef CONFIG_WL_4PPM_KEYBOARD
-	drv_wlkbd_init ();
+#ifdef CONFIG_KEYBOARD
+	drv_keyboard_init ();
 #endif
 #ifdef CONFIG_LOGBUFFER
 	drv_logbuff_init ();

@@ -27,18 +27,37 @@
 
 #include <common.h>
 #include <command.h>
+#include <malloc.h>
 #include <devices.h>
+#include <syscall.h>
 #include <version.h>
 #include <net.h>
 
+#if (CONFIG_COMMANDS & CFG_CMD_NAND)
+void nand_init (void);
+#endif
+
+ulong monitor_flash_len;
+
+#ifdef CONFIG_HAS_DATAFLASH
+extern int  AT91F_DataflashInit(void);
+extern void dataflash_print_info(void);
+#endif
+
+#ifndef CONFIG_IDENT_STRING
+#define CONFIG_IDENT_STRING ""
+#endif
 
 const char version_string[] =
-	U_BOOT_VERSION" (" __DATE__ " - " __TIME__ ")";
+	U_BOOT_VERSION" (" __DATE__ " - " __TIME__ ")"CONFIG_IDENT_STRING;
 
 #ifdef CONFIG_DRIVER_CS8900
 extern void cs8900_get_enetaddr (uchar * addr);
 #endif
 
+#ifdef CONFIG_DRIVER_LAN91C96
+#include "../drivers/lan91c96.h"
+#endif
 /*
  * Begin and End of memory area for malloc(), and current "brk"
  */
@@ -46,9 +65,7 @@ static ulong mem_malloc_start = 0;
 static ulong mem_malloc_end = 0;
 static ulong mem_malloc_brk = 0;
 
-#if !defined(CONFIG_MODEM_SUPPORT)
 static
-#endif
 void mem_malloc_init (ulong dest_addr)
 {
 	mem_malloc_start = dest_addr;
@@ -86,8 +103,7 @@ static int init_baudrate (void)
 
 	uchar tmp[64];	/* long enough for environment variables */
 	int i = getenv_r ("baudrate", tmp, sizeof (tmp));
-
-	gd->baudrate = (i > 0)
+	gd->bd->bi_baudrate = gd->baudrate = (i > 0)
 			? (int) simple_strtoul (tmp, NULL, 10)
 			: CONFIG_BAUDRATE;
 
@@ -139,7 +155,6 @@ static void display_flash_config (ulong size)
 }
 
 
-
 /*
  * Breath some life into the board...
  *
@@ -172,10 +187,13 @@ init_fnc_t *init_sequence[] = {
 	env_init,		/* initialize environment */
 	init_baudrate,		/* initialze baudrate settings */
 	serial_init,		/* serial communications setup */
+	console_init_f,		/* stage 1 init of console */
 	display_banner,		/* say that we are here */
 	dram_init,		/* configure available RAM banks */
 	display_dram_config,
-
+#if defined(CONFIG_VCMA9)
+	checkboard,
+#endif
 	NULL,
 };
 
@@ -187,7 +205,8 @@ void start_armboot (void)
 	gd_t gd_data;
 	bd_t bd_data;
 	init_fnc_t **init_fnc_ptr;
-#if defined(CONFIG_VFD) && !defined(CONFIG_MODEM_SUPPORT)
+	char *s;
+#if defined(CONFIG_VFD)
 	unsigned long addr;
 #endif
 
@@ -196,6 +215,8 @@ void start_armboot (void)
 	memset (gd, 0, sizeof (gd_t));
 	gd->bd = &bd_data;
 	memset (gd->bd, 0, sizeof (bd_t));
+
+	monitor_flash_len = _armboot_end_data - _armboot_start;
 
 	for (init_fnc_ptr = init_sequence; *init_fnc_ptr; ++init_fnc_ptr) {
 		if ((*init_fnc_ptr)() != 0) {
@@ -208,10 +229,9 @@ void start_armboot (void)
 	display_flash_config (size);
 
 #ifdef CONFIG_VFD
-#ifndef CONFIG_MODEM_SUPPORT
-#ifndef PAGE_SIZE
-#define PAGE_SIZE 4096
-#endif
+#  ifndef PAGE_SIZE
+#   define PAGE_SIZE 4096
+#  endif
 	/*
 	 * reserve memory for VFD display (always full pages)
 	 */
@@ -223,20 +243,27 @@ void start_armboot (void)
 	addr += size;
 	addr = (addr + (PAGE_SIZE - 1)) & ~(PAGE_SIZE - 1);
 	mem_malloc_init (addr);
-#endif /* CONFIG_MODEM_SUPPORT */
 #else
 	/* armboot_real_end is defined in the board-specific linker script */
 	mem_malloc_init (_armboot_real_end);
 #endif /* CONFIG_VFD */
 
-#ifdef CONFIG_VFD
-#ifndef CONFIG_MODEM_SUPPORT
-	/* must do this after the framebuffer is allocated */
-	drv_vfd_init();
-#endif /* CONFIG_MODEM_SUPPORT */
+#if (CONFIG_COMMANDS & CFG_CMD_NAND)
+	nand_init();		/* go init the NAND */
 #endif
+
+#ifdef CONFIG_HAS_DATAFLASH
+	AT91F_DataflashInit();
+	dataflash_print_info();
+#endif
+
 	/* initialize environment */
 	env_relocate ();
+
+#ifdef CONFIG_VFD
+	/* must do this after the framebuffer is allocated */
+	drv_vfd_init();
+#endif
 
 	/* IP Address */
 	bd_data.bi_ip_addr = getenv_IPaddr ("ipaddr");
@@ -258,6 +285,15 @@ void start_armboot (void)
 		}
 	}
 
+	devices_init ();      /* get the devices list going. */
+
+	/* Syscalls are not implemented for ARM. But allocating
+	 * this allows the console_init routines to work without #ifdefs
+	 */
+	syscall_tbl = (void **) malloc (NR_SYSCALLS * sizeof (void *));
+
+	console_init_r ();	/* fully init console as a device */
+
 #if defined(CONFIG_MISC_INIT_R)
 	/* miscellaneous platform dependent initialisations */
 	misc_init_r ();
@@ -267,10 +303,25 @@ void start_armboot (void)
 	enable_interrupts ();
 
 #ifdef CONFIG_DRIVER_CS8900
-	if (!getenv ("ethaddr")) {
-		cs8900_get_enetaddr (gd->bd->bi_enetaddr);
-	}
+	cs8900_get_enetaddr (gd->bd->bi_enetaddr);
 #endif
+
+#ifdef CONFIG_DRIVER_LAN91C96
+	if (getenv ("ethaddr")) {
+		smc_set_mac_addr(gd->bd->bi_enetaddr);
+	}
+	/* eth_hw_init(); */
+#endif /* CONFIG_DRIVER_LAN91C96 */
+
+	/* Initialize from environment */
+	if ((s = getenv ("loadaddr")) != NULL) {
+		load_addr = simple_strtoul (s, NULL, 16);
+	}
+#if (CONFIG_COMMANDS & CFG_CMD_NET)
+	if ((s = getenv ("bootfile")) != NULL) {
+		copy_filename (BootFile, s, sizeof (BootFile));
+	}
+#endif	/* CFG_CMD_NET */
 
 #ifdef BOARD_POST_INIT
 	board_post_init ();

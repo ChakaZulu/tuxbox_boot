@@ -46,7 +46,8 @@
  * a seperate section.  Note that ENV_CRC is only defined when building
  * U-Boot itself.
  */
-#if (defined(CONFIG_FADS)	|| \
+#if (defined(CONFIG_CMI)	|| \
+     defined(CONFIG_FADS)	|| \
      defined(CONFIG_HYMOD)	|| \
      defined(CONFIG_ICU862)	|| \
      defined(CONFIG_R360MPI)	|| \
@@ -164,10 +165,13 @@ env_t environment __PPCENV__ = {
 #ifdef	CONFIG_CLOCKS_IN_MHZ
 	"clocks_in_mhz=" "1"				"\0"
 #endif
+#if defined(CONFIG_PCI_BOOTDELAY) && (CONFIG_PCI_BOOTDELAY > 0)
+	"pcidelay="	MK_STR(CONFIG_PCI_BOOTDELAY)	"\0"
+#endif
 #ifdef  CONFIG_EXTRA_ENV_SETTINGS
 	CONFIG_EXTRA_ENV_SETTINGS
 #endif
-	"\0"		/* Term. env_t.data with 2 NULLs */
+	"\0"		/* Term. env_t.data with 2 NULs */
 	}
 };
 #ifdef CFG_ENV_ADDR_REDUND

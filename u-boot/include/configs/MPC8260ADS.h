@@ -7,6 +7,10 @@
  * Note: my board is a PILOT rev.
  * Note: the mpc8260ads doesn't come with a proper Ethernet MAC address.
  *
+ * (C) Copyright 2003 Arabella Software Ltd.
+ * Yuli Barcohen <yuli@arabellasw.com>
+ * Added support for SDRAM DIMMs SPD EEPROM, MII.
+ *
  * See file CREDITS for list of people who contributed to this
  * project.
  *
@@ -24,10 +28,6 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA
- */
-
-/*
- * Config header file for a MPC8260ADS Pilot 16M Ram Simm, 8Mbytes Flash Simm
  */
 
 #ifndef __CONFIG_H
@@ -77,34 +77,66 @@
 #undef	CONFIG_ETHER_ON_SCC		/* define if ether on SCC   */
 #define CONFIG_ETHER_ON_FCC		/* define if ether on FCC   */
 #undef	CONFIG_ETHER_NONE		/* define if ether on something else */
-#define CONFIG_ETHER_INDEX	2	/* which channel for ether  */
+
+#ifdef CONFIG_ETHER_ON_FCC
+
+#define CONFIG_ETHER_INDEX	2	/* which SCC/FCC channel for ethernet */
 
 #if (CONFIG_ETHER_INDEX == 2)
-
 /*
  * - Rx-CLK is CLK13
  * - Tx-CLK is CLK14
  * - Select bus for bd/buffers (see 28-13)
- * - Half duplex
+ * - Full duplex
  */
 # define CFG_CMXFCR_MASK	(CMXFCR_FC2 | CMXFCR_RF2CS_MSK | CMXFCR_TF2CS_MSK)
 # define CFG_CMXFCR_VALUE	(CMXFCR_RF2CS_CLK13 | CMXFCR_TF2CS_CLK14)
 # define CFG_CPMFCR_RAMTYPE	0
-# define CFG_FCC_PSMR		0
+# define CFG_FCC_PSMR		(FCC_PSMR_FDE | FCC_PSMR_LPB)
 
 #endif	/* CONFIG_ETHER_INDEX */
+
+#define CONFIG_MII			/* MII PHY management		*/
+#define CONFIG_BITBANGMII		/* bit-bang MII PHY management	*/
+/*
+ * GPIO pins used for bit-banged MII communications
+ */
+#define MDIO_PORT	2		/* Port C */
+#define MDIO_ACTIVE	(iop->pdir |=  0x00400000)
+#define MDIO_TRISTATE	(iop->pdir &= ~0x00400000)
+#define MDIO_READ	((iop->pdat &  0x00400000) != 0)
+
+#define MDIO(bit)	if(bit) iop->pdat |=  0x00400000; \
+			else	iop->pdat &= ~0x00400000
+
+#define MDC(bit)	if(bit) iop->pdat |=  0x00200000; \
+			else	iop->pdat &= ~0x00200000
+
+#define MIIDELAY	udelay(1)
+
+#endif /* CONFIG_ETHER_ON_FCC */
 
 /* other options */
 #define CONFIG_HARD_I2C		1	/* To enable I2C support	*/
 #define CFG_I2C_SPEED		400000	/* I2C speed and slave address	*/
 #define CFG_I2C_SLAVE		0x7F
 
+#if defined(CONFIG_SPD_EEPROM) && !defined(CONFIG_SPD_ADDR)
+#define CONFIG_SPD_ADDR         0x50
+#endif
 
+#ifndef CONFIG_SDRAM_PBI
+#define CONFIG_SDRAM_PBI        1 /* By default, use page-based interleaving */
+#endif
+
+#ifndef CONFIG_8260_CLKIN
 #define CONFIG_8260_CLKIN	66666666	/* in Hz */
+#endif
 #define CONFIG_BAUDRATE		115200
 
 #define CONFIG_COMMANDS		(CFG_CMD_ALL & ~( \
 				 CFG_CMD_BEDBUG | \
+				 CFG_CMD_BMP	| \
 				 CFG_CMD_BSP	| \
 				 CFG_CMD_DATE	| \
 				 CFG_CMD_DOC	| \
@@ -117,7 +149,8 @@
 				 CFG_CMD_IDE	| \
 				 CFG_CMD_JFFS2	| \
 				 CFG_CMD_KGDB	| \
-				 CFG_CMD_MII	| \
+				 CFG_CMD_MMC	| \
+				 CFG_CMD_NAND	| \
 				 CFG_CMD_PCI	| \
 				 CFG_CMD_PCMCIA | \
 				 CFG_CMD_SCSI	| \
@@ -160,9 +193,6 @@
 #define CFG_MEMTEST_START	0x00100000	/* memtest works on */
 #define CFG_MEMTEST_END		0x00f00000	/* 1 ... 15 MB in DRAM	*/
 
-#define CONFIG_CLOCKS_IN_MHZ	1	/* clocks passsed to Linux in MHz */
-					/* for versions < 2.4.5-pre5	*/
-
 #define CFG_LOAD_ADDR		0x100000	/* default load address */
 
 #define CFG_HZ			1000	/* decrementer freq: 1 ms ticks */
@@ -180,7 +210,7 @@
 /* this is stuff came out of the Motorola docs */
 #define CFG_DEFAULT_IMMR	0x0F010000
 
-#define CFG_IMMR		0x04700000
+#define CFG_IMMR		0xF0000000
 #define CFG_BCSR		0x04500000
 #define CFG_SDRAM_BASE		0x00000000
 #define CFG_LSDRAM_BASE		0x04000000
@@ -227,8 +257,8 @@
 
 #ifndef CFG_RAMBOOT
 #  define CFG_ENV_IS_IN_FLASH	1
-#    define CFG_ENV_ADDR	(CFG_MONITOR_BASE + 0x40000)
-#    define CFG_ENV_SECT_SIZE	0x40000
+#  define CFG_ENV_SECT_SIZE	0x40000
+#  define CFG_ENV_ADDR		(CFG_MONITOR_BASE + CFG_ENV_SECT_SIZE)
 #else
 #  define CFG_ENV_IS_IN_NVRAM	1
 #  define CFG_ENV_ADDR		(CFG_MONITOR_BASE - 0x1000)

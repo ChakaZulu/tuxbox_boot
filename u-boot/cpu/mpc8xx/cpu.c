@@ -44,7 +44,7 @@ static char *cpu_warning = "\n         " \
 
 #if ((defined(CONFIG_MPC860) || defined(CONFIG_MPC855)) && \
      !defined(CONFIG_MPC862))
-# ifdef	CONFIG_MPC855
+# ifdef CONFIG_MPC855
 #  define	ID_STR	"PC855"
 # else
 #  define	ID_STR	"PC860"
@@ -418,7 +418,6 @@ int do_reset (cmd_tbl_t * cmdtp, bd_t * bd, int flag, int argc,
 
 	volatile immap_t *immap = (immap_t *) CFG_IMMR;
 	volatile unsigned char dummy;
-
 	immap->im_clkrst.car_plprcr |= PLPRCR_CSR;	/* Checkstop Reset enable */
 
 	/* Interrupts and MMU off */
@@ -427,9 +426,7 @@ int do_reset (cmd_tbl_t * cmdtp, bd_t * bd, int flag, int argc,
 
 	msr &= ~0x1030;
 	__asm__ volatile ("mtmsr    %0"::"r" (msr));
-
 	dummy = immap->im_clkrst.res[0];
-
 	/*
 	 * Trying to execute the next instruction at a non-existing address
 	 * should cause a machine check, resulting in reset

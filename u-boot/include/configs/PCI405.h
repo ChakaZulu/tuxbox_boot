@@ -42,7 +42,7 @@
 
 #define CONFIG_SYS_CLK_FREQ     25000000 /* external frequency to pll   */
 
-#define CONFIG_BAUDRATE		9600
+#define CONFIG_BAUDRATE		115200
 #define CONFIG_BOOTDELAY	3	/* autoboot after 3 seconds	*/
 
 #if 0
@@ -78,6 +78,7 @@
 				CFG_CMD_ELF	| \
 				CFG_CMD_DATE	| \
 				CFG_CMD_I2C	| \
+				CFG_CMD_BSP	| \
 				CFG_CMD_EEPROM  )
 
 /* this must be included AFTER the definition of CONFIG_COMMANDS (if any) */
@@ -86,6 +87,8 @@
 #undef  CONFIG_WATCHDOG			/* watchdog disabled		*/
 
 #define	CONFIG_SDRAM_BANK0	1	/* init onboard SDRAM bank 0	*/
+
+#define	CONFIG_PRAM		2048	/* reserve 2 MB "protected RAM"	*/
 
 /*
  * Miscellaneous configurable options
@@ -128,7 +131,7 @@
 
 #define	CFG_HZ		1000		/* decrementer freq: 1 ms ticks	*/
 
-#define CONFIG_ZERO_BOOTDELAY_CHECK	/* check for keypress on bootdelay==0 */
+#undef CONFIG_ZERO_BOOTDELAY_CHECK	/* check for keypress on bootdelay==0 */
 
 /*-----------------------------------------------------------------------
  * PCI stuff
@@ -149,7 +152,7 @@
 #define CFG_PCI_SUBSYS_DEVICEID 0x0407  /* PCI Device ID: PCI-405       */
 #define CFG_PCI_CLASSCODE       0x0280  /* PCI Class Code: Network/Other*/
 #define CFG_PCI_PTM1LA  0x00000000      /* point to sdram               */
-#define CFG_PCI_PTM1MS  0xfc000001      /* 64MB, enable hard-wired to 1 */
+#define CFG_PCI_PTM1MS  0xff000001      /* 16MB, enable hard-wired to 1 */
 #define CFG_PCI_PTM1PCI 0x00000000      /* Host: use this pci address   */
 
 #if 0 /* test-only */
@@ -158,8 +161,8 @@
 #define CFG_PCI_PTM2PCI 0x04000000      /* Host: use this pci address   */
 #else
 #define CFG_PCI_PTM2LA  0xef600000      /* point to internal regs       */
-#define CFG_PCI_PTM2MS  0xef600001      /* 4MB, enable                  */
-#define CFG_PCI_PTM2PCI 0x04000000      /* Host: use this pci address   */
+#define CFG_PCI_PTM2MS  0xffe00001      /* 2MB, enable                  */
+#define CFG_PCI_PTM2PCI 0x00000000      /* Host: use this pci address   */
 #endif
 
 /*-----------------------------------------------------------------------
@@ -269,6 +272,7 @@
 
 /* Memory Bank 2 (CAN0, 1) initialization                                       */
 #define CFG_EBC_PB2AP           0x010053C0  /* BWT=2,WBN=1,WBF=1,TH=1,RE=1,SOR=1,BEM=1 */
+/*#define CFG_EBC_PB2AP           0x038056C0  / * BWT=2,WBN=1,WBF=1,TH=1,RE=1,SOR=1,BEM=1 */
 #define CFG_EBC_PB2CR           0xF0018000  /* BAS=0xF00,BS=1MB,BU=R/W,BW=8bit  */
 
 /* Memory Bank 3 (FPGA internal) initialization                                 */
@@ -319,18 +323,12 @@
 /*-----------------------------------------------------------------------
  * Definitions for initial stack pointer and data area (in data cache)
  */
-#if 1 /* test-only */
 #define CFG_INIT_DCACHE_CS      7       /* use cs # 7 for data cache memory    */
-
 #define CFG_INIT_RAM_ADDR       0x40000000  /* use data cache                  */
-#else
-#define CFG_INIT_RAM_ADDR	0x00df0000 /* inside of SDRAM                   */
-#endif
 #define CFG_INIT_RAM_END        0x2000  /* End of used area in RAM             */
 #define CFG_GBL_DATA_SIZE      128  /* size in bytes reserved for initial data */
 #define CFG_GBL_DATA_OFFSET    (CFG_INIT_RAM_END - CFG_GBL_DATA_SIZE)
 #define CFG_INIT_SP_OFFSET      CFG_GBL_DATA_OFFSET
-
 
 /*
  * Internal Definitions

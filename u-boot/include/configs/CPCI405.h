@@ -69,11 +69,20 @@
 #define CONFIG_MII		1	/* MII PHY management		*/
 #define	CONFIG_PHY_ADDR		0	/* PHY address			*/
 
+#if 0 /* test-only */
+#define CONFIG_BOOTP_MASK	(CONFIG_BOOTP_DEFAULT |  \
+				 CONFIG_BOOTP_VENDOREX)
+#else
+#define CONFIG_BOOTP_MASK       (CONFIG_BOOTP_DEFAULT)
+#endif
+
 #define CONFIG_COMMANDS	      ( CONFIG_CMD_DFL	| \
+				CFG_CMD_DHCP	| \
 				CFG_CMD_PCI	| \
 				CFG_CMD_IRQ	| \
 				CFG_CMD_IDE	| \
 				CFG_CMD_ELF	| \
+				CFG_CMD_MII	| \
 				CFG_CMD_EEPROM  )
 
 #define CONFIG_MAC_PARTITION
@@ -143,6 +152,8 @@
                                         /* resource configuration       */
 
 #define CONFIG_PCI_SCAN_SHOW            /* print pci devices @ startup  */
+
+#define CONFIG_PCI_BOOTDELAY    0       /* enable pci bootdelay variable*/
 
 #define CFG_PCI_SUBSYS_VENDORID 0x12FE  /* PCI Vendor ID: esd gmbh      */
 #define CFG_PCI_SUBSYS_DEVICEID 0x0405  /* PCI Device ID: CPCI-405      */

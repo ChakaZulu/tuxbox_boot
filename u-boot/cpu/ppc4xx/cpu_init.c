@@ -30,6 +30,73 @@
 
 #define mtebc(reg, data)  mtdcr(ebccfga,reg);mtdcr(ebccfgd,data)
 
+#ifdef CFG_INIT_DCACHE_CS
+# if (CFG_INIT_DCACHE_CS == 0)
+#  define PBxAP pb0ap
+#  define PBxCR pb0cr
+#  if (defined(CFG_EBC_PB0AP) && defined(CFG_EBC_PB0CR))
+#   define PBxAP_VAL CFG_EBC_PB0AP
+#   define PBxCR_VAL CFG_EBC_PB0CR
+#  endif
+# endif
+# if (CFG_INIT_DCACHE_CS == 1)
+#  define PBxAP pb1ap
+#  define PBxCR pb1cr
+#  if (defined(CFG_EBC_PB1AP) && defined(CFG_EBC_PB1CR))
+#   define PBxAP_VAL CFG_EBC_PB1AP
+#   define PBxCR_VAL CFG_EBC_PB1CR
+#  endif
+# endif
+# if (CFG_INIT_DCACHE_CS == 2)
+#  define PBxAP pb2ap
+#  define PBxCR pb2cr
+#  if (defined(CFG_EBC_PB2AP) && defined(CFG_EBC_PB2CR))
+#   define PBxAP_VAL CFG_EBC_PB2AP
+#   define PBxCR_VAL CFG_EBC_PB2CR
+#  endif
+# endif
+# if (CFG_INIT_DCACHE_CS == 3)
+#  define PBxAP pb3ap
+#  define PBxCR pb3cr
+#  if (defined(CFG_EBC_PB3AP) && defined(CFG_EBC_PB3CR))
+#   define PBxAP_VAL CFG_EBC_PB3AP
+#   define PBxCR_VAL CFG_EBC_PB3CR
+#  endif
+# endif
+# if (CFG_INIT_DCACHE_CS == 4)
+#  define PBxAP pb4ap
+#  define PBxCR pb4cr
+#  if (defined(CFG_EBC_PB4AP) && defined(CFG_EBC_PB4CR))
+#   define PBxAP_VAL CFG_EBC_PB4AP
+#   define PBxCR_VAL CFG_EBC_PB4CR
+#  endif
+# endif
+# if (CFG_INIT_DCACHE_CS == 5)
+#  define PBxAP pb5ap
+#  define PBxCR pb5cr
+#  if (defined(CFG_EBC_PB5AP) && defined(CFG_EBC_PB5CR))
+#   define PBxAP_VAL CFG_EBC_PB5AP
+#   define PBxCR_VAL CFG_EBC_PB5CR
+#  endif
+# endif
+# if (CFG_INIT_DCACHE_CS == 6)
+#  define PBxAP pb6ap
+#  define PBxCR pb6cr
+#  if (defined(CFG_EBC_PB6AP) && defined(CFG_EBC_PB6CR))
+#   define PBxAP_VAL CFG_EBC_PB6AP
+#   define PBxCR_VAL CFG_EBC_PB6CR
+#  endif
+# endif
+# if (CFG_INIT_DCACHE_CS == 7)
+#  define PBxAP pb7ap
+#  define PBxCR pb7cr
+#  if (defined(CFG_EBC_PB7AP) && defined(CFG_EBC_PB7CR))
+#   define PBxAP_VAL CFG_EBC_PB7AP
+#   define PBxCR_VAL CFG_EBC_PB7CR
+#  endif
+# endif
+#endif /* CFG_INIT_DCACHE_CS */
+
 
 /*
  * Breath some life into the CPU...
@@ -40,6 +107,24 @@
 void
 cpu_init_f (void)
 {
+#if defined(CONFIG_405EP)
+	/*
+	 * GPIO0 setup (select GPIO or alternate function)
+	 */
+	out32(GPIO0_OSRH, CFG_GPIO0_OSRH);   /* output select */
+	out32(GPIO0_OSRL, CFG_GPIO0_OSRL);
+	out32(GPIO0_ISR1H, CFG_GPIO0_ISR1H); /* input select */
+	out32(GPIO0_ISR1L, CFG_GPIO0_ISR1L);
+	out32(GPIO0_TSRH, CFG_GPIO0_TSRH);   /* three-state select */
+	out32(GPIO0_TSRL, CFG_GPIO0_TSRL);
+	out32(GPIO0_TCR, CFG_GPIO0_TCR);     /* enable output driver for outputs */
+
+	/*
+	 * Set EMAC noise filter bits
+	 */
+	mtdcr(cpc0_epctl, CPC0_EPRCSR_E0NFE | CPC0_EPRCSR_E1NFE);
+#endif /* CONFIG_405EP */
+
 	/*
 	 * External Bus Controller (EBC) Setup
 	 */
@@ -64,37 +149,37 @@ cpu_init_f (void)
 	mtebc(pb0cr, CFG_EBC_PB0CR);
 #endif
 
-#if (defined(CFG_EBC_PB1AP) && defined(CFG_EBC_PB1CR))
+#if (defined(CFG_EBC_PB1AP) && defined(CFG_EBC_PB1CR) && !(CFG_INIT_DCACHE_CS == 1))
 	mtebc(pb1ap, CFG_EBC_PB1AP);
 	mtebc(pb1cr, CFG_EBC_PB1CR);
 #endif
 
-#if (defined(CFG_EBC_PB2AP) && defined(CFG_EBC_PB2CR))
+#if (defined(CFG_EBC_PB2AP) && defined(CFG_EBC_PB2CR) && !(CFG_INIT_DCACHE_CS == 2))
 	mtebc(pb2ap, CFG_EBC_PB2AP);
 	mtebc(pb2cr, CFG_EBC_PB2CR);
 #endif
 
-#if (defined(CFG_EBC_PB3AP) && defined(CFG_EBC_PB3CR))
+#if (defined(CFG_EBC_PB3AP) && defined(CFG_EBC_PB3CR) && !(CFG_INIT_DCACHE_CS == 3))
 	mtebc(pb3ap, CFG_EBC_PB3AP);
 	mtebc(pb3cr, CFG_EBC_PB3CR);
 #endif
 
-#if (defined(CFG_EBC_PB4AP) && defined(CFG_EBC_PB4CR))
+#if (defined(CFG_EBC_PB4AP) && defined(CFG_EBC_PB4CR) && !(CFG_INIT_DCACHE_CS == 4))
 	mtebc(pb4ap, CFG_EBC_PB4AP);
 	mtebc(pb4cr, CFG_EBC_PB4CR);
 #endif
 
-#if (defined(CFG_EBC_PB5AP) && defined(CFG_EBC_PB5CR))
+#if (defined(CFG_EBC_PB5AP) && defined(CFG_EBC_PB5CR) && !(CFG_INIT_DCACHE_CS == 5))
 	mtebc(pb5ap, CFG_EBC_PB5AP);
 	mtebc(pb5cr, CFG_EBC_PB5CR);
 #endif
 
-#if (defined(CFG_EBC_PB6AP) && defined(CFG_EBC_PB6CR))
+#if (defined(CFG_EBC_PB6AP) && defined(CFG_EBC_PB6CR) && !(CFG_INIT_DCACHE_CS == 6))
 	mtebc(pb6ap, CFG_EBC_PB6AP);
 	mtebc(pb6cr, CFG_EBC_PB6CR);
 #endif
 
-#if (defined(CFG_EBC_PB7AP) && defined(CFG_EBC_PB7CR))
+#if (defined(CFG_EBC_PB7AP) && defined(CFG_EBC_PB7CR) && !(CFG_INIT_DCACHE_CS == 7))
 	mtebc(pb7ap, CFG_EBC_PB7AP);
 	mtebc(pb7cr, CFG_EBC_PB7CR);
 #endif
@@ -119,11 +204,32 @@ cpu_init_f (void)
  */
 int cpu_init_r (void)
 {
-#ifdef CONFIG_405GP
+#if defined(CONFIG_405GP)  || defined(CONFIG_405EP)
 	DECLARE_GLOBAL_DATA_PTR;
 
 	bd_t *bd = gd->bd;
 	unsigned long reg;
+#if defined(CONFIG_405GP)
+	uint pvr = get_pvr();
+#endif
+
+#ifdef CFG_INIT_DCACHE_CS
+	/*
+	 * Flush and invalidate dcache, then disable CS for temporary stack.
+	 * Afterwards, this CS can be used for other purposes
+	 */
+	dcache_disable();   /* flush and invalidate dcache */
+	mtebc(PBxAP, 0);
+	mtebc(PBxCR, 0);    /* disable CS for temporary stack */
+
+#if (defined(PBxAP_VAL) && defined(PBxCR_VAL))
+	/*
+	 * Write new value into CS register
+	 */
+	mtebc(PBxAP, PBxAP_VAL);
+	mtebc(PBxCR, PBxCR_VAL);
+#endif
+#endif /* CFG_INIT_DCACHE_CS */
 
 	/*
 	 * Write Ethernetaddress into on-chip register
@@ -143,6 +249,16 @@ int cpu_init_r (void)
 	reg = reg << 8;
 	reg |= bd->bi_enetaddr[5];
 	out32 (EMAC_IAL, reg);
-#endif  /* CONFIG_405GP */
+
+#if defined(CONFIG_405GP)
+	/*
+	 * Set edge conditioning circuitry on PPC405GPr
+	 * for compatibility to existing PPC405GP designs.
+	 */
+	if ((pvr & 0xfffffff0) == (PVR_405GPR_RB & 0xfffffff0)) {
+		mtdcr(ecr, 0x60606000);
+	}
+#endif  /* defined(CONFIG_405GP) */
+#endif  /* defined(CONFIG_405GP) || defined(CONFIG_405EP) */
 	return (0);
 }

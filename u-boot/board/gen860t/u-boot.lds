@@ -56,15 +56,6 @@ SECTIONS
   .text :
   {
     cpu/mpc8xx/start.o		(.text)
-    common/dlmalloc.o		(.text)
-    lib_ppc/ppcstring.o		(.text)
-    lib_generic/vsprintf.o	(.text)
-    lib_generic/crc32.o		(.text)
-    lib_generic/zlib.o		(.text)
-
-/*    . = env_offset;
-    common/environment.o(.text) */
-
     *(.text)
     *(.fixup)
     *(.got1)
@@ -75,6 +66,7 @@ SECTIONS
   {
     *(.rodata)
     *(.rodata1)
+    *(.rodata.str1.4)
   }
   .fini      : { *(.fini)    } =0
   .ctors     : { *(.ctors)   }
@@ -128,8 +120,6 @@ SECTIONS
    *(.bss)
    *(COMMON)
   }
-
   _end = . ;
   PROVIDE (end = .);
 }
-

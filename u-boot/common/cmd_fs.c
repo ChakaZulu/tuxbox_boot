@@ -34,12 +34,10 @@
 #include <s_record.h>
 #include <net.h>
 
-#if (CONFIG_COMMANDS & CFG_CMD_FS)
-
-#if (CONFIG_FS & CFG_FS_CRAMFS)
+#if (CONFIG_COMMANDS & CFG_FS_CRAMFS) || (CONFIG_FS & CFG_FS_CRAMFS)
 #include <cramfs.h>
 #endif
-#if (CONFIG_FS & CFG_FS_JFFS2)
+#if (CONFIG_COMMANDS & CFG_CMD_JFFS2) || (CONFIG_FS & CFG_FS_JFFS2)
 #include <jffs2/jffs2.h>
 #endif
 
@@ -113,7 +111,7 @@ int do_fs_fsload (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 	}
 
 	if (size > 0)
-		printf ("### FS load compleate: %d bytes loaded to 0x%lx\n", size, offset);
+		printf ("### FS load complete: %d bytes loaded to 0x%lx\n", size, offset);
 	else
 		printf ("### FS LOAD ERROR<%d> for %s!\n", size, filename);
 
@@ -267,5 +265,3 @@ int fs_fsload (unsigned long offset, char *filename)
 
 	return size;
 }
-
-#endif /* CFG_CMD_FS */

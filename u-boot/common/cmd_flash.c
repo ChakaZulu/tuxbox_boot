@@ -29,6 +29,10 @@
 #include <cmd_boot.h>
 #include <flash.h>
 
+#ifdef CONFIG_HAS_DATAFLASH
+#include <dataflash.h>
+#endif
+
 #if (CONFIG_COMMANDS & CFG_CMD_FLASH)
 
 extern flash_info_t flash_info[];	/* info for FLASH chips */
@@ -95,6 +99,10 @@ abbrev_spec(char *str, flash_info_t **pinfo, int *psf, int *psl)
 int do_flinfo ( cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 {
 	ulong bank;
+
+#ifdef CONFIG_HAS_DATAFLASH
+	dataflash_print_info();
+#endif
 
 	if (argc == 1) {	/* print info for all FLASH banks */
 		for (bank=0; bank <CFG_MAX_FLASH_BANKS; ++bank) {
@@ -254,7 +262,7 @@ int do_protect (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 	else if (strcmp(argv[1], "on") == 0)
 		p = 1;
 	else if (strcmp(argv[1], "ld") == 0)
-		p = 2;	
+		p = 2;
 	else {
 		printf ("Usage:\n%s\n", cmdtp->usage);
 		return 1;

@@ -12,12 +12,38 @@
 #ifndef __NET_H__
 #define __NET_H__
 
-#if !defined(CONFIG_NET_MULTI) && defined(CONFIG_8xx)
+#if defined(CONFIG_8xx)
 #include <commproc.h>
-#if defined(FEC_ENET) || defined(SCC_ENET)
+# if !defined(CONFIG_NET_MULTI)
+#  if defined(FEC_ENET) || defined(SCC_ENET)
+#   define CONFIG_NET_MULTI
+#  endif
+# endif
+#endif	/* CONFIG_8xx */
+
+#if !defined(CONFIG_NET_MULTI) && defined(CONFIG_8260)
+#include <config.h>
+#if defined(CONFIG_ETHER_ON_FCC)
+#if defined(CONFIG_ETHER_ON_SCC)
+#error "Ethernet not correctly defined"
+#endif /* CONFIG_ETHER_ON_SCC */
 #define CONFIG_NET_MULTI
-#endif
-#endif
+#if (CONFIG_ETHER_INDEX == 1)
+#define	CONFIG_ETHER_ON_FCC1
+# define CFG_CMXFCR_MASK1	CFG_CMXFCR_MASK
+# define CFG_CMXFCR_VALUE1	CFG_CMXFCR_VALUE
+#elif (CONFIG_ETHER_INDEX == 2)
+#define	CONFIG_ETHER_ON_FCC2
+# define CFG_CMXFCR_MASK2	CFG_CMXFCR_MASK
+# define CFG_CMXFCR_VALUE2	CFG_CMXFCR_VALUE
+#elif (CONFIG_ETHER_INDEX == 3)
+#define	CONFIG_ETHER_ON_FCC3
+# define CFG_CMXFCR_MASK3	CFG_CMXFCR_MASK
+# define CFG_CMXFCR_VALUE3	CFG_CMXFCR_VALUE
+#endif /* CONFIG_ETHER_INDEX */
+#endif /* CONFIG_ETHER_ON_FCC */
+#endif /* !CONFIG_NET_MULTI && CONFIG_8260 */
+
 #include <asm/byteorder.h>	/* for nton* / ntoh* stuff */
 
 
@@ -27,10 +53,10 @@
  *
  */
 
-#ifndef	CONFIG_EEPRO100
-#define PKTBUFSRX	4
+#ifdef CFG_RX_ETH_BUFFER
+# define PKTBUFSRX	CFG_RX_ETH_BUFFER
 #else
-#define PKTBUFSRX	8
+# define PKTBUFSRX	4
 #endif
 
 #define PKTALIGN	32
@@ -50,8 +76,6 @@ typedef void	rxhand_f(uchar *, unsigned, unsigned, unsigned);
  *	A timeout handler.  Called after time interval has expired.
  */
 typedef void	thand_f(void);
-
-#ifdef CONFIG_NET_MULTI
 
 #define NAMESIZE 16
 
@@ -81,7 +105,6 @@ extern int eth_register(struct eth_device* dev);/* Register network device	*/
 extern void eth_try_another(int first_restart);	/* Change the device		*/
 extern struct eth_device *eth_get_dev(void);	/* get the current device MAC	*/
 extern void eth_set_enetaddr(int num, char* a);	/* Set new MAC address		*/
-#endif
 
 extern int eth_init(bd_t *bis);			/* Initialize the device	*/
 extern int eth_send(volatile void *packet, int length);	   /* Send a packet	*/
@@ -179,7 +202,9 @@ typedef struct
 /*
  * ICMP stuff (just enough to handle (host) redirect messages)
  */
+#define ICMP_ECHO_REPLY		0	/* Echo reply 			*/
 #define ICMP_REDIRECT		5	/* Redirect (change route)	*/
+#define ICMP_ECHO_REQUEST	8	/* Echo request			*/
 
 /* Codes for REDIRECT. */
 #define ICMP_REDIR_NET		0	/* Redirect Net			*/
@@ -271,10 +296,14 @@ extern int		NetState;		/* Network loop state		*/
 extern int		NetRestartWrap;		/* Tried all network devices	*/
 #endif
 
-typedef enum { BOOTP, RARP, ARP, TFTP, DHCP } proto_t;
+typedef enum { BOOTP, RARP, ARP, TFTP, DHCP, PING, DNS } proto_t;
 
 /* from net/net.c */
 extern char	BootFile[128];			/* Boot File name		*/
+
+#if (CONFIG_COMMANDS & CFG_CMD_PING)
+extern IPaddr_t	NetPingIP;			/* the ip address to ping 		*/
+#endif
 
 /* Initialize the network adapter */
 extern int	NetLoop(proto_t);
@@ -301,6 +330,9 @@ extern void	NetSetTimeout(int, thand_f *);	/* Set timeout handler		*/
 
 /* Transmit "NetTxPacket" */
 extern void	NetSendPacket(volatile uchar *, int);
+
+/* Transmit UDP packet, performing ARP request if needed */
+extern int	NetSendUDPPacket(uchar *ether, IPaddr_t dest, int dport, int sport, int len);
 
 /* Processes a received packet */
 extern void	NetReceive(volatile uchar *, int);
@@ -351,6 +383,9 @@ static inline void NetCopyLong(ulong *to, ulong *from)
 
 /* Convert an IP address to a string */
 extern void	ip_to_string (IPaddr_t x, char *s);
+
+/* Convert a string to ip address */
+extern IPaddr_t string_to_ip(char *s);
 
 /* read an IP address from a environment variable */
 extern IPaddr_t getenv_IPaddr (char *);

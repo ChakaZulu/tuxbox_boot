@@ -60,9 +60,10 @@
 #define CONFIG_BOOTP_MASK	(CONFIG_BOOTP_DEFAULT | CONFIG_BOOTP_BOOTFILESIZE)
 
 #define CONFIG_COMMANDS	      ( CONFIG_CMD_DFL	| \
+				CFG_CMD_BEDBUG  | \
 				CFG_CMD_DHCP	| \
 				CFG_CMD_PCI	| \
-				0/* CFG_CMD_DATE */	)
+				0 /* CFG_CMD_DATE */	)
 
 /* This must be included AFTER the definition of CONFIG_COMMANDS (if any)
  */
@@ -302,4 +303,8 @@
 #define CFG_ETH_DEV_FN	     0x7800
 #define CFG_ETH_IOBASE	     0x00104000
 
+#define CONFIG_EEPRO100
+#define CFG_RX_ETH_BUFFER	8               /* use 8 rx buffer on eepro100  */
+#define PCI_ENET0_IOADDR	0x00104000
+#define PCI_ENET0_MEMADDR	0x80000000
 #endif	/* __CONFIG_H */

@@ -86,10 +86,14 @@
 
 #define	CONFIG_TIMESTAMP	1	/* Print timestamp info for images */
 
+/* Use s3c2400's RTC */
+#define CONFIG_RTC_S3C24X0	1
+
 #ifndef USE_920T_MMU
-#define CONFIG_COMMANDS_tmp	(CONFIG_CMD_DFL & ~CFG_CMD_CACHE)
+#define CONFIG_COMMANDS_tmp	((CONFIG_CMD_DFL & ~CFG_CMD_CACHE) | \
+				 CFG_CMD_DATE)
 #else
-#define CONFIG_COMMANDS_tmp	(CONFIG_CMD_DFL)
+#define CONFIG_COMMANDS_tmp	(CONFIG_CMD_DFL | CFG_CMD_DATE)
 #endif
 
 #ifdef CONFIG_HWFLOW
@@ -162,10 +166,7 @@
 #define PHYS_SDRAM_1		0x0c000000 /* SDRAM Bank #1 */
 #define PHYS_SDRAM_1_SIZE	0x02000000 /* 32 MB */
 
-#define PHYS_FLASH_1		0x00000000 /* Flash Bank #1 */
-#define PHYS_FLASH_SIZE		0x00800000 /* 8 MB */
-
-#define CFG_FLASH_BASE		PHYS_FLASH_1
+#define CFG_FLASH_BASE		0x00000000 /* Flash Bank #1 */
 
 /*-----------------------------------------------------------------------
  * FLASH and environment organization
@@ -180,7 +181,7 @@
 #define	CFG_ENV_IS_IN_FLASH	1
 
 /* Address and size of Primary Environment Sector	*/
-#define CFG_ENV_ADDR		(PHYS_FLASH_1 + 0x40000)
+#define CFG_ENV_ADDR		(CFG_FLASH_BASE + 0x40000)
 #define CFG_ENV_SIZE		0x40000
 
 /* Address and size of Redundant Environment Sector	*/

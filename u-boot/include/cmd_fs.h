@@ -42,7 +42,7 @@
 	),
 
 #define CMD_TBL_FS_FSINFO	MK_CMD_TBL_ENTRY(			\
-	"fsinfo",	5,	2,	1,	do_fs_fsinfo,		\
+	"fsinfo",       5,      2,      1,      do_fs_fsinfo,           \
 	"fsinfo  - print information about filesystems\n",		\
 	"    - print information about filesystems\n"			\
 	),

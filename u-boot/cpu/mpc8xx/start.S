@@ -73,8 +73,9 @@
 	GOT_ENTRY(_end_of_vectors)
 	GOT_ENTRY(transfer_to_handler)
 
+	GOT_ENTRY(__init_end)
 	GOT_ENTRY(_end)
-	GOT_ENTRY(.bss)
+	GOT_ENTRY(__bss_start)
 #if defined(CONFIG_FADS) || defined(CONFIG_ICU862)
 	GOT_ENTRY(environment)
 #endif
@@ -85,9 +86,9 @@
  * r4 - 2nd arg to board_init(): boot flag
  */
 	.text
-#ifdef CONFIG_SECONDSTAGE
-	bl EXC_OFF_SYS_RESET
-#endif
+#ifdef CONFIG_SECONDSTAGE 
+	bl EXC_OFF_SYS_RESET 
+#endif 
 	.long	0x27051956		/* U-Boot Magic Number			*/
 	.globl	version_string
 version_string:
@@ -571,8 +572,8 @@ relocate_code:
 	mr	r3,  r5				/* Destination Address	*/
 	lis	r4, CFG_MONITOR_BASE@h		/* Source      Address	*/
 	ori	r4, r4, CFG_MONITOR_BASE@l
-	lis	r5, CFG_MONITOR_LEN@h		/* Length in Bytes	*/
-	ori	r5, r5, CFG_MONITOR_LEN@l
+	lwz	r5, GOT(__init_end)
+	sub	r5, r5, r4
 	li	r6, CFG_CACHELINE_SIZE		/* Cache Line Size	*/
 
 	/*
@@ -687,7 +688,7 @@ clear_bss:
 	/*
 	 * Now clear BSS segment
 	 */
-	lwz	r3,GOT(.bss)
+	lwz	r3,GOT(__bss_start)
 #if defined(CONFIG_FADS) || defined(CONFIG_ICU862)
 	/*
 	 * For the FADS - the environment is the very last item in flash.
@@ -714,12 +715,6 @@ clear_bss:
 	mr	r4, r10		/* Destination Address		*/
 	bl	board_init_r
 
-	/* Problems accessing "end" in C, so do it here */
-	.globl	get_endaddr
-get_endaddr:
-	lwz	r3,GOT(_end)
-	blr
-
 	/*
 	 * Copy exception vector code to low memory
 	 *
@@ -731,7 +726,7 @@ trap_init:
 	lwz	r7, GOT(_start)
 	lwz	r8, GOT(_end_of_vectors)
 
-	rlwinm	r9, r7, 0, 22, 31	/* _start & 0x3FF	*/
+	li	r9, 0x100		/* reset vector always at 0x100 */
 
 	cmplw	0, r7, r8
 	bgelr				/* return if r7>=r8 - just in case */

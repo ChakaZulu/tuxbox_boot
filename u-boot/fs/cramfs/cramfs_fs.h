@@ -5,9 +5,6 @@
 int cramfs_uncompress_block (void *dst, void *src, int srclen);
 int cramfs_uncompress_init (void);
 
-#include <byteswap.h>
-#include <endian.h>
-
 #define CRAMFS_MAGIC		0x28cd3d45	/* some random number */
 #define CRAMFS_SIGNATURE	"Compressed ROMFS"
 

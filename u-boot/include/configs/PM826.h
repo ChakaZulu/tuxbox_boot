@@ -38,6 +38,8 @@
 #define CONFIG_MPC8260		1	/* This is a MPC8260 CPU	*/
 #define CONFIG_PM826		1	/* ...on a PM8260 module	*/
 
+#undef CONFIG_DB_CR826_J30x_ON		/* J30x jumpers on D.B. carrier	*/
+
 #define	CONFIG_CLOCKS_IN_MHZ	1	/* clocks passsed to Linux in MHz */
 
 #define CONFIG_BOOTDELAY	5	/* autoboot after 5 seconds	*/
@@ -93,32 +95,49 @@
 /*
  * select ethernet configuration
  *
- * if either CONFIG_ETHER_ON_SCC or CONFIG_ETHER_ON_FCC is selected, then
- * CONFIG_ETHER_INDEX must be set to the channel number (1-4 for SCC, 1-3
- * for FCC)
+ * if CONFIG_ETHER_ON_SCC is selected, then
+ *   - CONFIG_ETHER_INDEX must be set to the channel number (1-4)
+ *   - CONFIG_NET_MULTI must not be defined
+ *
+ * if CONFIG_ETHER_ON_FCC is selected, then
+ *   - one or more CONFIG_ETHER_ON_FCCx (x=1,2,3) must also be selected
+ *   - CONFIG_NET_MULTI must be defined
  *
  * if CONFIG_ETHER_NONE is defined, then either the ethernet routines must be
  * defined elsewhere (as for the console), or CFG_CMD_NET must be removed
  * from CONFIG_COMMANDS to remove support for networking.
  */
-#undef	CONFIG_ETHER_ON_SCC		/* define if ether on SCC       */
-#define	CONFIG_ETHER_ON_FCC		/* define if ether on FCC       */
+#define	CONFIG_NET_MULTI
 #undef	CONFIG_ETHER_NONE		/* define if ether on something else */
-#define	CONFIG_ETHER_INDEX    1		/* which SCC/FCC channel for ethernet */
 
-#if (CONFIG_ETHER_INDEX == 1)
+#undef	CONFIG_ETHER_ON_SCC		/* define if ether on SCC       */
+#define	CONFIG_ETHER_INDEX    1		/* which SCC channel for ethernet */
+
+#define	CONFIG_ETHER_ON_FCC		/* define if ether on FCC       */
 /*
  * - Rx-CLK is CLK11
  * - Tx-CLK is CLK10
+ */
+#define	CONFIG_ETHER_ON_FCC1
+# define CFG_CMXFCR_MASK1	(CMXFCR_FC1|CMXFCR_RF1CS_MSK|CMXFCR_TF1CS_MSK)
+#ifndef CONFIG_DB_CR826_J30x_ON
+# define CFG_CMXFCR_VALUE1	(CMXFCR_RF1CS_CLK11|CMXFCR_TF1CS_CLK10)
+#else
+# define CFG_CMXFCR_VALUE1	(CMXFCR_RF1CS_CLK11|CMXFCR_TF1CS_CLK12)
+#endif
+/*
+ * - Rx-CLK is CLK15
+ * - Tx-CLK is CLK14
+ */
+#define	CONFIG_ETHER_ON_FCC2
+# define CFG_CMXFCR_MASK2	(CMXFCR_FC2|CMXFCR_RF2CS_MSK|CMXFCR_TF2CS_MSK)
+# define CFG_CMXFCR_VALUE2	(CMXFCR_RF2CS_CLK13|CMXFCR_TF2CS_CLK14)
+/*
  * - RAM for BD/Buffers is on the 60x Bus (see 28-13)
  * - Enable Full Duplex in FSMR
  */
-# define CFG_CMXFCR_MASK	(CMXFCR_FC1|CMXFCR_RF1CS_MSK|CMXFCR_TF1CS_MSK)
-# define CFG_CMXFCR_VALUE	(CMXFCR_RF1CS_CLK11|CMXFCR_TF1CS_CLK10)
 # define CFG_CPMFCR_RAMTYPE	0
 # define CFG_FCC_PSMR		(FCC_PSMR_FDE|FCC_PSMR_LPB)
-
-#endif /* CONFIG_ETHER_INDEX */
 
 /* system clock rate (CLKIN) - equal to the 60x and local bus speed */
 #define CONFIG_8260_CLKIN	64000000	/* in Hz */
@@ -136,12 +155,22 @@
 
 #define CONFIG_BOOTP_MASK	(CONFIG_BOOTP_DEFAULT|CONFIG_BOOTP_BOOTFILESIZE)
 
+#ifdef CONFIG_PCI
 #define CONFIG_COMMANDS		(CONFIG_CMD_DFL	| \
 				 CFG_CMD_BEDBUG	| \
 				 CFG_CMD_DATE	| \
+				 CFG_CMD_DOC	| \
 				 CFG_CMD_EEPROM | \
 				 CFG_CMD_I2C	| \
-				 CFG_CMD_DOC)
+				 CFG_CMD_PCI)
+#else	/* ! PCI */
+#define CONFIG_COMMANDS		(CONFIG_CMD_DFL	| \
+				 CFG_CMD_BEDBUG	| \
+				 CFG_CMD_DATE	| \
+				 CFG_CMD_DOC	| \
+				 CFG_CMD_EEPROM | \
+				 CFG_CMD_I2C	)
+#endif	/* CONFIG_PCI */
 
 /* this must be included AFTER the definition of CONFIG_COMMANDS (if any) */
 #include <cmd_confdefs.h>
@@ -179,7 +208,7 @@
 
 #define CFG_BAUDRATE_TABLE	{ 9600, 19200, 38400, 57600, 115200 }
 
-#define	CFG_RESET_ADDRESS 0xFFFFFFFC	/* "bad" address		*/
+#define	CFG_RESET_ADDRESS 0xFDFFFFFC	/* "bad" address		*/
 
 /*
  * For booting Linux, the board info and command line data
@@ -192,11 +221,11 @@
  * Flash and Boot ROM mapping
  */
 
-#define	CFG_BOOTROM_BASE	0x60000000
+#define	CFG_BOOTROM_BASE	0xFF800000
 #define	CFG_BOOTROM_SIZE	0x00080000
-#define	CFG_FLASH0_BASE		0x40000000
+#define	CFG_FLASH0_BASE		0xFF000000
 #define	CFG_FLASH0_SIZE		0x02000000
-#define CFG_DOC_BASE		0x60000000
+#define CFG_DOC_BASE		0xFF800000
 #define CFG_DOC_SIZE		0x00100000
 
 
@@ -226,8 +255,8 @@
 #define CFG_I2C_EEPROM_ADDR_LEN	1
 #define CFG_EEPROM_PAGE_WRITE_BITS	4
 #define CFG_EEPROM_PAGE_WRITE_DELAY_MS	10	/* and takes up to 10 msec */
-#define CFG_ENV_OFFSET		0
-#define CFG_ENV_SIZE		2048
+#define CFG_ENV_OFFSET		512
+#define CFG_ENV_SIZE		(2048 - 512)
 #endif
 
 /*-----------------------------------------------------------------------
@@ -282,6 +311,12 @@
 
 #if (CFG_MONITOR_BASE < CFG_FLASH_BASE)
 # define CFG_RAMBOOT
+#endif
+
+#ifdef	CONFIG_PCI
+#define CONFIG_PCI_PNP
+#define CONFIG_EEPRO100
+#define CFG_RX_ETH_BUFFER	8               /* use 8 rx buffer on eepro100  */
 #endif
 
 /*

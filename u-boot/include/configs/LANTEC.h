@@ -84,6 +84,7 @@
 #define CONFIG_CMD_NORMAL	(CONFIG_CMD_DFL & ~CFG_CMD_BOOTD)
 #define CONFIG_CMD_GDB		(CONFIG_CMD_NORMAL | CFG_CMD_KGDB)
 #define CONFIG_CMD_FULL		(CFG_CMD_ALL & ~CFG_CMD_BEDBUG	\
+					     & ~CFG_CMD_BMP	\
 					     & ~CFG_CMD_BSP	\
 					     & ~CFG_CMD_DOC	\
 					     & ~CFG_CMD_DTT	\
@@ -98,6 +99,8 @@
 					     & ~CFG_CMD_JFFS2	\
 					     & ~CFG_CMD_KGDB	\
 					     & ~CFG_CMD_MII	\
+					     & ~CFG_CMD_MMC	\
+					     & ~CFG_CMD_NAND	\
 					     & ~CFG_CMD_PCI	\
 					     & ~CFG_CMD_PCMCIA	\
 					     & ~CFG_CMD_SCSI	\
@@ -274,7 +277,6 @@
  *-----------------------------------------------------------------------
  *
  */
-/*#define	CFG_DER	0x2002000F*/
 #define CFG_DER	0
 
 /*

@@ -48,6 +48,7 @@ int do_setenv   (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);
 
 #if (defined(CFG_ENV_IS_IN_NVRAM) || defined(CFG_ENV_IS_IN_EEPROM)) && \
 	((CONFIG_COMMANDS & (CFG_CMD_ENV|CFG_CMD_FLASH)) == (CFG_CMD_ENV|CFG_CMD_FLASH))
+
 #define	CMD_TBL_SAVEENV		MK_CMD_TBL_ENTRY(				\
 	"saveenv",	4,	1,		0,	do_saveenv,		\
 	"saveenv - save environment variables to persistent storage\n",		\

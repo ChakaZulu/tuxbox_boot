@@ -30,8 +30,15 @@
 #include <common.h>
 #include <command.h>
 #include <cmd_mem.h>
+#if (CONFIG_COMMANDS & CFG_CMD_MMC)
+#include <mmc.h>
+#endif
+#ifdef CONFIG_HAS_DATAFLASH
+#include <dataflash.h>
+#endif
 
-#if (CONFIG_COMMANDS & (CFG_CMD_MEMORY | CFG_CMD_PCI | CFG_CMD_I2C))
+#if (CONFIG_COMMANDS & (CFG_CMD_MEMORY | CFG_CMD_PCI | CFG_CMD_I2C\
+			| CMD_CMD_PORTIO))
 int cmd_get_data_size(char* arg, int default_size)
 {
 	/* Check for a size specification .b, .w or .l.
@@ -127,6 +134,23 @@ int do_mem_md ( cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 
 		printf("%08lx:", addr);
 		linebytes = (nbytes>DISP_LINE_LEN)?DISP_LINE_LEN:nbytes;
+
+#ifdef CONFIG_HAS_DATAFLASH
+		if (read_dataflash(addr, (linebytes/size)*size, linebuf) != -1){
+
+			for (i=0; i<linebytes; i+= size) {
+				if (size == 4) {
+					printf(" %08x", *uip++);
+				} else if (size == 2) {
+					printf(" %04x", *usp++);
+				} else {
+					printf(" %02x", *ucp++);
+				}
+				addr += size;
+			}
+			
+		} else {	/* addr does not correspond to DataFlash */
+#endif
 		for (i=0; i<linebytes; i+= size) {
 			if (size == 4) {
 				printf(" %08x", (*uip++ = *((uint *)addr)));
@@ -137,6 +161,9 @@ int do_mem_md ( cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 			}
 			addr += size;
 		}
+#ifdef CONFIG_HAS_DATAFLASH
+		}
+#endif
 		printf("    ");
 		cp = linebuf;
 		for (i=0; i<linebytes; i++) {
@@ -232,6 +259,13 @@ int do_mem_cmp (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 
 	count = simple_strtoul(argv[3], NULL, 16);
 
+#ifdef CONFIG_HAS_DATAFLASH
+	if (addr_dataflash(addr1) | addr_dataflash(addr2)){
+		printf("Comparison with DataFlash space not supported.\n\r");
+		return 0;
+	}
+#endif
+
 	ngood = 0;
 
 	while (count-- > 0) {
@@ -307,7 +341,11 @@ int do_mem_cp ( cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 
 #ifndef CFG_NO_FLASH
 	/* check if we are copying to Flash */
-	if (addr2info(dest) != NULL) {
+	if ( (addr2info(dest) != NULL)
+#ifdef CONFIG_HAS_DATAFLASH
+	   && (!addr_dataflash(addr))
+#endif
+	   ) {
 		int rc;
 
 		printf ("Copy to Flash... ");
@@ -319,6 +357,75 @@ int do_mem_cp ( cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 		}
 		puts ("done\n");
 		return 0;
+	}
+#endif
+
+#if (CONFIG_COMMANDS & CFG_CMD_MMC)
+	if (mmc2info(dest)) {
+		int rc;
+
+		printf ("Copy to MMC... ");
+		switch (rc = mmc_write ((uchar *)addr, dest, count*size)) {
+		case 0:
+			printf ("\n");
+			return 1;
+		case -1:
+			printf("failed\n");
+			return 1;
+		default:
+			printf ("%s[%d] FIXME: rc=%d\n",__FILE__,__LINE__,rc);
+			return 1;
+		}
+		puts ("done\n");
+		return 0;
+	}
+
+	if (mmc2info(addr)) {
+		int rc;
+
+		printf ("Copy from MMC... ");
+		switch (rc = mmc_read (addr, (uchar *)dest, count*size)) {
+		case 0:
+			printf ("\n");
+			return 1;
+		case -1:
+			printf("failed\n");
+			return 1;
+		default:
+			printf ("%s[%d] FIXME: rc=%d\n",__FILE__,__LINE__,rc);
+			return 1;
+		}
+		puts ("done\n");
+		return 0;
+	}
+#endif
+
+#ifdef CONFIG_HAS_DATAFLASH
+	/* Check if we are copying from RAM or Flash to DataFlash */
+	if (addr_dataflash(dest) && !addr_dataflash(addr)){
+		int rc;
+
+		printf ("Copy to DataFlash... ");
+
+		rc = write_dataflash (dest, addr, count*size);
+
+		if (rc != 1) {
+			dataflash_perror (rc);
+			return (1);
+		}
+		puts ("done\n");
+		return 0;
+	}
+	
+	/* Check if we are copying from DataFlash to RAM */
+	if (addr_dataflash(addr) && !addr_dataflash(dest) && (addr2info(dest)==NULL) ){
+		read_dataflash(addr, count * size, (char *) dest);
+		return 0;
+	}
+
+	if (addr_dataflash(addr) && addr_dataflash(dest)){
+		printf("Unsupported combination of source/destination.\n\r");
+		return 1;
 	}
 #endif
 
@@ -761,6 +868,13 @@ mod_mem(cmd_tbl_t *cmdtp, int incrflag, int flag, int argc, char *argv[])
 		addr += base_address;
 	}
 
+#ifdef CONFIG_HAS_DATAFLASH
+	if (addr_dataflash(addr)){
+		printf("Can't modify DataFlash in place. Use cp instead.\n\r");
+		return 0;
+	}
+#endif
+
 	/* Print the address, followed by value.  Then accept input for
 	 * the next value.  A non-converted value exits.
 	 */
@@ -819,30 +933,29 @@ mod_mem(cmd_tbl_t *cmdtp, int incrflag, int flag, int argc, char *argv[])
 
 int do_mem_crc (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 {
-	ulong	addr, length;
-	ulong	crc;
-	ulong   *ptr;
+	ulong addr, length;
+	ulong crc;
+	ulong *ptr;
 
 	if (argc < 3) {
 		printf ("Usage:\n%s\n", cmdtp->usage);
 		return 1;
 	}
 
-	addr = simple_strtoul(argv[1], NULL, 16);
+	addr = simple_strtoul (argv[1], NULL, 16);
 	addr += base_address;
 
-	length = simple_strtoul(argv[2], NULL, 16);
+	length = simple_strtoul (argv[2], NULL, 16);
 
-	crc = crc32 (0, (const uchar *)addr, length);
+	crc = crc32 (0, (const uchar *) addr, length);
 
 	printf ("CRC32 for %08lx ... %08lx ==> %08lx\n",
-		addr, addr + length -1, crc);
+			addr, addr + length - 1, crc);
 
-	if (argc > 3)
-	  {
-	    ptr = (ulong *)simple_strtoul(argv[3], NULL, 16);
-	    *ptr = crc;
-	  }
+	if (argc > 3) {
+		ptr = (ulong *) simple_strtoul (argv[3], NULL, 16);
+		*ptr = crc;
+	}
 
 	return 0;
 }

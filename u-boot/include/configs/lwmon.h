@@ -40,9 +40,12 @@
 #define CONFIG_LWMON		1	/* ...on a LWMON board		*/
 
 #define CONFIG_BOARD_PRE_INIT	1	/* Call board_pre_init		*/
+#define CONFIG_BOARD_POSTCLK_INIT 1	/* Call board_postclk_init	*/
 
 #define CONFIG_LCD		1	/* use LCD controller ...	*/
 #define CONFIG_HLD1045		1	/* ... with a HLD1045 display	*/
+
+#define	CONFIG_SPLASH_SCREEN		/* ... with splashscreen support*/
 
 #if 1
 #define CONFIG_8xx_CONS_SMC2	1	/* Console is on SMC2		*/
@@ -72,36 +75,38 @@
 				 CFG_POST_I2C	   | \
 				 CFG_POST_SPI	   | \
 				 CFG_POST_USB	   | \
-				 CFG_POST_SPR)
+				 CFG_POST_SPR	   | \
+				 CFG_POST_SYSMON)
 
 #define CONFIG_BOOTCOMMAND	"run flash_self"
 
-#define	CONFIG_EXTRA_ENV_SETTINGS						\
-	"kernel_addr=40040000\0"						\
-	"ramdisk_addr=40100000\0"						\
-	"magic_keys=#3\0"							\
-	"key_magic#=28\0"							\
-	"key_cmd#=setenv addfb setenv bootargs \\$(bootargs) console=tty0\0"	\
-	"key_magic3=24\0"							\
-	"key_cmd3=echo *** Entering Test Mode ***;" \
-		"setenv add_misc setenv bootargs \\$(bootargs) testmode\0"	\
-	"nfsargs=setenv bootargs root=/dev/nfs rw nfsroot=$(serverip):$(rootpath)\0" \
-	"ramargs=setenv bootargs root=/dev/ram rw\0"				\
-	"addfb=setenv bootargs $(bootargs) console=ttyS1,$(baudrate)\0"		\
-	"addip=setenv bootargs $(bootargs) "					\
-		"ip=$(ipaddr):$(serverip):$(gatewayip):$(netmask):$(hostname)::off " \
-		"panic=1\0"							\
-	"add_wdt=setenv bootargs $(bootargs) $(wdt_args)\0"			\
-	"flash_nfs=run nfsargs addip add_wdt addfb;"		\
-		"bootm $(kernel_addr)\0"					\
-	"flash_self=run ramargs addip add_wdt addfb;"		\
-		"bootm $(kernel_addr) $(ramdisk_addr)\0"			\
-	"net_nfs=tftp 100000 /tftpboot/pImage.lwmon;"		\
-		"run nfsargs addip add_wdt addfb;bootm\0"	\
-	"rootpath=/opt/eldk/ppc_8xx\0"						\
-	"load=tftp 100000 /tftpboot/u-boot.bin\0"				\
-	"update=protect off 1:0;era 1:0;cp.b 100000 40000000 $(filesize)\0"	\
-	"wdt_args=wdt_8xx=off\0"						\
+#define	CONFIG_EXTRA_ENV_SETTINGS					\
+	"kernel_addr=40080000\0"					\
+	"ramdisk_addr=40280000\0"					\
+	"magic_keys=#3\0"						\
+	"key_magic#=28\0"						\
+	"key_cmd#=setenv addfb setenv 'bootargs $bootargs console=tty0'\0" \
+	"key_magic3=3C+3F\0"						\
+	"key_cmd3=echo *** Entering Test Mode ***;"			\
+		"setenv add_misc 'setenv bootargs $bootargs testmode'\0" \
+	"nfsargs=setenv bootargs root=/dev/nfs rw nfsroot=$serverip:$rootpath\0" \
+	"ramargs=setenv bootargs root=/dev/ram rw\0"			\
+	"addfb=setenv bootargs $bootargs console=ttyS1,$baudrate\0"	\
+	"addip=setenv bootargs $bootargs "				\
+		"ip=$ipaddr:$serverip:$gatewayip:$netmask:$hostname::off " \
+		"panic=1\0"						\
+	"add_wdt=setenv bootargs $bootargs $wdt_args\0"			\
+	"add_misc=setenv bootargs $bootargs runmode\0"			\
+	"flash_nfs=run nfsargs addip add_wdt addfb add_misc;"		\
+		"bootm $kernel_addr\0"					\
+	"flash_self=run ramargs addip add_wdt addfb add_misc;"		\
+		"bootm $kernel_addr $ramdisk_addr\0"			\
+	"net_nfs=tftp 100000 /tftpboot/uImage.lwmon;"			\
+		"run nfsargs addip add_wdt addfb;bootm\0"		\
+	"rootpath=/opt/eldk/ppc_8xx\0"					\
+	"load=tftp 100000 /tftpboot/u-boot.bin\0"			\
+	"update=protect off 1:0;era 1:0;cp.b 100000 40000000 $filesize\0" \
+	"wdt_args=wdt_8xx=off\0"					\
 	"verify=no"
 
 #define CONFIG_LOADS_ECHO	1	/* echo on for serial download	*/
@@ -133,7 +138,7 @@
 			else    immr->im_cpm.cp_pbdat &= ~PB_SDA
 #define I2C_SCL(bit)	if(bit) immr->im_cpm.cp_pbdat |=  PB_SCL; \
 			else    immr->im_cpm.cp_pbdat &= ~PB_SCL
-#define I2C_DELAY	udelay(1)	/* 1/4 I2C clock duration */
+#define I2C_DELAY	udelay(2)	/* 1/4 I2C clock duration */
 #endif	/* CONFIG_SOFT_I2C */
 
 
@@ -152,6 +157,7 @@
 				CFG_CMD_EEPROM	| \
 				CFG_CMD_IDE	| \
 				CFG_CMD_BSP	| \
+				CFG_CMD_BMP	| \
 				CFG_CMD_POST_DIAG )
 #else
 #define CONFIG_COMMANDS	      ( CONFIG_CMD_DFL	| \
@@ -161,6 +167,7 @@
 				CFG_CMD_EEPROM	| \
 				CFG_CMD_IDE	| \
 				CFG_CMD_BSP	| \
+				CFG_CMD_BMP	| \
 				CFG_CMD_POST_DIAG )
 #endif
 #define CONFIG_MAC_PARTITION
@@ -179,10 +186,10 @@
 #define CFG_LONGHELP			/* undef to save memory		*/
 #define CFG_PROMPT	"=> "		/* Monitor Command Prompt	*/
 
-#undef	CFG_HUSH_PARSER			/* enable "hush" shell		*/
+#define	CFG_HUSH_PARSER		1	/* use "hush" command parser	*/
+#endif
 #ifdef	CFG_HUSH_PARSER
 #define	CFG_PROMPT_HUSH_PS2	"> "
-#endif
 
 #if (CONFIG_COMMANDS & CFG_CMD_KGDB)
 #define CFG_CBSIZE	1024		/* Console I/O Buffer Size	*/
@@ -202,7 +209,14 @@
 
 #define CFG_HZ			1000	/* decrementer freq: 1 ms ticks */
 
-#define CFG_BAUDRATE_TABLE	{ 9600, 19200, 38400, 57600, 115200 }
+/*
+ * When the watchdog is enabled, output must be fast enough in Linux.
+ */
+#ifdef CONFIG_WATCHDOG
+#define CFG_BAUDRATE_TABLE	{		38400, 57600, 115200 }
+#else
+#define CFG_BAUDRATE_TABLE	{  9600, 19200, 38400, 57600, 115200 }
+#endif
 
 /*
  * Low Level Configuration Settings
@@ -219,7 +233,7 @@
  */
 #define CFG_INIT_RAM_ADDR	CFG_IMMR
 #define CFG_INIT_RAM_END	0x2F00	/* End of used area in DPRAM	*/
-#define CFG_GBL_DATA_SIZE	64  /* size in bytes reserved for initial data */
+#define CFG_GBL_DATA_SIZE	68  /* size in bytes reserved for initial data */
 #define CFG_GBL_DATA_OFFSET	(CFG_INIT_RAM_END - CFG_GBL_DATA_SIZE)
 #define CFG_INIT_SP_OFFSET	CFG_GBL_DATA_OFFSET
 
@@ -470,7 +484,6 @@
  *-----------------------------------------------------------------------
  *
  */
-/*#define	CFG_DER 0x2002000F*/
 #define CFG_DER 0
 
 /*
@@ -560,5 +573,10 @@
  */
 #define BOOTFLAG_COLD	0x01		/* Normal Power-On: Boot from FLASH	*/
 #define BOOTFLAG_WARM	0x02		/* Software reboot			*/
+
+#define CONFIG_MODEM_SUPPORT	1	/* enable modem initialization stuff */
+#undef CONFIG_MODEM_SUPPORT_DEBUG
+
+#define	CONFIG_MODEM_KEY_MAGIC	"3C+3F"	/* hold down these keys to enable modem */
 
 #endif	/* __CONFIG_H */

@@ -117,14 +117,15 @@
 /* #include <dmalloc.h> */
 /* #define DEBUG_SHELL */
 
-#ifdef BB_VER
+#if 1
 #include "busybox.h"
 #include "cmdedit.h"
 #else
 #define applet_name "hush"
 #include "standalone.h"
 #define hush_main main
-#undef BB_FEATURE_SH_FANCY_PROMPT
+#undef CONFIG_FEATURE_SH_FANCY_PROMPT
+#define BB_BANNER
 #endif
 #endif
 #define SPECIAL_VAR_SYMBOL 03
@@ -430,7 +431,7 @@ static void setup_string_in_str(struct in_str *i, const char *s);
 /*  close_me manipulations: */
 static void mark_open(int fd);
 static void mark_closed(int fd);
-static void close_all();
+static void close_all(void);
 #endif
 /*  "run" the final data structures: */
 static char *indenter(int i);
@@ -902,7 +903,7 @@ static void b_reset(o_string *o)
 static void b_free(o_string *o)
 {
 	b_reset(o);
-	if (o->data != NULL) free(o->data);
+	free(o->data);
 	o->data = NULL;
 	o->maxlen = 0;
 }
@@ -958,7 +959,7 @@ static int static_peek(struct in_str *i)
 #ifndef __U_BOOT__
 static inline void cmdedit_set_initial_prompt(void)
 {
-#ifndef BB_FEATURE_SH_FANCY_PROMPT
+#ifndef CONFIG_FEATURE_SH_FANCY_PROMPT
 	PS1 = NULL;
 #else
 	PS1 = getenv("PS1");
@@ -970,11 +971,10 @@ static inline void cmdedit_set_initial_prompt(void)
 static inline void setup_prompt_string(int promptmode, char **prompt_str)
 {
 	debug_printf("setup_prompt_string %d ",promptmode);
-#ifndef BB_FEATURE_SH_FANCY_PROMPT
+#ifndef CONFIG_FEATURE_SH_FANCY_PROMPT
 	/* Set up the prompt */
 	if (promptmode == 1) {
-		if (PS1)
-			free(PS1);
+		free(PS1);
 		PS1=xmalloc(strlen(cwd)+4);
 		sprintf(PS1, "%s %s", cwd, ( geteuid() != 0 ) ?  "$ ":"# ");
 		*prompt_str = PS1;
@@ -995,7 +995,7 @@ static void get_user_input(struct in_str *i)
 	static char the_command[BUFSIZ];
 
 	setup_prompt_string(i->promptmode, &prompt_str);
-#ifdef BB_FEATURE_COMMAND_EDITING
+#ifdef CONFIG_FEATURE_COMMAND_EDITING
 	/*
 	 ** enable command line editing only while a command line
 	 ** is actually being read; otherwise, we'll end up bequeathing
@@ -1176,7 +1176,7 @@ static void mark_closed(int fd)
 	free(tmp);
 }
 
-static void close_all()
+static void close_all(void)
 {
 	struct close_me *c;
 	for (c=close_me_head; c; c=c->next) {
@@ -1290,18 +1290,18 @@ static void pseudo_exec(struct child_prog *child)
 		 * really dislike relying on /proc for things.  We could exec ourself
 		 * from global_argv[0], but if we are in a chroot, we may not be able
 		 * to find ourself... */
-#ifdef BB_FEATURE_SH_STANDALONE_SHELL
+#ifdef CONFIG_FEATURE_SH_STANDALONE_SHELL
 		{
 			int argc_l;
 			char** argv_l=child->argv;
 			char *name = child->argv[0];
 
-#ifdef BB_FEATURE_SH_APPLETS_ALWAYS_WIN
+#ifdef CONFIG_FEATURE_SH_APPLETS_ALWAYS_WIN
 			/* Following discussions from November 2000 on the busybox mailing
 			 * list, the default configuration, (without
 			 * get_last_path_component()) lets the user force use of an
 			 * external command by specifying the full (with slashes) filename.
-			 * If you enable BB_FEATURE_SH_APPLETS_ALWAYS_WIN, then applets
+			 * If you enable CONFIG_FEATURE_SH_APPLETS_ALWAYS_WIN then applets
 			 * _aways_ override external commands, so if you want to run
 			 * /bin/cat, it will use BusyBox cat even if /bin/cat exists on the
 			 * filesystem and is _not_ busybox.  Some systems may want this,
@@ -1524,13 +1524,26 @@ static int run_pipe_real(struct pipe *pi)
 	struct child_prog *child;
 	struct built_in_command *x;
 	char *p;
+# if __GNUC__
+	/* Avoid longjmp clobbering */
+	(void) &i;
+	(void) &nextin;
+	(void) &nextout;
+	(void) &child;
+# endif
 #else
 	int nextin;
 	int flag = do_repeat ? CMD_FLAG_REPEAT : 0;
 	struct child_prog *child;
 	cmd_tbl_t *cmdtp;
 	char *p;
-#endif
+# if __GNUC__
+	/* Avoid longjmp clobbering */
+	(void) &i;
+	(void) &nextin;
+	(void) &child;
+# endif
+#endif	/* __U_BOOT__ */
 
 	nextin = 0;
 #ifndef __U_BOOT__
@@ -2344,34 +2357,35 @@ static void initialize_context(struct p_context *ctx)
  * should handle if, then, elif, else, fi, for, while, until, do, done.
  * case, function, and select are obnoxious, save those for later.
  */
+struct reserved_combo {
+	char *literal;
+	int code;
+	long flag;
+};
+/* Mostly a list of accepted follow-up reserved words.
+ * FLAG_END means we are done with the sequence, and are ready
+ * to turn the compound list into a command.
+ * FLAG_START means the word must start a new compound list.
+ */
+static struct reserved_combo reserved_list[] = {
+	{ "if",    RES_IF,    FLAG_THEN | FLAG_START },
+	{ "then",  RES_THEN,  FLAG_ELIF | FLAG_ELSE | FLAG_FI },
+	{ "elif",  RES_ELIF,  FLAG_THEN },
+	{ "else",  RES_ELSE,  FLAG_FI   },
+	{ "fi",    RES_FI,    FLAG_END  },
+	{ "for",   RES_FOR,   FLAG_IN   | FLAG_START },
+	{ "while", RES_WHILE, FLAG_DO   | FLAG_START },
+	{ "until", RES_UNTIL, FLAG_DO   | FLAG_START },
+	{ "in",    RES_IN,    FLAG_DO   },
+	{ "do",    RES_DO,    FLAG_DONE },
+	{ "done",  RES_DONE,  FLAG_END  }
+};
+#define NRES (sizeof(reserved_list)/sizeof(struct reserved_combo))
+
 int reserved_word(o_string *dest, struct p_context *ctx)
 {
-	struct reserved_combo {
-		char *literal;
-		int code;
-		long flag;
-	};
-	/* Mostly a list of accepted follow-up reserved words.
-	 * FLAG_END means we are done with the sequence, and are ready
-	 * to turn the compound list into a command.
-	 * FLAG_START means the word must start a new compound list.
-	 */
-	static struct reserved_combo reserved_list[] = {
-		{ "if",    RES_IF,    FLAG_THEN | FLAG_START },
-		{ "then",  RES_THEN,  FLAG_ELIF | FLAG_ELSE | FLAG_FI },
-		{ "elif",  RES_ELIF,  FLAG_THEN },
-		{ "else",  RES_ELSE,  FLAG_FI   },
-		{ "fi",    RES_FI,    FLAG_END  },
-		{ "for",   RES_FOR,   FLAG_IN   | FLAG_START },
-		{ "while", RES_WHILE, FLAG_DO   | FLAG_START },
-		{ "until", RES_UNTIL, FLAG_DO   | FLAG_START },
-		{ "in",    RES_IN,    FLAG_DO   },
-		{ "do",    RES_DO,    FLAG_DONE },
-		{ "done",  RES_DONE,  FLAG_END  }
-	};
 	struct reserved_combo *r;
 	for (r=reserved_list;
-#define NRES sizeof(reserved_list)/sizeof(struct reserved_combo)
 		r<reserved_list+NRES; r++) {
 		if (strcmp(dest->data, r->literal) == 0) {
 			debug_printf("found reserved word %s, code %d\n",r->literal,r->code);
@@ -3156,6 +3170,18 @@ int parse_file_outer(void)
 }
 
 #ifdef __U_BOOT__
+static void u_boot_hush_reloc(void)
+{
+	DECLARE_GLOBAL_DATA_PTR;
+	unsigned long addr;
+	struct reserved_combo *r;
+
+	for (r=reserved_list; r<reserved_list+NRES; r++) {
+		addr = (ulong) (r->literal) + gd->reloc_off;
+		r->literal = (char *)addr;
+	}
+}
+
 int u_boot_hush_start(void)
 {
 	top_vars = malloc(sizeof(struct variables));
@@ -3164,6 +3190,7 @@ int u_boot_hush_start(void)
 	top_vars->next = 0;
 	top_vars->flg_export = 0;
 	top_vars->flg_read_only = 1;
+	u_boot_hush_reloc();
 	return 0;
 }
 
@@ -3194,7 +3221,7 @@ static void *xrealloc(void *ptr, size_t size)
 /* Make sure we have a controlling tty.  If we get started under a job
  * aware app (like bash for example), make sure we are now in charge so
  * we don't fight over who gets the foreground */
-static void setup_job_control()
+static void setup_job_control(void)
 {
 	static pid_t shell_pgrp;
 	/* Loop until we are in the foreground.  */
@@ -3243,7 +3270,7 @@ int hush_main(int argc, char **argv)
 
 	/* Initialize some more globals to non-zero values */
 	set_cwd();
-#ifdef BB_FEATURE_COMMAND_EDITING
+#ifdef CONFIG_FEATURE_COMMAND_EDITING
 	cmdedit_set_initial_prompt();
 #else
 	PS1 = NULL;
@@ -3312,7 +3339,10 @@ int hush_main(int argc, char **argv)
 	debug_printf("\ninteractive=%d\n", interactive);
 	if (interactive) {
 		/* Looks like they want an interactive shell */
-		fprintf(stdout, "\nhush -- the humble shell v0.01 (testing)\n\n");
+#ifndef CONFIG_FEATURE_SH_EXTRA_QUIET 
+		printf( "\n\n" BB_BANNER " hush - the humble shell v0.01 (testing)\n");
+		printf( "Enter 'help' for a list of built-in commands.\n\n");
+#endif
 		setup_job_control();
 	}
 
@@ -3327,7 +3357,7 @@ int hush_main(int argc, char **argv)
 	input = xfopen(argv[optind], "r");
 	opt = parse_file_outer(input);
 
-#ifdef BB_FEATURE_CLEAN_UP
+#ifdef CONFIG_FEATURE_CLEAN_UP
 	fclose(input);
 	if (cwd && cwd != unknown)
 		free((char*)cwd);

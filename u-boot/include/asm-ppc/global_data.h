@@ -59,7 +59,9 @@ typedef	struct	global_data {
 #if defined(CONFIG_EVB64260)
 	unsigned int	mirror_hack[16];
 #endif
-#if defined(CONFIG_SANDPOINT) || defined(CONFIG_MUSENKI)
+#if defined(CONFIG_SANDPOINT) ||  \
+    defined(CONFIG_MUSENKI)   ||  \
+    defined(CONFIG_A3000)
 	void *		console_addr;
 #endif
 #ifdef CONFIG_AMIGAONEG3SE
@@ -70,10 +72,18 @@ typedef	struct	global_data {
 #endif
 #ifdef CONFIG_POST
 	unsigned long	post_log_word;  /* Record POST activities */
+	unsigned long	post_init_f_time;  /* When post_init_f started */
 #endif
 #ifdef CONFIG_BOARD_TYPES
 	unsigned long	board_type;
 #endif
+#ifdef CONFIG_MODEM_SUPPORT
+	unsigned long do_mdm_init;
+	unsigned long be_quiet;
+#endif
+#ifdef CONFIG_LWMON
+	unsigned long kbd_status;
+#endif	
 } gd_t;
 
 /*

@@ -76,7 +76,7 @@ ulong flash_init (void)
 		flash_info[i].sector_count = CFG_MAX_FLASH_SECT;
 		memset (flash_info[i].protect, 0, CFG_MAX_FLASH_SECT);
 		if (i == 0)
-			flashbase = PHYS_FLASH_1;
+			flashbase = CFG_FLASH_BASE;
 		else
 			panic ("configured too many flash banks!\n");
 		for (j = 0; j < flash_info[i].sector_count; j++) {
@@ -93,7 +93,7 @@ ulong flash_init (void)
 	 */
 	flash_protect ( FLAG_PROTECT_SET,
 			CFG_FLASH_BASE,
-			CFG_FLASH_BASE + _armboot_end_data - _armboot_start,
+			CFG_FLASH_BASE + monitor_flash_len - 1,
 			&flash_info[0]);
 
 	flash_protect ( FLAG_PROTECT_SET,

@@ -83,7 +83,7 @@ unsigned long flash_init (void)
 	flash_info[0].flash_id = 0x00600000;
 	flash_info[0].sector_count = 0x40;
 	flash_info[0].size = 0x800000;
-	flash_info[0].start[0] = FLASH_BASE_PRELIM;
+	flash_info[0].start[0] = FLASH_BASE0_PRELIM;
 
 	for (i = 0; i < flash_info[0].sector_count; ++i)
 	{

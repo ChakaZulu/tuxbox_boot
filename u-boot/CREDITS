@@ -26,21 +26,33 @@ N: Guillaume Alexandre
 E: guillaume.alexandre@gespac.ch
 D: Add PCIPPC6 configuration
 
+N: Pantelis Antoniou
+E: panto@intracom.gr
+D: NETVIA board support, ARTOS support.
+
 N: Pierre Aubert
 E: <p.aubert@staubli.com>
 D: Support for RPXClassic board
-
-N: Andre Beaudin
-E: <andre.beaudin@colubris.com>
-D: PCMCIA, Ethernet, TFTP
 
 N: Jerry van Baren
 E: <vanbaren@cideas.com>
 D: BedBug port to 603e core (MPC82xx). Code for enhanced memory test.
 
+N: Andre Beaudin
+E: <andre.beaudin@colubris.com>
+D: PCMCIA, Ethernet, TFTP
+
+N: Jon Benediktsson
+E: jonb@marel.is
+D: Support for Marel V37 board
+
 N: Raphael Bossek
 E: raphael.bossek@solutions4linux.de
 D: 8xxrom-0.3.0
+
+N: Rick Bronson
+E: rick@efn.org
+D: Atmel AT91RM9200DK and NAND support
 
 N: David Brown
 E: DBrown03@harris.com
@@ -54,6 +66,10 @@ N: Jonathan De Bruyne
 E: jonathan.debruyne@siemens.atea.be
 D: Port to Siemens IAD210 board
 
+N: Ken Chou
+E: kchou@ieee.org	
+D: Support for A3000 SBC board
+
 N: Conn Clark
 E: clark@esteem.com
 D: ESTEEM192E support
@@ -61,6 +77,10 @@ D: ESTEEM192E support
 N: Magnus Damm
 E: eramdam@kieray1.p.y.ki.era.ericsson.se
 D: 8xxrom
+
+N: Arun Dharankar
+E: ADharankar@ATTBI.Com
+D: threads / scheduler example code
 
 N: Kári Davíðsson
 E: kd@flaga.is
@@ -92,6 +112,10 @@ E: wg@denx.de
 D: Support for Interphase 4539 T1/E1/J1 PMC, PN62, CCM, SCM boards
 W: www.denx.de
 
+N: Peter Figuli
+E: peposh@etc.sk
+D: Support for WEP EP250 (PXA) board
+
 N: Thomas Frieden
 E: ThomasF@hyperion-entertainment.com
 D: Support for AmigaOne
@@ -121,6 +145,10 @@ D: Port to Walnut405 board
 N: Andreas Heppel
 E: aheppel@sysgo.de
 D: CPU Support for MPC 75x; board support for Eltec BAB750 [obsolete!]
+
+N: August Hoeraendl
+E: august.hoerandl@gmx.at
+D: Support for the logodl board (PXA2xx)
 
 N: Josh Huber
 E: huber@alum.wpi.edu
@@ -162,6 +190,11 @@ N: Thomas Lange
 E: thomas@corelatus.com
 D: Support for GTH board; lots of PCMCIA fixes
 
+N: The LEOX team
+E: team@leox.org
+D: Support for LEOX boards, DS164x RTC
+W: http://www.leox.org
+
 N: Raymond Lo
 E: lo@routefree.com
 D: Support for DOS partitions
@@ -169,6 +202,10 @@ D: Support for DOS partitions
 N: Dan Malek
 E: dan@netx4.com
 D: FADSROM, the grandfather of all of this
+
+N: Reinhard Meyer
+E: r.meyer@emk-elektronik.de
+D: Port to EMK TOP860 Module
 
 N: Jay Monkman
 E: jtm@smoothsmoothie.com
@@ -188,12 +225,8 @@ D: Initial support for SSV-DNP1110, SMC91111 driver
 W: www.elinos.com
 
 N: Keith Outwater
-E: Keith_Outwater@mvis.com
-D: Support for GEN860T board
-
-N: Keith Outwater
 E: keith_outwater@mvis.com
-D: Support for generic/custom MPC860T board (GEN860T)
+D: Support for generic/custom MPC860T boards (GEN860T, GEN860T_SC)
 
 N: Frank Panno
 E: fpanno@delphintech.com
@@ -213,6 +246,10 @@ N: Stefan Roese
 E: stefan.roese@esd-electronics.com
 D: IBM PPC401/403/405GP Support; Windows environment support
 
+N: Erwin Rol
+E: erwin@muffin.org
+D: boot support for RTEMS
+
 N: Neil Russell
 E: caret@c-side.com
 D: Author of LiMon-1.4.2, which contributed some ideas
@@ -223,7 +260,8 @@ D: FADS823 configuration, MPC823 video support, I2C, wireless keyboard, lots mor
 
 N: Robert Schwebel
 E: r.schwebel@pengutronix.de
-D: Support for csb226 board (xscale)
+D: Support for csb226, logodl and innokom boards (PXA2xx)
+
 N: Rob Taylor
 E: robt@flyingpig.com
 D: Port to MBX860T and Sandpoint8240
@@ -236,15 +274,31 @@ N: Jim Thompson
 E: jim@musenki.com
 D: Support for MUSENKI board
 
+N: Rune Torgersen
+E: <runet@innovsys.com>
+D: Support for Motorola MPC8266ADS board
+
 N: David Updegraff
 E: dave@cray.com
 D: Port to Cray L1 board; DHCP vendor extensions
+
+N: Martin Winistoerfer
+E: martinwinistoerfer@gmx.ch
+D: Port to MPC555/556 microcontrollers and support for cmi board
 
 N: Christian Vejlbo
 E: christian.vejlbo@tellabs.com
 D: FADS860T ethernet support
 
+N: John Zhan
+E: zhanz@sinovee.com
+D: Support for SinoVee Microsystems SC8xx SBC
+
 N: Alex Zuepke
 E: azu@sysgo.de
 D: Overall improvements on StrongARM, ARM720TDMI; Support for Tuxscreen; initial PCMCIA support for ARM
 W: www.elinos.com
+
+N: Pantelis Antoniou
+E: panto@intracom.gr
+D: NETVIA board support, ARTOS support.

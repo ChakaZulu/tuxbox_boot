@@ -15,6 +15,7 @@ as		2
 autoscr		5
 base		2
 bdinfo		2
+bmp		3
 bootelf		7
 bootm		5
 bootp		5
@@ -68,6 +69,8 @@ mm		2
 mtest		5
 muxinfo		3
 mw		2
+nand		3
+nboot		4
 next		4
 nm		2
 pciinfo		3

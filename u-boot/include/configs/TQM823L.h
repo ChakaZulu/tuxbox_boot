@@ -71,7 +71,7 @@
 		"bootm $(kernel_addr) $(ramdisk_addr)\0"		\
 	"net_nfs=tftp 200000 $(bootfile);run nfsargs addip;bootm\0"	\
 	"rootpath=/opt/eldk/ppc_8xx\0"					\
-	"bootfile=/tftpboot/TQM860L/pImage\0"				\
+	"bootfile=/tftpboot/TQM860L/uImage\0"				\
 	"kernel_addr=40040000\0"					\
 	"ramdisk_addr=40100000\0"					\
 	""
@@ -178,7 +178,7 @@
  * FLASH organization
  */
 #define CFG_MAX_FLASH_BANKS	2	/* max number of memory banks		*/
-#define CFG_MAX_FLASH_SECT	67	/* max number of sectors on one chip	*/
+#define CFG_MAX_FLASH_SECT	71	/* max number of sectors on one chip	*/
 
 #define CFG_FLASH_ERASE_TOUT	120000	/* Timeout for Flash Erase (in ms)	*/
 #define CFG_FLASH_WRITE_TOUT	500	/* Timeout for Flash Write (in ms)	*/
@@ -330,7 +330,6 @@
  *-----------------------------------------------------------------------
  *
  */
-/*#define	CFG_DER	0x2002000F*/
 #define CFG_DER	0
 
 /*

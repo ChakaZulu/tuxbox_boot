@@ -21,8 +21,11 @@
  * MA 02111-1307 USA
  */
 
+/* #define DEBUG */
+
 #include <common.h>
 #include <mpc8xx.h>
+#include <environment.h>
 
 #ifndef	CFG_ENV_ADDR
 #define CFG_ENV_ADDR	(CFG_FLASH_BASE + CFG_ENV_OFFSET)
@@ -53,7 +56,11 @@ unsigned long flash_init (void)
 
 	/* Static FLASH Bank configuration here - FIXME XXX */
 
+	debug ("\n## Get flash bank 1 size @ 0x%08x\n",FLASH_BASE0_PRELIM);
+
 	size_b0 = flash_get_size((vu_long *)FLASH_BASE0_PRELIM, &flash_info[0]);
+
+	debug ("## Get flash bank 2 size @ 0x%08x\n",FLASH_BASE1_PRELIM);
 
 	if (flash_info[0].flash_id == FLASH_UNKNOWN) {
 		printf ("## Unknown FLASH on Bank 0 - Size = 0x%08lx = %ld MB\n",
@@ -61,6 +68,8 @@ unsigned long flash_init (void)
 	}
 
 	size_b1 = flash_get_size((vu_long *)FLASH_BASE1_PRELIM, &flash_info[1]);
+
+	debug ("## Prelim. Flash bank sizes: %08lx + 0x%08lx\n",size_b0,size_b1);
 
 	if (size_b1 > size_b0) {
 		printf ("## ERROR: "
@@ -77,26 +86,59 @@ unsigned long flash_init (void)
 		return (0);
 	}
 
+	debug  ("## Before remap: "
+		"BR0: 0x%08x    OR0: 0x%08x    "
+		"BR1: 0x%08x    OR1: 0x%08x\n",
+		memctl->memc_br0, memctl->memc_or0,
+		memctl->memc_br1, memctl->memc_or1);
+
 	/* Remap FLASH according to real size */
 	memctl->memc_or0 = CFG_OR_TIMING_FLASH | (-size_b0 & OR_AM_MSK);
 	memctl->memc_br0 = (CFG_FLASH_BASE & BR_BA_MSK) | BR_MS_GPCM | BR_V;
+
+	debug ("## BR0: 0x%08x    OR0: 0x%08x\n",
+		memctl->memc_br0, memctl->memc_or0);
 
 	/* Re-do sizing to get full correct info */
 	size_b0 = flash_get_size((vu_long *)CFG_FLASH_BASE, &flash_info[0]);
 
 #if CFG_MONITOR_BASE >= CFG_FLASH_BASE
 	/* monitor protection ON by default */
+	debug ("Protect monitor: %08lx ... %08lx\n",
+		(ulong)CFG_MONITOR_BASE,
+		(ulong)CFG_MONITOR_BASE + monitor_flash_len - 1);
+
 	flash_protect(FLAG_PROTECT_SET,
 		      CFG_MONITOR_BASE,
-		      CFG_MONITOR_BASE+CFG_MONITOR_LEN-1,
+		      CFG_MONITOR_BASE + monitor_flash_len - 1,
 		      &flash_info[0]);
 #endif
 
 #ifdef	CFG_ENV_IS_IN_FLASH
 	/* ENV protection ON by default */
+	debug ("Protect %senvironment: %08lx ... %08lx\n",
+# ifdef CFG_ENV_ADDR_REDUND
+		"primary   ",
+# else
+		"",
+# endif
+		(ulong)CFG_ENV_ADDR,
+		(ulong)CFG_ENV_ADDR + CFG_ENV_SECT_SIZE - 1);
+
 	flash_protect(FLAG_PROTECT_SET,
 		      CFG_ENV_ADDR,
-		      CFG_ENV_ADDR+CFG_ENV_SIZE-1,
+		      CFG_ENV_ADDR + CFG_ENV_SECT_SIZE - 1,
+		      &flash_info[0]);
+#endif
+
+#ifdef CFG_ENV_ADDR_REDUND
+	debug ("Protect redundand environment: %08lx ... %08lx\n",
+		(ulong)CFG_ENV_ADDR_REDUND,
+		(ulong)CFG_ENV_ADDR_REDUND + CFG_ENV_SECT_SIZE - 1);
+
+	flash_protect(FLAG_PROTECT_SET,
+		      CFG_ENV_ADDR_REDUND,
+		      CFG_ENV_ADDR_REDUND + CFG_ENV_SECT_SIZE - 1,
 		      &flash_info[0]);
 #endif
 
@@ -104,6 +146,9 @@ unsigned long flash_init (void)
 		memctl->memc_or1 = CFG_OR_TIMING_FLASH | (-size_b1 & 0xFFFF8000);
 		memctl->memc_br1 = ((CFG_FLASH_BASE + size_b0) & BR_BA_MSK) |
 				    BR_MS_GPCM | BR_V;
+
+		debug ("## BR1: 0x%08x    OR1: 0x%08x\n",
+			memctl->memc_br1, memctl->memc_or1);
 
 		/* Re-do sizing to get full correct info */
 		size_b1 = flash_get_size((vu_long *)(CFG_FLASH_BASE + size_b0),
@@ -113,7 +158,7 @@ unsigned long flash_init (void)
 		/* monitor protection ON by default */
 		flash_protect(FLAG_PROTECT_SET,
 			      CFG_MONITOR_BASE,
-			      CFG_MONITOR_BASE+CFG_MONITOR_LEN-1,
+			      CFG_MONITOR_BASE+monitor_flash_len-1,
 			      &flash_info[1]);
 #endif
 
@@ -129,7 +174,13 @@ unsigned long flash_init (void)
 
 		flash_info[1].flash_id = FLASH_UNKNOWN;
 		flash_info[1].sector_count = -1;
+		flash_info[1].size = 0;
+
+		debug ("## DISABLE BR1: 0x%08x    OR1: 0x%08x\n",
+			memctl->memc_br1, memctl->memc_or1);
 	}
+
+	debug ("## Final Flash bank sizes: %08lx + 0x%08lx\n",size_b0,size_b1);
 
 	flash_info[0].size = size_b0;
 	flash_info[1].size = size_b1;
@@ -155,6 +206,10 @@ void flash_print_info  (flash_info_t *info)
 	}
 
 	switch (info->flash_id & FLASH_TYPEMASK) {
+#ifdef CONFIG_TQM8xxM	/* mirror bit flash */
+	case FLASH_AMLV128U:	printf ("AM29LV128ML (128Mbit, uniform sector size)\n");
+				break;
+# else	/* ! TQM8xxM */
 	case FLASH_AM400B:	printf ("AM29LV400B (4 Mbit, bottom boot sect)\n");
 				break;
 	case FLASH_AM400T:	printf ("AM29LV400T (4 Mbit, top boot sector)\n");
@@ -171,6 +226,7 @@ void flash_print_info  (flash_info_t *info)
 				break;
 	case FLASH_AM320T:	printf ("AM29LV320T (32 Mbit, top boot sector)\n");
 				break;
+#endif	/* TQM8xxM */
 	default:		printf ("Unknown Chip Type\n");
 				break;
 	}
@@ -215,6 +271,8 @@ static ulong flash_get_size (vu_long *addr, flash_info_t *info)
 
 	value = addr[0];
 
+	debug ("Manuf. ID @ 0x%08lx: 0x%08lx\n", (ulong)addr, value);
+
 	switch (value) {
 	case AMD_MANUFACT:
 		info->flash_id = FLASH_MAN_AMD;
@@ -231,7 +289,28 @@ static ulong flash_get_size (vu_long *addr, flash_info_t *info)
 
 	value = addr[1];			/* device ID		*/
 
+	debug ("Device ID @ 0x%08lx: 0x%08lx\n", (ulong)(&addr[1]), value);
+
 	switch (value) {
+#ifdef CONFIG_TQM8xxM	/* mirror bit flash */
+	case AMD_ID_MIRROR:
+		switch(addr[14]) {
+		case AMD_ID_LV128U_2:
+			if (addr[15] != AMD_ID_LV128U_3) {
+				info->flash_id = FLASH_UNKNOWN;
+			}
+			else {
+				info->flash_id += FLASH_AMLV128U;
+				info->sector_count = 256;
+				info->size = 0x02000000;
+			}
+			break;				/* => 32 MB		*/
+		default:
+			info->flash_id = FLASH_UNKNOWN;
+			break;
+		}
+		break;
+# else	/* ! TQM8xxM */
 	case AMD_ID_LV400T:
 		info->flash_id += FLASH_AM400T;
 		info->sector_count = 11;
@@ -267,6 +346,7 @@ static ulong flash_get_size (vu_long *addr, flash_info_t *info)
 		info->sector_count = 35;
 		info->size = 0x00400000;
 		break;				/* => 4 MB		*/
+
 	case AMD_ID_LV320T:
 		info->flash_id += FLASH_AM320T;
 		info->sector_count = 71;
@@ -278,6 +358,7 @@ static ulong flash_get_size (vu_long *addr, flash_info_t *info)
 		info->sector_count = 71;
 		info->size = 0x00800000;
 		break;				/* => 8 MB		*/
+#endif	/* TQM8xxM */
 	default:
 		info->flash_id = FLASH_UNKNOWN;
 		return (0);			/* => no or unknown flash */
@@ -285,6 +366,19 @@ static ulong flash_get_size (vu_long *addr, flash_info_t *info)
 
 	/* set up sector start address table */
 	switch (value) {
+#ifdef CONFIG_TQM8xxM	/* mirror bit flash */
+	case AMD_ID_MIRROR:
+		switch (info->flash_id & FLASH_TYPEMASK) {
+			/* only known types here - no default */
+		case FLASH_AMLV128U:
+			for (i = 0; i < info->sector_count; i++) {
+				info->start[i] = base;
+				base += 0x20000;
+			}
+			break;
+		}
+		break;
+# else	/* ! TQM8xxM */
 	case AMD_ID_LV400B:
 	case AMD_ID_LV800B:
 	case AMD_ID_LV160B:
@@ -333,6 +427,7 @@ static ulong flash_get_size (vu_long *addr, flash_info_t *info)
 				:  2 * ( 8 << 10);
 		}
 		break;
+#endif	/* TQM8xxM */
 	default:
 		return (0);
 		break;
@@ -367,6 +462,8 @@ int	flash_erase (flash_info_t *info, int s_first, int s_last)
 	vu_long *addr = (vu_long*)(info->start[0]);
 	int flag, prot, sect, l_sect;
 	ulong start, now, last;
+
+	debug ("flash_erase: first: %d last: %d\n", s_first, s_last);
 
 	if ((s_first < 0) || (s_first > s_last)) {
 		if (info->flash_id == FLASH_UNKNOWN) {

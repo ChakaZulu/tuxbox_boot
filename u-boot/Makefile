@@ -57,10 +57,14 @@ ifeq ($(ARCH),ppc)
 CROSS_COMPILE = ppc_8xx-
 endif
 ifeq ($(ARCH),arm)
-CROSS_COMPILE = arm_920TDI-
+CROSS_COMPILE = arm-linux-
 endif
 ifeq ($(ARCH),i386)
-#CROSS_COMPILE = i386-elf-
+ifeq ($(HOSTARCH),i386)
+CROSS_COMPILE =
+else
+CROSS_COMPILE = i386-linux-
+endif
 endif
 ifeq ($(ARCH),mips)
 CROSS_COMPILE = mips_4KC-
@@ -175,6 +179,14 @@ unconfig:
 #========================================================================
 # PowerPC
 #========================================================================
+
+#########################################################################
+## MPC5xx Systems
+#########################################################################
+
+cmi_mpc5xx_config:	unconfig
+	@./mkconfig $(@:_config=) ppc mpc5xx cmi
+
 #########################################################################
 ## MPC8xx Systems
 #########################################################################
@@ -194,8 +206,8 @@ CCM_config:		unconfig
 cogent_mpc8xx_config:	unconfig
 	@./mkconfig $(@:_config=) ppc mpc8xx cogent
 
-dbox2_config:		unconfig
-	@./mkconfig $(@:_config=) ppc mpc8xx dbox2
+dbox2_config:		unconfig 
+	@./mkconfig $(@:_config=) ppc mpc8xx dbox2 
 
 ELPT860_config:		unconfig
 	@./mkconfig $(@:_config=) ppc mpc8xx elpt860 LEOX
@@ -214,8 +226,16 @@ FADS860T_config:	unconfig
 FLAGADM_config:	unconfig
 	@./mkconfig $(@:_config=) ppc mpc8xx flagadm
 
+xtract_GEN860T = $(subst _SC,,$(subst _config,,$1))
+
+GEN860T_SC_config	\
 GEN860T_config: unconfig
-	@./mkconfig $(@:_config=) ppc mpc8xx gen860t
+	@ >include/config.h
+	@[ -z "$(findstring _SC,$@)" ] || \
+		{ echo "#define CONFIG_SC" >>include/config.h ; \
+		  echo "With reduced H/W feature set (SC)..." ; \
+		}
+	@./mkconfig -a $(call xtract_GEN860T,$@) ppc mpc8xx gen860t
 
 GENIETV_config:	unconfig
 	@./mkconfig $(@:_config=) ppc mpc8xx genietv
@@ -292,8 +312,20 @@ MHPC_config:		unconfig
 MVS1_config :		unconfig
 	@./mkconfig $(@:_config=) ppc mpc8xx mvs1
 
+xtract_NETVIA = $(subst _V2,,$(subst _config,,$1))
+
+NETVIA_V2_config \
 NETVIA_config:		unconfig
-	@./mkconfig $(@:_config=) ppc mpc8xx netvia
+	@ >include/config.h
+	@[ -z "$(findstring NETVIA_config,$@)" ] || \
+		 { echo "#define CONFIG_NETVIA_VERSION 1" >>include/config.h ; \
+		  echo "... Version 1" ; \
+		 }
+	@[ -z "$(findstring NETVIA_V2_config,$@)" ] || \
+		 { echo "#define CONFIG_NETVIA_VERSION 2" >>include/config.h ; \
+		  echo "... Version 2" ; \
+		 }
+	@./mkconfig -a $(call xtract_NETVIA,$@) ppc mpc8xx netvia
 
 NX823_config:		unconfig
 	@./mkconfig $(@:_config=) ppc mpc8xx nx823
@@ -304,11 +336,17 @@ pcu_e_config:		unconfig
 R360MPI_config:	unconfig
 	@./mkconfig $(@:_config=) ppc mpc8xx r360mpi
 
+RBC823_config:	unconfig
+	@./mkconfig $(@:_config=) ppc mpc8xx rbc823
+
 RPXClassic_config:	unconfig
 	@./mkconfig $(@:_config=) ppc mpc8xx RPXClassic
 
 RPXlite_config:		unconfig
 	@./mkconfig $(@:_config=) ppc mpc8xx RPXlite
+
+rmu_config:	unconfig
+	@./mkconfig $(@:_config=) ppc mpc8xx rmu
 
 RRvision_config:	unconfig
 	@./mkconfig $(@:_config=) ppc mpc8xx RRvision
@@ -324,6 +362,10 @@ SM850_config	:	unconfig
 SPD823TS_config:	unconfig
 	@./mkconfig $(@:_config=) ppc mpc8xx spd8xx
 
+svm_sc8xx_config:	unconfig
+	@ >include/config.h
+	@./mkconfig $(@:_config=) ppc mpc8xx svm_sc8xx
+
 SXNI855T_config:	unconfig
 	@./mkconfig $(@:_config=) ppc mpc8xx sixnet
 
@@ -332,10 +374,10 @@ TOP860_config:		unconfig
 	@./mkconfig $(@:_config=) ppc mpc8xx top860 emk
 
 # Play some tricks for configuration selection
-# All boards can come with 50 MHz (default), 66MHz or 80MHz clock,
+# All boards can come with 50 MHz (default), 66MHz, 80MHz or 100 MHz clock,
 # but only 855 and 860 boards may come with FEC
 # and 823 boards may have LCD support
-xtract_8xx = $(subst _66MHz,,$(subst _80MHz,,$(subst _LCD,,$(subst _FEC,,$(subst _config,,$1)))))
+xtract_8xx = $(subst _66MHz,,$(subst _80MHz,,$(subst _100MHz,,$(subst _LCD,,$(subst _config,,$1)))))
 
 FPS850L_config		\
 FPS860L_config		\
@@ -351,20 +393,14 @@ TQM850L_80MHz_config	\
 TQM855L_config		\
 TQM855L_66MHz_config	\
 TQM855L_80MHz_config	\
-TQM855L_FEC_config	\
-TQM855L_FEC_66MHz_config \
-TQM855L_FEC_80MHz_config \
 TQM860L_config		\
 TQM860L_66MHz_config	\
 TQM860L_80MHz_config	\
-TQM860L_FEC_config	\
-TQM860L_FEC_66MHz_config	\
-TQM860L_FEC_80MHz_config:	unconfig
+TQM862L_config		\
+TQM862L_66MHz_config	\
+TQM862L_80MHz_config	\
+TQM862M_100MHz_config:	unconfig
 	@ >include/config.h
-	@[ -z "$(findstring _FEC,$@)" ] || \
-		{ echo "#define CONFIG_FEC_ENET"	>>include/config.h ; \
-		  echo "... with FEC support" ; \
-		}
 	@[ -z "$(findstring _66MHz,$@)" ] || \
 		{ echo "#define CONFIG_66MHz"		>>include/config.h ; \
 		  echo "... with 66MHz system clock" ; \
@@ -372,6 +408,10 @@ TQM860L_FEC_80MHz_config:	unconfig
 	@[ -z "$(findstring _80MHz,$@)" ] || \
 		{ echo "#define CONFIG_80MHz"		>>include/config.h ; \
 		  echo "... with 80MHz system clock" ; \
+		}
+	@[ -z "$(findstring _100MHz,$@)" ] || \
+		{ echo "#define CONFIG_100MHz"		>>include/config.h ; \
+		  echo "... with 100MHz system clock" ; \
 		}
 	@[ -z "$(findstring _LCD,$@)" ] || \
 		{ echo "#define CONFIG_LCD"		>>include/config.h ; \
@@ -400,11 +440,18 @@ ADCIOP_config:	unconfig
 AR405_config:	unconfig
 	@./mkconfig $(@:_config=) ppc ppc4xx ar405 esd
 
+ASH405_config:	unconfig
+	@./mkconfig $(@:_config=) ppc ppc4xx ash405 esd
+
+BUBINGA405EP_config:unconfig
+	@./mkconfig $(@:_config=) ppc ppc4xx bubinga405ep
+
 CANBT_config:	unconfig
 	@./mkconfig $(@:_config=) ppc ppc4xx canbt esd
 
-CPCI405_config		\
-CPCI4052_config:	unconfig
+CPCI405_config	\
+CPCI4052_config	\
+CPCI405AB_config:	unconfig
 	@./mkconfig $(@:_config=) ppc ppc4xx cpci405 esd
 	@echo "BOARD_REVISION = $(@:_config=)"	>>include/config.mk
 
@@ -435,6 +482,11 @@ ERIC_config:unconfig
 MIP405_config:unconfig
 	@./mkconfig $(@:_config=) ppc ppc4xx mip405 mpl
 
+MIP405T_config:unconfig
+	@echo "#define CONFIG_MIP405T" >include/config.h
+	@echo "Enable subset config for MIP405T"
+	@./mkconfig -a MIP405 ppc ppc4xx mip405 mpl
+
 ML2_config:unconfig
 	@./mkconfig $(@:_config=) ppc ppc4xx ml2
 
@@ -448,6 +500,9 @@ PCI405_config:	unconfig
 PIP405_config:unconfig
 	@./mkconfig $(@:_config=) ppc ppc4xx pip405 mpl
 
+PMC405_config:	unconfig
+	@./mkconfig $(@:_config=) ppc ppc4xx pmc405 esd
+
 W7OLMC_config	\
 W7OLMG_config: unconfig
 	@./mkconfig $(@:_config=) ppc ppc4xx w7o
@@ -459,6 +514,9 @@ WALNUT405_config:unconfig
 ## MPC824x Systems
 #########################################################################
 xtract_82xx = $(subst _ROMBOOT,,$(subst _L2,,$(subst _266MHz,,$(subst _300MHz,,$(subst _config,,$1)))))
+
+A3000_config: unconfig
+	@./mkconfig $(@:_config=) ppc mpc824x a3000
 
 BMW_config: unconfig
 	@./mkconfig $(@:_config=) ppc mpc824x bmw
@@ -538,6 +596,20 @@ MPC8260ADS_config:	unconfig
 MPC8266ADS_config:	unconfig
 	@./mkconfig $(@:_config=) ppc mpc8260 mpc8266ads
 
+PM825_config	\
+PM825_ROMBOOT_config: unconfig
+	@echo "#define CONFIG_PCI"	>include/config.h
+	@./mkconfig -a PM826 ppc mpc8260 pm826
+	@cd ./include ;				\
+	if [ "$(findstring _ROMBOOT_,$@)" ] ; then \
+		echo "CONFIG_BOOT_ROM = y" >> config.mk ; \
+		echo "... booting from 8-bit flash" ; \
+	else \
+		echo "CONFIG_BOOT_ROM = n" >> config.mk ; \
+		echo "... booting from 64-bit flash" ; \
+	fi; \
+	echo "export CONFIG_BOOT_ROM" >> config.mk; \
+
 PM826_config	\
 PM826_ROMBOOT_config: unconfig
 	@./mkconfig $(call xtract_82xx,$@) ppc mpc8260 pm826
@@ -569,10 +641,13 @@ sbc8260_config:	unconfig
 SCM_config:		unconfig
 	@./mkconfig $(@:_config=) ppc mpc8260 SCM siemens
 
+TQM8255_config	\
 TQM8260_config	\
 TQM8260_L2_config	\
+TQM8255_266MHz_config	\
 TQM8260_266MHz_config	\
 TQM8260_L2_266MHz_config \
+TQM8255_300MHz_config	\
 TQM8260_300MHz_config:	unconfig
 	@ >include/config.h
 	@if [ "$(findstring _L2_,$@)" ] ; then \
@@ -590,7 +665,12 @@ TQM8260_300MHz_config:	unconfig
 		{ echo "#define CONFIG_300MHz"	>>include/config.h ; \
 		  echo "... with 300MHz system clock" ; \
 		}
-	@./mkconfig -a $(call xtract_82xx,$@) ppc mpc8260 tqm8260
+	@[ -z "$(findstring TQM8255_,$@)" ] || \
+		{ echo "#define CONFIG_MPC8255"	>>include/config.h ; }
+	@./mkconfig -a TQM8260 ppc mpc8260 tqm8260
+
+atc_config:	unconfig
+	@./mkconfig $(@:_config=) ppc mpc8260 atc
 
 #########################################################################
 ## 74xx/7xx Systems
@@ -622,6 +702,9 @@ ELPPC_config: unconfig
 #########################################################################
 ## StrongARM Systems
 #########################################################################
+
+at91rm9200dk_config	:	unconfig
+	@./mkconfig $(@:_config=) arm at91rm9200 at91rm9200dk
 
 lart_config	:	unconfig
 	@./mkconfig $(@:_config=) arm sa1100 lart
@@ -671,16 +754,22 @@ ep7312_config	:	unconfig
 #########################################################################
 
 cradle_config	:	unconfig
-	@./mkconfig $(@:_config=) arm xscale cradle
+	@./mkconfig $(@:_config=) arm pxa cradle 
 
 csb226_config	:	unconfig
-	@./mkconfig $(@:_config=) arm xscale csb226
+	@./mkconfig $(@:_config=) arm pxa csb226
 
 innokom_config	:	unconfig
-	@./mkconfig $(@:_config=) arm xscale innokom
+	@./mkconfig $(@:_config=) arm pxa innokom
 
 lubbock_config	:	unconfig
-	@./mkconfig $(@:_config=) arm xscale lubbock
+	@./mkconfig $(@:_config=) arm pxa lubbock
+
+logodl_config	:	unconfig
+	@./mkconfig $(@:_config=) arm pxa logodl
+
+wepep250_config	:	unconfig
+	@./mkconfig $(@:_config=) arm pxa wepep250
 
 #========================================================================
 # i386
@@ -690,6 +779,12 @@ lubbock_config	:	unconfig
 #########################################################################
 sc520_cdp_config	:	unconfig
 	@./mkconfig $(@:_config=) i386 i386 sc520_cdp
+
+sc520_spunk_config	:	unconfig
+	@./mkconfig $(@:_config=) i386 i386 sc520_spunk
+
+sc520_spunk_rel_config	:	unconfig
+	@./mkconfig $(@:_config=) i386 i386 sc520_spunk
 
 #========================================================================
 # MIPS
@@ -701,18 +796,26 @@ sc520_cdp_config	:	unconfig
 incaip_config :		unconfig
 	@./mkconfig $(@:_config=) mips mips incaip
 
+purple_config :		unconfig
+	@./mkconfig $(@:_config=) mips mips purple
 
+#########################################################################
+#########################################################################
 
 clean:
 	find . -type f \
 		\( -name 'core' -o -name '*.bak' -o -name '*~' \
 		-o -name '*.o'  -o -name '*.a'  \) -print \
 		| xargs rm -f
-	rm -f examples/hello_world examples/timer examples/eepro100_eeprom
+	rm -f examples/hello_world examples/timer \
+	      examples/eepro100_eeprom examples/sched \
+	      examples/mem_to_mem_idma2intr examples/82559_eeprom
+
 	rm -f tools/img2srec tools/mkimage tools/envcrc tools/gen_eth_addr
 	rm -f tools/easylogo/easylogo tools/bmp_logo tools/mktree
 	rm -f tools/gdb/astest tools/gdb/gdbcont tools/gdb/gdbsend
 	rm -f tools/env/fw_printenv tools/env/fw_setenv
+	rm -f board/cray/L1/bootscript.c board/cray/L1/bootscript.image
 
 clobber:	clean
 	find . -type f \
@@ -723,8 +826,8 @@ clobber:	clean
 	rm -fr *.*~
 	rm -f u-boot u-boot.* System.map
 	rm -f tools/crc32.c tools/environment.c tools/env/crc32.c
-	rm -f cpu/mpc824x/bedbug_603e.c
-	rm -f include/asm/arch include/asm
+	rm -f tools/inca-swap-bytes cpu/mpc824x/bedbug_603e.c
+	rm -f include/asm/proc include/asm/arch include/asm
 
 mrproper \
 distclean:	clobber unconfig

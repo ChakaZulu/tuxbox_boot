@@ -90,6 +90,9 @@
 
 #define	CONFIG_TIMESTAMP	1	/* Print timestamp info for images */
 
+/* Use s3c2400's RTC */
+#define CONFIG_RTC_S3C24X0	1
+
 #ifdef CONFIG_HWFLOW
 #define CONFIG_COMMANDS_ADD_HWFLOW	CFG_CMD_HWFLOW
 #else
@@ -105,11 +108,13 @@
 #ifndef USE_920T_MMU
 #define CONFIG_COMMANDS		((CONFIG_CMD_DFL & ~CFG_CMD_CACHE) | \
 				 CFG_CMD_BSP			| \
+				 CFG_CMD_DATE			| \
 				 CONFIG_COMMANDS_ADD_HWFLOW	| \
 				 CONFIG_COMMANDS_ADD_VFD	)
 #else
 #define CONFIG_COMMANDS		(CONFIG_CMD_DFL			| \
 				 CFG_CMD_BSP			| \
+				 CFG_CMD_DATE			| \
 				 CONFIG_COMMANDS_ADD_HWFLOW	| \
 				 CONFIG_COMMANDS_ADD_VFD	)
 #endif
@@ -117,15 +122,17 @@
 /* this must be included AFTER the definition of CONFIG_COMMANDS (if any) */
 #include <cmd_confdefs.h>
 
-
 #define CONFIG_BOOTDELAY	5
+#define CONFIG_ZERO_BOOTDELAY_CHECK	/* allow to break in always */
 #define CONFIG_PREBOOT		"echo;echo *** booting ***;echo"
 #define CONFIG_BOOTARGS    	"console=ttyS0"
-#define CONFIG_ETHADDR		00:D0:93:00:61:11
-#define CONFIG_NETMASK          255.255.255.0
-#define CONFIG_IPADDR		192.168.3.27
+#define CONFIG_NETMASK          255.255.0.0
+#define CONFIG_IPADDR		192.168.3.68
+#define CONFIG_HOSTNAME		trab
 #define CONFIG_SERVERIP		192.168.3.1
 #define CONFIG_BOOTCOMMAND	"run flash_nfs"
+
+#ifndef CONFIG_BIG_FLASH
 #define	CONFIG_EXTRA_ENV_SETTINGS	\
 	"nfs_args=setenv bootargs root=/dev/nfs rw " \
 		"nfsroot=$(serverip):$(rootpath)\0" \
@@ -137,7 +144,7 @@
 	"load=tftp 0xC100000 /tftpboot/TRAB/u-boot.bin\0" \
 	"update=protect off 1:0-8;era 1:0-8;cp.b 0xc100000 0 $(filesize);" \
 		"setenv filesize;saveenv\0" \
-	"loadfile=/tftpboot/TRAB/pImage\0" \
+	"loadfile=/tftpboot/TRAB/uImage\0" \
 	"loadaddr=c400000\0" \
 	"net_load=tftpboot $(loadaddr) $(loadfile)\0" \
 	"net_nfs=run net_load nfs_args add_net add_misc;bootm\0" \
@@ -146,6 +153,27 @@
 	"mdm_init1=ATZ\0" \
 	"mdm_init2=ATS0=1\0" \
 	"mdm_flow_control=rts/cts\0"
+#else	/* CONFIG_BIG_FLASH */
+#define	CONFIG_EXTRA_ENV_SETTINGS	\
+	"nfs_args=setenv bootargs root=/dev/nfs rw " \
+		"nfsroot=$(serverip):$(rootpath)\0" \
+	"rootpath=/opt/eldk/arm_920TDI\0" \
+	"ram_args=setenv bootargs root=/dev/ram rw\0" \
+	"add_net=setenv bootargs $(bootargs) ethaddr=$(ethaddr) " \
+		"ip=$(ipaddr):$(serverip):$(gatewayip):$(netmask):$(hostname)::off\0" \
+	"add_misc=setenv bootargs $(bootargs) console=ttyS0 panic=1\0" \
+	"load=tftp 0xC100000 /tftpboot/TRAB/u-boot.bin\0" \
+	"update=protect off 1:0;era 1:0;cp.b 0xc100000 0 $(filesize)\0" \
+	"loadfile=/tftpboot/TRAB/uImage\0" \
+	"loadaddr=c400000\0" \
+	"net_load=tftpboot $(loadaddr) $(loadfile)\0" \
+	"net_nfs=run net_load nfs_args add_net add_misc;bootm\0" \
+	"kernel_addr=00040000\0" \
+	"flash_nfs=run nfs_args add_net add_misc;bootm $(kernel_addr)\0" \
+	"mdm_init1=ATZ\0" \
+	"mdm_init2=ATS0=1\0" \
+	"mdm_flow_control=rts/cts\0"
+#endif	/* CONFIG_BIG_FLASH */
 
 #if 0	/* disabled for development */
 #define	CONFIG_AUTOBOOT_KEYED		/* Enable password protection	*/
@@ -211,20 +239,25 @@
 #define PHYS_SDRAM_1		0x0c000000 /* SDRAM Bank #1 */
 #define PHYS_SDRAM_1_SIZE	0x01000000 /* 16 MB */
 
-#define PHYS_FLASH_1		0x00000000 /* Flash Bank #1 */
-#define PHYS_FLASH_SIZE		0x00800000 /* 8 MB */
+#define CFG_FLASH_BASE		0x00000000 /* Flash Bank #1 */
 
 /* The following #defines are needed to get flash environment right */
-#define	CFG_MONITOR_BASE	PHYS_FLASH_1
+#define	CFG_MONITOR_BASE	CFG_FLASH_BASE
+#ifndef CONFIG_BIG_FLASH
 #define	CFG_MONITOR_LEN		(256 << 10)
-
-#define CFG_FLASH_BASE		PHYS_FLASH_1
+#else
+#define	CFG_MONITOR_LEN		(128 << 10)
+#endif
 
 /*-----------------------------------------------------------------------
  * FLASH and environment organization
  */
 #define CFG_MAX_FLASH_BANKS	1	/* max number of memory banks */
-#define CFG_MAX_FLASH_SECT	(71)	/* max number of sectors on one chip */
+#ifndef CONFIG_BIG_FLASH
+#define CFG_MAX_FLASH_SECT	71	/* max number of sectors on one chip */
+#else
+#define CFG_MAX_FLASH_SECT	128	/* max number of sectors on one chip */
+#endif
 
 /* timeout values are in ticks */
 #define CFG_FLASH_ERASE_TOUT	(2*CFG_HZ) /* Timeout for Flash Erase */
@@ -233,11 +266,21 @@
 #define	CFG_ENV_IS_IN_FLASH	1
 
 /* Address and size of Primary Environment Sector	*/
-#define CFG_ENV_ADDR		(PHYS_FLASH_1 + 0x4000)
+#ifndef CONFIG_BIG_FLASH
+#define CFG_ENV_ADDR		(CFG_FLASH_BASE + 0x4000)
 #define CFG_ENV_SIZE		0x4000
+#define CFG_ENV_SECT_SIZE	0x4000
+#else
+#define CFG_ENV_ADDR		(CFG_FLASH_BASE + 0x20000)
+#define CFG_ENV_SIZE		0x4000
+#define CFG_ENV_SECT_SIZE	0x20000
+#endif
 
 /* Address and size of Redundant Environment Sector	*/
-#define CFG_ENV_OFFSET_REDUND	(CFG_ENV_ADDR+CFG_ENV_SIZE)
+#define CFG_ENV_OFFSET_REDUND	(CFG_ENV_ADDR+CFG_ENV_SECT_SIZE)
 #define CFG_ENV_SIZE_REDUND	(CFG_ENV_SIZE)
+
+/* Initial value of the on-board touch screen brightness */
+#define CFG_BRIGHTNESS 0x20
 
 #endif	/* __CONFIG_H */

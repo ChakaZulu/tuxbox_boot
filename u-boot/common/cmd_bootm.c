@@ -31,6 +31,7 @@
 #include <image.h>
 #include <malloc.h>
 #include <zlib.h>
+#include <environment.h>
 #include <asm/byteorder.h>
 #if (CONFIG_COMMANDS & CFG_CMD_DATE) || defined(CONFIG_TIMESTAMP)
 #include <rtc.h>
@@ -53,6 +54,10 @@
 
 #ifdef CONFIG_LOGBUFFER
 #include <logbuff.h>
+#endif
+
+#ifdef CONFIG_HAS_DATAFLASH
+#include <dataflash.h>
 #endif
 
 /*
@@ -98,12 +103,16 @@ static boot_os_Fcn do_bootm_linux;
 extern boot_os_Fcn do_bootm_linux;
 #endif
 static boot_os_Fcn do_bootm_netbsd;
+static boot_os_Fcn do_bootm_rtems;
 #if (CONFIG_COMMANDS & CFG_CMD_ELF)
 static boot_os_Fcn do_bootm_vxworks;
 static boot_os_Fcn do_bootm_qnxelf;
 int do_bootvx ( cmd_tbl_t *cmdtp, int flag, int argc, char *argv[] );
 int do_bootelf (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[] );
 #endif /* CFG_CMD_ELF */
+#if defined(CONFIG_ARTOS) && defined(CONFIG_PPC)
+static boot_os_Fcn do_bootm_artos;
+#endif
 
 image_header_t header;
 
@@ -133,6 +142,11 @@ int do_bootm (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 	printf ("## Booting image at %08lx ...\n", addr);
 
 	/* Copy header so we can blank CRC field for re-calculation */
+#ifdef CONFIG_HAS_DATAFLASH
+	if (addr_dataflash(addr)){
+		read_dataflash(addr, sizeof(image_header_t), (char *)&header);
+	} else
+#endif
 	memmove (&header, (char *)addr, sizeof(image_header_t));
 
 	if (ntohl(hdr->ih_magic) != IH_MAGIC) {
@@ -173,6 +187,13 @@ int do_bootm (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 	data = addr + sizeof(image_header_t);
 	len  = ntohl(hdr->ih_size);
 
+#ifdef CONFIG_HAS_DATAFLASH
+	if (addr_dataflash(addr)){
+		read_dataflash(data, len, (char *)CFG_LOAD_ADDR);
+		data = CFG_LOAD_ADDR;
+	}
+#endif	
+
 	if (verify) {
 		printf ("   Verifying Checksum ... ");
 		if (crc32 (0, (char *)data, len) != ntohl(hdr->ih_dcrc)) {
@@ -192,6 +213,8 @@ int do_bootm (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 	if (hdr->ih_arch != IH_CPU_ARM)
 #elif defined(__I386__)
 	if (hdr->ih_arch != IH_CPU_I386)
+#elif defined(__mips__)
+	if (hdr->ih_arch != IH_CPU_MIPS)	
 #else
 # error Unknown CPU type
 #endif
@@ -285,12 +308,17 @@ int do_bootm (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 
 	switch (hdr->ih_type) {
 	case IH_TYPE_STANDALONE:
-		appl = (int (*)(cmd_tbl_t *, int, int, char *[]))ntohl(hdr->ih_ep);
 		if (iflag)
 			enable_interrupts();
 
+		/* load (and uncompress), but don't start if "autostart"
+		 * is set to "no"
+		 */
+		if (((s = getenv("autostart")) != NULL) && (strcmp(s,"no") == 0))
+			return 0;
+		appl = (int (*)(cmd_tbl_t *, int, int, char *[]))ntohl(hdr->ih_ep);
 		(*appl)(cmdtp, flag, argc-1, &argv[1]);
-		break;
+		return 0;
 	case IH_TYPE_KERNEL:
 	case IH_TYPE_MULTI:
 		/* handled below */
@@ -314,6 +342,12 @@ int do_bootm (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 	    do_bootm_netbsd (cmdtp, flag, argc, argv,
 			     addr, len_ptr, verify);
 	    break;
+	    
+	case IH_OS_RTEMS:
+	    do_bootm_rtems (cmdtp, flag, argc, argv,
+			     addr, len_ptr, verify);
+	    break;
+	     
 #if (CONFIG_COMMANDS & CFG_CMD_ELF)
 	case IH_OS_VXWORKS:
 	    do_bootm_vxworks (cmdtp, flag, argc, argv,
@@ -324,6 +358,12 @@ int do_bootm (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 			      addr, len_ptr, verify);
 	    break;
 #endif /* CFG_CMD_ELF */
+#ifdef CONFIG_ARTOS
+	case IH_OS_ARTOS:
+	    do_bootm_artos  (cmdtp, flag, argc, argv,
+			     addr, len_ptr, verify);
+	    break;
+#endif
 	}
 
 	SHOW_BOOT_PROGRESS (-9);
@@ -350,6 +390,7 @@ do_bootm_linux (cmd_tbl_t *cmdtp, int flag,
 	ulong	cmd_start, cmd_end;
 	ulong	initrd_high;
 	ulong	data;
+	int	initrd_copy_to_ram = 1;
 	char    *cmdline;
 	char	*s;
 	bd_t	*kbd;
@@ -361,6 +402,8 @@ do_bootm_linux (cmd_tbl_t *cmdtp, int flag,
 		 * turning the "load high" feature off. This is intentional.
 		 */
 		initrd_high = simple_strtoul(s, NULL, 16);
+		if (initrd_high == ~0)
+			initrd_copy_to_ram = 0;
 	} else {	/* not set, no restrictions to load high */
 		initrd_high = ~0;
 	}
@@ -543,6 +586,10 @@ do_bootm_linux (cmd_tbl_t *cmdtp, int flag,
 	}
 
 	if (data) {
+	    if (!initrd_copy_to_ram) {	/* zero-copy ramdisk support */
+		initrd_start = data;
+		initrd_end = initrd_start + len;
+	    } else {
 		initrd_start  = (ulong)kbd - len;
 		initrd_start &= ~(4096 - 1);	/* align on page */
 
@@ -597,6 +644,7 @@ do_bootm_linux (cmd_tbl_t *cmdtp, int flag,
 		memmove ((void *)initrd_start, (void *)data, len);
 #endif	/* CONFIG_HW_WATCHDOG || CONFIG_WATCHDOG */
 		printf ("OK\n");
+	    }
 	} else {
 		initrd_start = 0;
 		initrd_end = 0;
@@ -621,7 +669,7 @@ do_bootm_linux (cmd_tbl_t *cmdtp, int flag,
 	 */
 	(*kernel) (kbd, initrd_start, initrd_end, cmd_start, cmd_end);
 }
-#endif /* CONFIG_ARM */
+#endif /* CONFIG_PPC */
 
 static void
 do_bootm_netbsd (cmd_tbl_t *cmdtp, int flag,
@@ -702,6 +750,99 @@ do_bootm_netbsd (cmd_tbl_t *cmdtp, int flag,
 	 */
 	(*loader) (gd->bd, img_addr, consdev, cmdline);
 }
+
+#if defined(CONFIG_ARTOS) && defined(CONFIG_PPC)
+
+/* Function that returns a character from the environment */
+extern uchar (*env_get_char)(int);
+
+static void
+do_bootm_artos (cmd_tbl_t *cmdtp, int flag,
+		int	argc, char *argv[],
+		ulong	addr,
+		ulong	*len_ptr,
+		int	verify)
+{
+	DECLARE_GLOBAL_DATA_PTR;
+	ulong top;
+	char *s, *cmdline;
+	char **fwenv, **ss;
+	int i, j, nxt, len, envno, envsz;
+	bd_t *kbd;
+	void (*entry)(bd_t *bd, char *cmdline, char **fwenv, ulong top);
+	image_header_t *hdr = &header;
+
+	/*
+	 * Booting an ARTOS kernel image + application
+	 */
+
+	/* this used to be the top of memory, but was wrong... */
+#ifdef CONFIG_PPC
+	/* get stack pointer */
+	asm volatile ("mr %0,1" : "=r"(top) );
+#endif
+	debug ("## Current stack ends at 0x%08lX ", top);
+
+	top -= 2048;		/* just to be sure */
+	if (top > CFG_BOOTMAPSZ)
+		top = CFG_BOOTMAPSZ;
+	top &= ~0xF;
+
+	debug ("=> set upper limit to 0x%08lX\n", top);
+
+	/* first check the artos specific boot args, then the linux args*/
+	if ((s = getenv("abootargs")) == NULL && (s = getenv("bootargs")) == NULL)
+		s = "";
+
+	/* get length of cmdline, and place it */
+	len = strlen(s);
+	top = (top - (len + 1)) & ~0xF;
+	cmdline = (char *)top;
+	debug ("## cmdline at 0x%08lX ", top);
+	strcpy(cmdline, s);
+
+	/* copy bdinfo */
+	top = (top - sizeof(bd_t)) & ~0xF;
+	debug ("## bd at 0x%08lX ", top);
+	kbd = (bd_t *)top;
+	memcpy(kbd, gd->bd, sizeof(bd_t));
+
+	/* first find number of env entries, and their size */
+	envno = 0;
+	envsz = 0;
+	for (i = 0; env_get_char(i) != '\0'; i = nxt + 1) {
+		for (nxt = i; env_get_char(nxt) != '\0'; ++nxt)
+			;
+		envno++;
+		envsz += (nxt - i) + 1;	/* plus trailing zero */
+	}
+	envno++;	/* plus the terminating zero */
+	debug ("## %u envvars total size %u ", envno, envsz);
+
+	top = (top - sizeof(char **)*envno) & ~0xF;
+	fwenv = (char **)top;
+	debug ("## fwenv at 0x%08lX ", top);
+
+	top = (top - envsz) & ~0xF;
+	s = (char *)top;
+	ss = fwenv;
+
+	/* now copy them */
+	for (i = 0; env_get_char(i) != '\0'; i = nxt + 1) {
+		for (nxt = i; env_get_char(nxt) != '\0'; ++nxt)
+			;
+		*ss++ = s;
+		for (j = i; j < nxt; ++j)
+			*s++ = env_get_char(j);
+		*s++ = '\0';
+	}
+	*ss++ = NULL;	/* terminate */
+
+	entry = (void (*)(bd_t *, char *, char **, ulong))ntohl(hdr->ih_ep);
+	(*entry)(kbd, cmdline, fwenv, top);
+}
+#endif
+
 
 #if (CONFIG_COMMANDS & CFG_CMD_BOOTD)
 int do_bootd (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
@@ -824,6 +965,10 @@ print_type (image_header_t *hdr)
 	case IH_OS_VXWORKS:	os = "VxWorks";			break;
 	case IH_OS_QNX:		os = "QNX";			break;
 	case IH_OS_U_BOOT:	os = "U-Boot";			break;
+	case IH_OS_RTEMS:	os = "RTEMS";			break;
+#ifdef CONFIG_ARTOS
+	case IH_OS_ARTOS:	os = "ARTOS";			break;
+#endif
 	default:		os = "Unknown OS";		break;
 	}
 
@@ -944,6 +1089,29 @@ int gunzip(void *dst, int dstlen, unsigned char *src, int *lenp)
 	inflateEnd(&s);
 
 	return (0);
+}
+
+static void
+do_bootm_rtems (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[],
+		ulong addr, ulong *len_ptr, int verify)
+{
+	DECLARE_GLOBAL_DATA_PTR;
+	image_header_t *hdr = &header;
+	void	(*entry_point)(bd_t *);
+
+	entry_point = (void (*)(bd_t *)) hdr->ih_ep;
+
+	printf ("## Transferring control to RTEMS (at address %08lx) ...\n",
+		(ulong)entry_point);
+
+	SHOW_BOOT_PROGRESS (15);
+
+	/*
+	 * RTEMS Parameters:
+	 *   r3: ptr to board info data
+	 */
+
+	(*entry_point ) ( gd->bd );
 }
 
 #if (CONFIG_COMMANDS & CFG_CMD_ELF)

@@ -33,6 +33,7 @@
  *	CONFIG_L2_CACHE
  *	CONFIG_266MHz
  *	CONFIG_300MHz
+ *	CONFIG_MPC8255
  */
 
 /*
@@ -69,11 +70,25 @@
 #define CONFIG_PREBOOT	"echo;echo Type \"run flash_nfs\" to mount root filesystem over NFS;echo"
 
 #undef	CONFIG_BOOTARGS
-#define CONFIG_BOOTCOMMAND							\
-	"bootp; " 								\
-	"setenv bootargs root=/dev/nfs rw nfsroot=$(serverip):$(rootpath) " 	\
-	"ip=$(ipaddr):$(serverip):$(gatewayip):$(netmask):$(hostname)::off; " 	\
-	"bootm"
+
+#define	CONFIG_EXTRA_ENV_SETTINGS					\
+	"nfsargs=setenv bootargs root=/dev/nfs rw "			\
+		"nfsroot=$(serverip):$(rootpath)\0"			\
+	"ramargs=setenv bootargs root=/dev/ram rw\0"			\
+	"addip=setenv bootargs $(bootargs) "				\
+		"ip=$(ipaddr):$(serverip):$(gatewayip):$(netmask)"	\
+		":$(hostname):$(netdev):off panic=1\0"			\
+	"flash_nfs=run nfsargs addip;"					\
+		"bootm $(kernel_addr)\0"				\
+	"flash_self=run ramargs addip;"					\
+		"bootm $(kernel_addr) $(ramdisk_addr)\0"		\
+	"net_nfs=tftp 200000 $(bootfile);run nfsargs addip;bootm\0"	\
+	"rootpath=/opt/eldk/ppc_82xx\0"					\
+	"bootfile=/tftpboot/TQM8260/uImage\0"				\
+	"kernel_addr=40040000\0"					\
+	"ramdisk_addr=40100000\0"					\
+	""
+#define CONFIG_BOOTCOMMAND	"run flash_self"
 
 /* enable I2C and select the hardware/software driver */
 #undef  CONFIG_HARD_I2C			/* I2C with hardware support	*/
@@ -188,11 +203,15 @@
 
 
 /* system clock rate (CLKIN) - equal to the 60x and local bus speed */
-#ifndef CONFIG_300MHz
-#define CONFIG_8260_CLKIN	66666666	/* in Hz */
-#else
-#define CONFIG_8260_CLKIN	83333000	/* in Hz */
-#endif
+#ifdef CONFIG_MPC8255
+#  define CONFIG_8260_CLKIN	66666666	/* in Hz */
+#else	/* !CONFIG_MPC8255 */
+# ifndef CONFIG_300MHz
+#  define CONFIG_8260_CLKIN	66666666	/* in Hz */
+# else
+#  define CONFIG_8260_CLKIN	83333000	/* in Hz */
+# endif
+#endif	/* CONFIG_MPC8255 */
 
 #if defined(CONFIG_CONS_NONE) || defined(CONFIG_CONS_USE_EXTC)
 #define CONFIG_BAUDRATE		230400
@@ -296,15 +315,19 @@
  * defines for the various registers affected by the HRCW e.g. changing
  * HRCW_DPPCxx requires you to also change CFG_SIUMCR.
  */
-#if defined(CONFIG_266MHz)
-#define CFG_HRCW_MASTER		(HRCW_CIP | HRCW_ISB111 | HRCW_BMS | \
-				                              HRCW_MODCK_H0111)
-#elif defined(CONFIG_300MHz)
-#define CFG_HRCW_MASTER		(HRCW_CIP | HRCW_ISB111 | HRCW_BMS | \
-				                              HRCW_MODCK_H0110)
-#else
-#define CFG_HRCW_MASTER		(HRCW_CIP | HRCW_ISB111 | HRCW_BMS)
-#endif
+#define	__HRCW__ALL__		(HRCW_CIP | HRCW_ISB111 | HRCW_BMS)
+
+#ifdef	CONFIG_MPC8255
+#  define CFG_HRCW_MASTER	(__HRCW__ALL__ | HRCW_MODCK_H0111)
+#else	/* ! MPC8255 */
+# if defined(CONFIG_266MHz)
+#  define CFG_HRCW_MASTER	(__HRCW__ALL__ | HRCW_MODCK_H0111)
+# elif defined(CONFIG_300MHz)
+#  define CFG_HRCW_MASTER	(__HRCW__ALL__ | HRCW_MODCK_H0110)
+# else
+#  define CFG_HRCW_MASTER	(__HRCW__ALL__)
+# endif
+#endif	/* CONFIG_MPC8255 */
 
 /* no slaves so just fill with zeros */
 #define CFG_HRCW_SLAVE1		0

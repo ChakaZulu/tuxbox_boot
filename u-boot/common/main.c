@@ -195,8 +195,7 @@ static __inline__ int abortboot(int bootdelay)
 	int abort = 0;
 
 #ifdef CONFIG_AUTOBOOT_SELECT
-	char option = 'CONFIG_AUTOBOOT_SELECT_AUTOBOOT';
-
+	char option = CONFIG_AUTOBOOT_SELECT_AUTOBOOT;
 	puts("\nOptions:\n");
 # if CONFIG_AUTOBOOT_SELECT_NUMBER >= 1
 	printf("  1: " CONFIG_AUTOBOOT_SELECT_1_TEXT "\n");
@@ -215,12 +214,14 @@ static __inline__ int abortboot(int bootdelay)
 # endif /* CONFIG_AUTOBOOT_SELECT_NUMBER >= 5 */
 	printf("Select option (1-%d), other keys to stop autoboot: %2d ", CONFIG_AUTOBOOT_SELECT_NUMBER, bootdelay);
 #else /* CONFIG_AUTOBOOT_SELECT */
+
 #ifdef CONFIG_MENUPROMPT
 	printf(CONFIG_MENUPROMPT, bootdelay);
 #else
 	printf("Hit any key to stop autoboot: %2d ", bootdelay);
 #endif
 #endif /* CONFIG_AUTOBOOT_SELECT */
+
 #ifdef CONFIG_DBOX2_LCD_INFO
 	lcd_printf ("\nautoboot: %2d", bootdelay);
 #endif /* CONFIG_DBOX2_LCD_INFO */
@@ -250,10 +251,10 @@ static __inline__ int abortboot(int bootdelay)
 		for (i=0; !abort && i<100; ++i) {
 			if (tstc()) {	/* we got a key press	*/
 #ifdef CONFIG_AUTOBOOT_SELECT
-				option = getc();
-# ifdef CONFIG_AUTOBOOT_SELECT_AUTOBOOT
-				if (option < '1' || option > CONFIG_AUTOBOOT_SELECT_NUMBER + '0')
-# endif /* CONFIG_AUTOBOOT_SELECT_AUTOBOOT */
+ 				option = getc();
+ 	# ifdef CONFIG_AUTOBOOT_SELECT_AUTOBOOT
+ 				if (option < '1' || option > CONFIG_AUTOBOOT_SELECT_NUMBER + '0')
+ 	# endif /* CONFIG_AUTOBOOT_SELECT_AUTOBOOT */
 #endif /* CONFIG_AUTOBOOT_SELECT */
 				abort  = 1;	/* don't auto boot	*/
 				bootdelay = 0;	/* no more delay	*/
@@ -264,14 +265,14 @@ static __inline__ int abortboot(int bootdelay)
 				(void) getc();  /* consume input	*/
 # endif
 #endif /* CONFIG_AUTOBOOT_SELECT */
-				break;
+ 			break;
 			}
 			udelay (10000);
 		}
 
 		printf ("\b\b\b%2d ", bootdelay);
 #ifdef CONFIG_DBOX2_LCD_INFO
-		lcd_printf ("\b\b%2d", bootdelay);
+ 		lcd_printf ("\b\b%2d", bootdelay);
 #endif /* CONFIG_DBOX2_LCD_INFO */
 	}
 
@@ -279,34 +280,34 @@ static __inline__ int abortboot(int bootdelay)
 	switch ( option )
 	{
 # if CONFIG_AUTOBOOT_SELECT_NUMBER >= 1
-		case '1':
-			run_command (CONFIG_AUTOBOOT_SELECT_1_COMMAND, 0);
-			break;
+	case '1':
+		run_command (CONFIG_AUTOBOOT_SELECT_1_COMMAND, 0);
+		break;
 # endif /* CONFIG_AUTOBOOT_SELECT_NUMBER >= 1 */
 # if CONFIG_AUTOBOOT_SELECT_NUMBER >= 2
-		case '2':
-			run_command (CONFIG_AUTOBOOT_SELECT_2_COMMAND, 0);
-			break;
+	case '2':
+		run_command (CONFIG_AUTOBOOT_SELECT_2_COMMAND, 0);
+		break;
 # endif /* CONFIG_AUTOBOOT_SELECT_NUMBER >= 2 */
 # if CONFIG_AUTOBOOT_SELECT_NUMBER >= 3
-		case '3':
-			run_command (CONFIG_AUTOBOOT_SELECT_3_COMMAND, 0);
-			break;
+	case '3':
+		run_command (CONFIG_AUTOBOOT_SELECT_3_COMMAND, 0);
+		break;
 # endif /* CONFIG_AUTOBOOT_SELECT_NUMBER >= 3 */
 # if CONFIG_AUTOBOOT_SELECT_NUMBER >= 4
-		case '4':
-			run_command (CONFIG_AUTOBOOT_SELECT_4_COMMAND, 0);
-			break;
+	case '4':
+		run_command (CONFIG_AUTOBOOT_SELECT_4_COMMAND, 0);
+		break;
 # endif /* CONFIG_AUTOBOOT_SELECT_NUMBER >= 4 */
 # if CONFIG_AUTOBOOT_SELECT_NUMBER >= 5
-		case '5':
-			run_command (CONFIG_AUTOBOOT_SELECT_5_COMMAND, 0);
-			break;
+	case '5':
+		run_command (CONFIG_AUTOBOOT_SELECT_5_COMMAND, 0);
+		break;
 # endif /* CONFIG_AUTOBOOT_SELECT_NUMBER >= 5 */
 # ifndef CONFIG_AUTOBOOT_SELECT_AUTOBOOT
-		default:
-			abort = 1;
-			break;
+	default:
+		abort = 1;
+		break;
 # endif /* CONFIG_AUTOBOOT_SELECT_AUTOBOOT */
 	}
 #endif /* CONFIG_AUTOBOOT_SELECT */
@@ -362,6 +363,16 @@ void main_loop (void)
 	}
 #endif  /* CONFIG_MODEM_SUPPORT */
 
+#ifdef CONFIG_VERSION_VARIABLE
+	{
+		extern char version_string[];
+		char *str = getenv("ver");
+
+		if (!str)
+			setenv ("ver", version_string);  /* set version variable */
+	}
+#endif /* CONFIG_VERSION_VARIABLE */
+
 #ifdef CFG_HUSH_PARSER
 	u_boot_hush_start ();
 #endif
@@ -392,13 +403,7 @@ void main_loop (void)
 	debug ("### main_loop entered: bootdelay=%d\n\n", bootdelay);
 
 # ifdef CONFIG_BOOT_RETRY_TIME
-	s = getenv ("bootretry");
-	if (s != NULL)
-		retry_time = (int)simple_strtoul(s, NULL, 10);
-	else
-		retry_time =  CONFIG_BOOT_RETRY_TIME;
-	if (retry_time >= 0 && retry_time < CONFIG_BOOT_RETRY_MIN)
-		retry_time = CONFIG_BOOT_RETRY_MIN;
+	init_cmd_timeout ();
 # endif	/* CONFIG_BOOT_RETRY_TIME */
 
 	s = getenv ("bootcmd");
@@ -499,10 +504,26 @@ void main_loop (void)
 #endif /*CFG_HUSH_PARSER*/
 }
 
+#ifdef CONFIG_BOOT_RETRY_TIME
+/***************************************************************************
+ * initialise command line timeout
+ */
+void init_cmd_timeout(void)
+{
+	char *s = getenv ("bootretry");
+
+	if (s != NULL)
+		retry_time = (int)simple_strtoul(s, NULL, 10);
+	else
+		retry_time =  CONFIG_BOOT_RETRY_TIME;
+
+	if (retry_time >= 0 && retry_time < CONFIG_BOOT_RETRY_MIN)
+		retry_time = CONFIG_BOOT_RETRY_MIN;
+}
+
 /***************************************************************************
  * reset command line timeout to retry_time seconds
  */
-#ifdef CONFIG_BOOT_RETRY_TIME
 void reset_cmd_timeout(void)
 {
 	endtime = endtick(retry_time);
@@ -823,9 +844,9 @@ int run_command (const char *cmd, int flag)
 	char finaltoken[CFG_CBSIZE];
 	char *str = cmdbuf;
 	char *argv[CFG_MAXARGS + 1];	/* NULL terminated	*/
-	int argc;
+	int argc, inquotes;
 	int repeatable = 1;
-	int inquotes;
+	int rc = 0;
 
 #ifdef DEBUG_PARSER
 	printf ("[RUN_COMMAND] cmd[%p]=\"", cmd);
@@ -894,13 +915,15 @@ int run_command (const char *cmd, int flag)
 		/* Look up command in command table */
 		if ((cmdtp = find_cmd(argv[0])) == NULL) {
 			printf ("Unknown command '%s' - try 'help'\n", argv[0]);
-			return -1;	/* give up after bad command */
+			rc = -1;	/* give up after bad command */
+			continue;
 		}
 
 		/* found - check max args */
 		if (argc > cmdtp->maxargs) {
 			printf ("Usage:\n%s\n", cmdtp->usage);
-			return -1;
+			rc = -1;
+			continue;
 		}
 
 #if (CONFIG_COMMANDS & CFG_CMD_BOOTD)
@@ -911,7 +934,8 @@ int run_command (const char *cmd, int flag)
 #endif
 			if (flag & CMD_FLAG_BOOTD) {
 				printf ("'bootd' recursion detected\n");
-				return -1;
+				rc = -1;
+				continue;
 			}
 			else
 				flag |= CMD_FLAG_BOOTD;
@@ -920,7 +944,7 @@ int run_command (const char *cmd, int flag)
 
 		/* OK - call function to do the command */
 		if ((cmdtp->cmd) (cmdtp, flag, argc, argv) != 0) {
-			return (-1);
+			rc = -1;
 		}
 
 		repeatable &= cmdtp->repeatable;
@@ -930,7 +954,7 @@ int run_command (const char *cmd, int flag)
 			return 0;	/* if stopped then not repeatable */
 	}
 
-	return repeatable;
+	return rc ? rc : repeatable;
 }
 
 /****************************************************************************/
@@ -939,7 +963,6 @@ int run_command (const char *cmd, int flag)
 int do_run (cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
 {
 	int i;
-	int rcode = 1;
 
 	if (argc < 2) {
 		printf ("Usage:\n%s\n", cmdtp->usage);
@@ -947,13 +970,21 @@ int do_run (cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
 	}
 
 	for (i=1; i<argc; ++i) {
+		char *arg;
+
+		if ((arg = getenv (argv[i])) == NULL) {
+			printf ("## Error: \"%s\" not defined\n", argv[i]);
+			return 1;
+		}
 #ifndef CFG_HUSH_PARSER
-	    if (run_command (getenv (argv[i]), flag) != -1) ++rcode;
+		if (run_command (arg, flag) == -1)
+			return 1;
 #else
-   	    if (parse_string_outer(getenv (argv[i]),
-		    FLAG_PARSE_SEMICOLON | FLAG_EXIT_FROM_LOOP) == 0) ++rcode;
+		if (parse_string_outer(arg,
+		    FLAG_PARSE_SEMICOLON | FLAG_EXIT_FROM_LOOP) != 0)
+			return 1;
 #endif
 	}
-	return ((rcode == i) ? 0 : 1);
+	return 0;
 }
-#endif
+#endif	/* CFG_CMD_RUN */

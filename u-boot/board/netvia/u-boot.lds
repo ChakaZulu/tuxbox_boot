@@ -63,8 +63,8 @@ SECTIONS
     lib_ppc/cache.o		(.text)
     lib_ppc/time.o		(.text)
 
-    . = env_offset;
-    common/environment.o	(.ppcenv)
+    . = DEFINED(env_offset) ? env_offset : .;
+    common/environment.o	(.text)
 
     *(.text)
     *(.fixup)
@@ -76,6 +76,7 @@ SECTIONS
   {
     *(.rodata)
     *(.rodata1)
+    *(.rodata.str1.4)
   }
   .fini      : { *(.fini)    } =0
   .ctors     : { *(.ctors)   }

@@ -31,6 +31,7 @@
 extern int gt6426x_eth_initialize(bd_t *bis);
 #endif
 
+extern int e1000_initialize(bd_t*);
 extern int eepro100_initialize(bd_t*);
 extern int natsemi_initialize(bd_t*);
 extern int ns8382x_initialize(bd_t*);
@@ -40,6 +41,8 @@ extern int pcnet_initialize(bd_t*);
 extern int fec_initialize(bd_t*);
 extern int scc_initialize(bd_t*);
 extern int inca_switch_initialize(bd_t*);
+extern int ppc_4xx_eth_initialize(bd_t *);
+extern int plb2800_eth_initialize(bd_t*);
 
 static struct eth_device *eth_devices, *eth_current;
 
@@ -96,8 +99,17 @@ int eth_initialize(bd_t *bis)
 	eth_devices = NULL;
 	eth_current = NULL;
 
+#if defined(CONFIG_405GP) || defined(CONFIG_440) || defined(CONFIG_405EP)
+        ppc_4xx_eth_initialize(bis);
+#endif
 #ifdef CONFIG_INCA_IP_SWITCH
 	inca_switch_initialize(bis);
+#endif
+#ifdef CONFIG_PLB2800_ETHER
+	plb2800_eth_initialize(bis);
+#endif
+#ifdef CONFIG_E1000
+	e1000_initialize(bis);
 #endif
 #ifdef CONFIG_EEPRO100
 	eepro100_initialize(bis);
@@ -210,7 +222,7 @@ void eth_set_enetaddr(int num, char *addr) {
 	}
 
 #ifdef DEBUG
-	printf("name: %x\n", dev->name);
+	printf("Name: %x\n", dev->name);
 	printf("Setting new HW address on %s\n", dev->name);
 	printf("New Address is             "
 	       "%02X:%02X:%02X:%02X:%02X:%02X\n",

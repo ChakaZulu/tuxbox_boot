@@ -87,7 +87,7 @@ void get_sys_info (PPC405_SYS_INFO * sysInfo)
 	/*
 	 * Check if PPC405GPr used (mask minor revision field)
 	 */
-	if ((pvr & 0xfffffff0) == (PVR_405GPR_RA & 0xfffffff0)) {
+	if ((pvr & 0xfffffff0) == (PVR_405GPR_RB & 0xfffffff0)) {
 		/*
 		 * Determine FWD_DIV B (only PPC405GPr with new mode strapping).
 		 */
@@ -257,6 +257,127 @@ void get_sys_info (sys_info_t * sysInfo) {
 
 }
 
+#elif defined(CONFIG_405EP)
+void get_sys_info (PPC405_SYS_INFO * sysInfo)
+{
+	unsigned long pllmr0;
+	unsigned long pllmr1;
+	unsigned long sysClkPeriodPs = ONE_BILLION / (CONFIG_SYS_CLK_FREQ / 1000);
+	unsigned long m;
+	unsigned long pllmr0_ccdv;
+
+	/*
+	 * Read PLL Mode registers
+	 */
+	pllmr0 = mfdcr (cpc0_pllmr0);
+	pllmr1 = mfdcr (cpc0_pllmr1);
+
+	/*
+	 * Determine forward divider A
+	 */
+	sysInfo->pllFwdDiv = 8 - ((pllmr1 & PLLMR1_FWDVA_MASK) >> 16);
+
+	/*
+	 * Determine forward divider B (should be equal to A)
+	 */
+	sysInfo->pllFwdDivB = 8 - ((pllmr1 & PLLMR1_FWDVB_MASK) >> 12);
+
+	/*
+	 * Determine FBK_DIV.
+	 */
+	sysInfo->pllFbkDiv = ((pllmr1 & PLLMR1_FBMUL_MASK) >> 20);
+	if (sysInfo->pllFbkDiv == 0) {
+		sysInfo->pllFbkDiv = 16;
+	}
+
+	/*
+	 * Determine PLB_DIV.
+	 */
+	sysInfo->pllPlbDiv = ((pllmr0 & PLLMR0_CPU_TO_PLB_MASK) >> 16) + 1;
+
+	/*
+	 * Determine PCI_DIV.
+	 */
+	sysInfo->pllPciDiv = (pllmr0 & PLLMR0_PCI_TO_PLB_MASK) + 1;
+
+	/*
+	 * Determine EXTBUS_DIV.
+	 */
+	sysInfo->pllExtBusDiv = ((pllmr0 & PLLMR0_EXB_TO_PLB_MASK) >> 8) + 2;
+
+	/*
+	 * Determine OPB_DIV.
+	 */
+	sysInfo->pllOpbDiv = ((pllmr0 & PLLMR0_OPB_TO_PLB_MASK) >> 12) + 1;
+
+	/*
+	 * Determine the M factor
+	 */
+	m = sysInfo->pllFbkDiv * sysInfo->pllFwdDivB;
+
+	/*
+	 * Determine VCO clock frequency
+	 */
+	sysInfo->freqVCOMhz = (1000000 * m) / sysClkPeriodPs;
+
+	/*
+	 * Determine CPU clock frequency
+	 */
+	pllmr0_ccdv = ((pllmr0 & PLLMR0_CPU_DIV_MASK) >> 20) + 1;
+	if (pllmr1 & PLLMR1_SSCS_MASK) {
+		sysInfo->freqProcessor = (CONFIG_SYS_CLK_FREQ * sysInfo->pllFbkDiv)
+			/ pllmr0_ccdv;
+	} else {
+		sysInfo->freqProcessor = CONFIG_SYS_CLK_FREQ / pllmr0_ccdv;
+	}
+
+	/*
+	 * Determine PLB clock frequency
+	 */
+	sysInfo->freqPLB = sysInfo->freqProcessor / sysInfo->pllPlbDiv;
+
+	if (!((sysInfo->freqVCOMhz >= VCO_MIN) && (sysInfo->freqVCOMhz <= VCO_MAX))) {
+		printf ("\nInvalid VCO frequency calculated :  %ld MHz \a\n",
+			sysInfo->freqVCOMhz);
+		printf ("It must be between %d-%d MHz \a\n", VCO_MIN, VCO_MAX);
+		printf ("PLL Mode reg 0           :  %8.8lx\a\n", pllmr0);
+		printf ("PLL Mode reg 1           :  %8.8lx\a\n", pllmr1);
+		hang ();
+	}
+}
+
+
+/********************************************
+ * get_OPB_freq
+ * return OPB bus freq in Hz
+ *********************************************/
+ulong get_OPB_freq (void)
+{
+	ulong val = 0;
+
+	PPC405_SYS_INFO sys_info;
+
+	get_sys_info (&sys_info);
+	val = sys_info.freqPLB / sys_info.pllOpbDiv;
+
+	return val;
+}
+
+
+/********************************************
+ * get_PCI_freq
+ * return PCI bus freq in Hz
+ *********************************************/
+ulong get_PCI_freq (void)
+{
+	ulong val;
+	PPC405_SYS_INFO sys_info;
+
+	get_sys_info (&sys_info);
+	val = sys_info.freqPLB / sys_info.pllPciDiv;
+	return val;
+}
+
 #elif defined(CONFIG_405D4)
 
 void get_sys_info (sys_info_t * sysInfo)
@@ -273,7 +394,7 @@ void get_sys_info (sys_info_t * sysInfo)
 
 int get_clocks (void)
 {
-#if defined(CONFIG_405GP) || defined(CONFIG_405CR) || defined(CONFIG_440) || defined(CONFIG_405) || defined(CONFIG_405D4)
+#if defined(CONFIG_405GP) || defined(CONFIG_405CR) || defined(CONFIG_440) || defined(CONFIG_405) || defined(CONFIG_405EP) || defined(CONFIG_405D4)
 	DECLARE_GLOBAL_DATA_PTR;
 
 	sys_info_t sys_info;
@@ -302,7 +423,7 @@ ulong get_bus_freq (ulong dummy)
 {
 	ulong val;
 
-#if defined(CONFIG_405GP) || defined(CONFIG_405CR) || defined(CONFIG_405) || defined(CONFIG_440) || defined(CONFIG_405D4)
+#if defined(CONFIG_405GP) || defined(CONFIG_405CR) || defined(CONFIG_405) || defined(CONFIG_440) || defined(CONFIG_405EP) || defined(CONFIG_405D4)
 	sys_info_t sys_info;
 
 	get_sys_info (&sys_info);

@@ -23,6 +23,11 @@
 
 #########################################################################
 
+# clean the slate ...
+PLATFORM_RELFLAGS =
+PLATFORM_CPPFLAGS =
+PLATFORM_LDFLAGS =
+
 #
 # When cross-compiling on NetBSD, we have to define __PPC__ or else we
 # will pick up a va_list declaration that is incompatible with the
@@ -96,14 +101,18 @@ RANLIB	= $(CROSS_COMPILE)RANLIB
 RELFLAGS= $(PLATFORM_RELFLAGS)
 DBGFLAGS= -g #-DDEBUG
 OPTFLAGS= -Os #-fomit-frame-pointer
+ifndef LDSCRIPT
 #LDSCRIPT := board/$(BOARDDIR)/u-boot.lds.debug
 LDSCRIPT := $(TOPDIR)/board/$(BOARDDIR)/u-boot.lds
-OBJCFLAGS := --gap-fill=0xff
+endif
+OBJCFLAGS += --gap-fill=0xff
+
+gccincdir := $(shell $(CC) -print-file-name=include)
 
 CPPFLAGS := $(DBGFLAGS) $(OPTFLAGS) $(RELFLAGS)		\
 	-D__KERNEL__ -DTEXT_BASE=$(TEXT_BASE)		\
 	-I$(TOPDIR)/include				\
-	-fno-builtin					\
+	-fno-builtin -nostdinc -isystem $(gccincdir)	\
 	-pipe $(PLATFORM_CPPFLAGS)
 
 ifdef BUILD_TAG

@@ -288,7 +288,7 @@ int eeprom_write (unsigned dev_addr, unsigned offset, uchar *buffer, unsigned cn
 			 */
 			contr_reg[0] = 0;
 			for (i = 0; i < MAX_ACKNOWLEDGE_POLLS; i++) {
-				if (i2c_read (addr_void[0], addr_void[1], 1, contr_reg, 1) == 1)
+				if (i2c_read (addr_void[0], addr_void[1], 1, contr_reg, 1) == 0)
 					break;	/* got ack */
 #if defined(CFG_EEPROM_PAGE_WRITE_DELAY_MS)
 				udelay(CFG_EEPROM_PAGE_WRITE_DELAY_MS * 1000);
@@ -326,6 +326,26 @@ int eeprom_write (unsigned dev_addr, unsigned offset, uchar *buffer, unsigned cn
 	}
 	return rcode;
 }
+
+#ifndef CONFIG_SPI
+int
+eeprom_probe (unsigned dev_addr, unsigned offset)
+{
+	unsigned char chip;
+
+	/* Probe the chip address
+	 */
+#if CFG_I2C_EEPROM_ADDR_LEN == 1 && !defined(CONFIG_SPI_X)
+	chip = offset >> 8;		/* block number */
+#else
+	chip = offset >> 16;		/* block number */
+#endif	/* CFG_I2C_EEPROM_ADDR_LEN, CONFIG_SPI_X */
+
+	chip |= dev_addr;		/* insert device address */
+
+	return (i2c_probe (chip));
+}
+#endif
 
 /*-----------------------------------------------------------------------
  * Set default values

@@ -32,6 +32,7 @@
 #include <ioports.h>
 #include <i2c.h>
 #include <mpc8260.h>
+#include <pci.h>
 
 /*
  * PBI Page Based Interleaving
@@ -45,7 +46,7 @@
  *   PSDMR_BUFCMD adds a clock
  *   0            no extra clock
  */
-#define CONFIG_PBI		0
+#define CONFIG_PBI		PSDMR_PBI
 #define PESSIMISTIC_SDRAM	0
 #define EAMUX			0	/* EST requires EAMUX */
 #define BUFCMD			0
@@ -155,8 +156,8 @@ const iop_conf_t iop_conf_tab[4][32] = {
 	/* PC13 */ {   0,   0,   0,   1,   0,   0   }, /* PC13 */
 	/* PC12 */ {   0,   1,   0,   1,   0,   0   }, /* PC12 */
 	/* PC11 */ {   0,   0,   0,   1,   0,   0   }, /* LXT971 transmit control */
-	/* PC10 */ {   1,   1,   0,   0,   0,   0   }, /* LXT970 FETHMDC */
-	/* PC9  */ {   1,   1,   0,   0,   0,   0   }, /* LXT970 FETHMDIO */
+	/* PC10 */ {   1,   0,   0,   1,   0,   0   }, /* LXT970 FETHMDC */
+	/* PC9  */ {   1,   0,   0,   0,   0,   0   }, /* LXT970 FETHMDIO */
 	/* PC8  */ {   0,   0,   0,   1,   0,   0   }, /* PC8 */
 	/* PC7  */ {   0,   0,   0,   1,   0,   0   }, /* PC7 */
 	/* PC6  */ {   0,   0,   0,   1,   0,   0   }, /* PC6 */
@@ -216,6 +217,11 @@ typedef struct bscr_ {
 	unsigned long bcsr7;
 } bcsr_t;
 
+typedef struct pci_ic_s {
+	unsigned long pci_int_stat;
+	unsigned long pci_int_mask;
+} pci_ic_t;
+
 void reset_phy(void)
 {
     volatile bcsr_t  *bcsr           = (bcsr_t *)CFG_BCSR;
@@ -229,8 +235,13 @@ void reset_phy(void)
 int board_pre_init (void)
 {
     volatile bcsr_t  *bcsr         = (bcsr_t *)CFG_BCSR;
-    bcsr->bcsr1                    = ~FETHIEN & ~RS232EN_1;
+    volatile pci_ic_t *pci_ic      = (pci_ic_t *) CFG_PCI_INT;
 
+    bcsr->bcsr1                    = ~FETHIEN & ~RS232EN_1 & ~RS232EN_2;
+
+    /* mask all PCI interrupts */
+    pci_ic->pci_int_mask |= 0xfff00000;
+    
     return 0;
 }
 
@@ -250,7 +261,7 @@ long int initdram(int board_type)
     uint  psdmr = CFG_PSDMR;
     int i;
 
-    uint   psrt = 14;					/* for no SPD */
+    uint   psrt = 0x21;					/* for no SPD */
     uint   chipselects = 1;				/* for no SPD */
     uint   sdram_size = CFG_SDRAM_SIZE * 1024 * 1024;	/* for no SPD */
     uint   or = CFG_OR2_PRELIM;				/* for no SPD */
@@ -270,7 +281,7 @@ long int initdram(int board_type)
     int    j;
 
     /* Keep the compiler from complaining about potentially uninitialized vars */
-    data_width = chipselects = rows = banks = cols = caslatency = psrt = 0;
+    data_width = rows = banks = cols = caslatency = 0;
 
     /*
      * Read the SDRAM SPD EEPROM via I2C.
@@ -294,17 +305,18 @@ long int initdram(int board_type)
 		{
 			/*
 				 * Refresh rate: this assumes the prescaler is set to
-			 * approximately 1uSec per tick.
+			 * approximately 0.39uSec per tick and the target refresh period 
+			 * is about 85% of maximum.
 			 */
 			switch(data & 0x7F) 
 			{
 					default:
-					case 0:  psrt =  16; /*  15.625uS */  break;
-					case 1:  psrt =   2;  /*   3.9uS   */  break;
-					case 2:  psrt =   6;  /*   7.8uS   */  break;
-					case 3:  psrt =  29;  /*  31.3uS   */  break;
-					case 4:  psrt =  60;  /*  62.5uS   */  break;
-					case 5:  psrt = 120;  /* 125uS     */  break;
+					case 0:  psrt = 0x21; /*  15.625uS */  break;
+					case 1:  psrt = 0x07; /*   3.9uS   */  break;
+					case 2:  psrt = 0x0F; /*   7.8uS   */  break;
+					case 3:  psrt = 0x43; /*  31.3uS   */  break;
+					case 4:  psrt = 0x87; /*  62.5uS   */  break;
+					case 5:  psrt = 0xFF; /* 125uS     */  break;
 			}
 		}
 		else if(j == 17) banks       = data;
@@ -367,6 +379,25 @@ long int initdram(int board_type)
 
 
     sdram_size = 1 << (rows + cols + banks + width);
+    /* hack for high density memory (512MB per CS) */
+    /* !!!!! Will ONLY work with Page Based Interleave !!!!!
+             ( PSDMR[PBI] = 1 ) 
+    */
+    /* mamory actually has 11 column addresses, but the memory controller 
+       doesn't really care. 
+       the calculations that follow will however move the rows so that 
+       they are muxed one bit off if you use 11 bit columns. 
+       The solution is to tell the memory controller the correct size of the memory
+       but change the number of columns to 10 afterwards.
+       The 11th column addre will still be mucxed correctly onto the bus.
+
+       Also be aware that the MPC8266ADS board Rev B has not connected 
+       Row addres 13 to anything.
+
+       The fix is to connect ADD16 (from U37-47) to SADDR12 (U28-126)
+    */
+    if (cols > 10)
+	    cols = 10;
 
 #if(CONFIG_PBI == 0)	/* bank-based interleaving */
     rowst = ((32 - 6) - (rows + cols + width)) * 2;
@@ -477,10 +508,13 @@ long int initdram(int board_type)
      * The appropriate BRx/ORx registers have already been set when we
      * get here. The SDRAM can be accessed at the address CFG_SDRAM_BASE.
      */
-#if 1
+
     memctl->memc_mptpr = CFG_MPTPR;
     memctl->memc_psrt  = psrt;
 
+    memctl->memc_br2 = CFG_BR2_PRELIM;
+    memctl->memc_or2 = or;
+    
     memctl->memc_psdmr = psdmr | PSDMR_OP_PREA;
     *ramaddr = c;
 
@@ -518,41 +552,7 @@ long int initdram(int board_type)
 		memctl->memc_psdmr = psdmr | PSDMR_OP_NORM | PSDMR_RFEN;
 		*ramaddr = c;
     }
-#endif
-	/*
-    printf("memctl->memc_mptpr = 0x%08x\n", CFG_MPTPR);
-    printf("memctl->memc_psrt  = 0x%08x\n", psrt);
 
-    printf("memctl->memc_psdmr = 0x%08x\n", psdmr | PSDMR_OP_PREA);
-    printf("ramaddr = 0x%08x\n", ramaddr);
-
-    printf("memctl->memc_psdmr = 0x%08x\n", psdmr | PSDMR_OP_CBRR);
-
-    printf("memctl->memc_psdmr = 0x%08x\n", psdmr | PSDMR_OP_MRW);
-
-    printf("memctl->memc_psdmr = 0x%08x\n", psdmr | PSDMR_OP_NORM | PSDMR_RFEN);
-
-    immap->im_siu_conf.sc_ppc_acr   = 0x00000002;
-    immap->im_siu_conf.sc_ppc_alrh  = 0x01267893;
-    immap->im_siu_conf.sc_tescr1    = 0x00004000;
-	*/
-#if 0
-    /* init sdram dimm */
-    ramaddr                         = (uchar *)CFG_SDRAM_BASE;
-    memctl->memc_psrt               = 0x00000010;
-    immap->im_memctl.memc_or2       = 0xFF000CA0;
-    immap->im_memctl.memc_br2       = 0x00000041;
-    memctl->memc_psdmr              = 0x296EB452;
-    *ramaddr                        = c;
-    memctl->memc_psdmr              = 0x096EB452;
-    for (i = 0; i < 8; i++)
-        *ramaddr                    = c;
-
-    memctl->memc_psdmr              = 0x196EB452;
-    *ramaddr                        = c;
-    memctl->memc_psdmr              = 0x416EB452;
-    *ramaddr                        = c;
-#endif	
 	/* print info */
 	printf("SDRAM configuration read from SPD\n");
 	printf("\tSize per side = %dMB\n", sdram_size >> 20);
@@ -563,3 +563,15 @@ long int initdram(int board_type)
     return (sdram_size * chipselects);
 	/*return (16 * 1024 * 1024);*/
 }
+
+
+#ifdef	CONFIG_PCI
+struct pci_controller hose;
+
+extern void pci_mpc8250_init(struct pci_controller *);
+
+void pci_init_board(void)
+{
+	pci_mpc8250_init(&hose);
+}
+#endif

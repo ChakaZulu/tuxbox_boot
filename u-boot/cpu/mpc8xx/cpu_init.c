@@ -45,6 +45,7 @@ void cpu_init_f (volatile immap_t * immr)
 #endif
 	ulong reg;
 
+
 	/* SYPCR - contains watchdog control (11-9) */
 
 	immr->im_siu_conf.sc_sypcr = CFG_SYPCR;
@@ -54,9 +55,11 @@ void cpu_init_f (volatile immap_t * immr)
 #endif /* CONFIG_WATCHDOG */
 
 	/* SIUMCR - contains debug pin configuration (11-6) */
-
+#ifndef CONFIG_SVM_SC8xx
 	immr->im_siu_conf.sc_siumcr |= CFG_SIUMCR;
-
+#else
+	immr->im_siu_conf.sc_siumcr = CFG_SIUMCR;
+#endif
 	/* initialize timebase status and control register (11-26) */
 	/* unlock TBSCRK */
 
@@ -204,8 +207,8 @@ void cpu_init_f (volatile immap_t * immr)
 
 #endif /* ! CONFIG_SECONDSTAGE */
 #endif /* ! CONFIG_MBX */
-
 #ifndef CONFIG_SECONDSTAGE
+
 	/*
 	 * Reset CPM
 	 */
@@ -213,8 +216,8 @@ void cpu_init_f (volatile immap_t * immr)
 	do {			/* Spin until command processed     */
 		__asm__ ("eieio");
 	} while (immr->im_cpm.cp_cpcr & CPM_CR_FLG);
-#endif /* ! CONFIG_SECONDSTAGE */
 
+#endif /* ! CONFIG_SECONDSTAGE */
 #ifdef CONFIG_MBX
 	/*
 	 * on the MBX, things are a little bit different:

@@ -97,20 +97,20 @@ void status_led_set  (int led, int state);
 # define STATUS_LED_DAT			im_ioport.iop_padat
 
 # define STATUS_LED_BIT			0x0800	/* Red LED 0 is on PA.4	*/
-# define STATUS_LED_PERIOD		(CFG_HZ / 2)
-# define STATUS_LED_STATE		STATUS_LED_BLINKING
+# define STATUS_LED_PERIOD		(CFG_HZ / 4)
+# define STATUS_LED_STATE		STATUS_LED_OFF
 # define STATUS_LED_BIT1		0x0400	/* Grn LED 1 is on PA.5	*/
-# define STATUS_LED_PERIOD1		(CFG_HZ / 2)
+# define STATUS_LED_PERIOD1		(CFG_HZ / 8)
 # define STATUS_LED_STATE1		STATUS_LED_BLINKING
 # define STATUS_LED_BIT2		0x0080	/* Red LED 2 is on PA.8	*/
-# define STATUS_LED_PERIOD2		(CFG_HZ / 2)
-# define STATUS_LED_STATE2		STATUS_LED_BLINKING
+# define STATUS_LED_PERIOD2		(CFG_HZ / 4)
+# define STATUS_LED_STATE2		STATUS_LED_OFF
 # define STATUS_LED_BIT3		0x0040	/* Grn LED 3 is on PA.9	*/
-# define STATUS_LED_PERIOD3		(CFG_HZ / 2)
-# define STATUS_LED_STATE3		STATUS_LED_BLINKING
+# define STATUS_LED_PERIOD3		(CFG_HZ / 4)
+# define STATUS_LED_STATE3		STATUS_LED_OFF
 
 # define STATUS_LED_ACTIVE		1	/* LED on for bit == 1	*/
-# define STATUS_LED_BOOT		0	/* Boot status on LED 1	*/
+# define STATUS_LED_BOOT		1	/* Boot status on LED 1	*/
 
 /*****  IVMS8  **********************************************************/
 #elif defined(CONFIG_IVMS8)
@@ -236,6 +236,8 @@ void status_led_set  (int led, int state);
 /*****  NetVia   ********************************************************/
 #elif defined(CONFIG_NETVIA)
 
+#if !defined(CONFIG_NETVIA_VERSION) || CONFIG_NETVIA_VERSION == 1
+
 #define STATUS_LED_PAR		im_ioport.iop_pdpar
 #define STATUS_LED_DIR		im_ioport.iop_pddir
 #undef  STATUS_LED_ODR
@@ -252,6 +254,20 @@ void status_led_set  (int led, int state);
 # define STATUS_LED_ACTIVE	0		/* LED on for bit == 0	*/
 # define STATUS_LED_BOOT	0		/* LED 0 used for boot status */
 
+#endif
+
+/*****  CMI   ********************************************************/
+#elif defined(CONFIG_CMI)
+# define STATUS_LED_DIR		im_mios.mios_mpiosm32ddr 
+# define STATUS_LED_DAT		im_mios.mios_mpiosm32dr 
+
+# define STATUS_LED_BIT		0x2000		/* Select one of the 16 possible*/
+						/* MIOS outputs */
+# define STATUS_LED_PERIOD	(CFG_HZ / 2)	/* Blinking periode is 500 ms */
+# define STATUS_LED_STATE	STATUS_LED_BLINKING
+
+# define STATUS_LED_ACTIVE	1		/* LED on for bit == 0	*/
+# define STATUS_LED_BOOT	0		/* LED 0 used for boot status */
 
 /*****  KUP4K  ********************************************************/
 #elif defined(CONFIG_KUP4K)
@@ -269,11 +285,48 @@ void status_led_set  (int led, int state);
 
 # define STATUS_LED_BOOT	0		/* LED 0 used for boot status */
 
+#elif defined(CONFIG_SVM_SC8xx)
+# define STATUS_LED_PAR         im_cpm.cp_pbpar
+# define STATUS_LED_DIR         im_cpm.cp_pbdir
+# define STATUS_LED_ODR         im_cpm.cp_pbodr
+# define STATUS_LED_DAT         im_cpm.cp_pbdat
+
+# define STATUS_LED_BIT         0x00000001
+# define STATUS_LED_PERIOD      (CFG_HZ / 2)
+# define STATUS_LED_STATE       STATUS_LED_BLINKING
+
+# define STATUS_LED_ACTIVE      1               /* LED on for bit == 1  */
+
+# define STATUS_LED_BOOT        0               /* LED 0 used for boot status */
+
+/*****  RBC823    ********************************************************/
+#elif defined(CONFIG_RBC823)
+
+# define STATUS_LED_PAR         im_ioport.iop_pcpar
+# define STATUS_LED_DIR         im_ioport.iop_pcdir
+#  undef STATUS_LED_ODR
+# define STATUS_LED_DAT         im_ioport.iop_pcdat
+
+# define STATUS_LED_BIT         0x0002          /* LED 0 is on PC.14 */
+# define STATUS_LED_PERIOD      (CFG_HZ / 2)
+# define STATUS_LED_STATE       STATUS_LED_BLINKING
+# define STATUS_LED_BIT1        0x0004          /* LED 1 is on PC.13 */
+# define STATUS_LED_PERIOD1     (CFG_HZ)
+# define STATUS_LED_STATE1      STATUS_LED_OFF
+
+# define STATUS_LED_ACTIVE      1               /* LED on for bit == 1  */
+
+# define STATUS_LED_BOOT        0               /* LED 0 used for boot status */
+
 /************************************************************************/
 #else
 # error Status LED configuration missing
 #endif
 /************************************************************************/
+
+#ifndef CONFIG_BOARD_SPECIFIC_LED
+# include <asm/status_led.h>
+#endif
 
 #endif	/* CONFIG_STATUS_LED	*/
 

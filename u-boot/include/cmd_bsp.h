@@ -112,7 +112,19 @@ int do_pip405 (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);
 int do_mip405 (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);
 
 #endif /* CONFIG_MIP405 */
-/* --------------------------------------------------------------------	*/
+/* ----- VCMA9 -----------------------------------------------------------------
+ */
+#if defined(CONFIG_VCMA9)
+
+#define	CMD_TBL_BSP MK_CMD_TBL_ENTRY(				\
+	"vcma9",	4,	6,	1,	do_vcma9,	\
+	"vcma9   - VCMA9 specific Cmds\n",			\
+	"flash mem [SrcAddr] - updates U-Boot with image in memory\n"					\
+),
+int do_vcma9 (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);
+
+#endif /* CONFIG_VCMA9 */
+/* ----------------------------------------------------------------------------*/
 
 /* ----- DASA_SIM ----------------------------------------------------- */
 #if defined(CONFIG_DASA_SIM)
@@ -156,14 +168,20 @@ int do_pci9054 (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);
 	"    address spaces appear in the physical address space\n"	\
 ), MK_CMD_TBL_ENTRY(							\
 	"eeclear", 4,	1,	0,	do_eecl,			\
-	"eeclear - Clear the eeprom on a Hymod board \n",		\
+	"eeclear - Clear the eeprom on a Hymod board\n",		\
 	"[type]\n"							\
 	"  - write zeroes into the EEPROM on the board of type `type'\n"\
 	"    (`type' is either `main' or `mezz' - default `main')\n"	\
 	"    Note: the EEPROM write enable jumper must be installed\n"	\
+), MK_CMD_TBL_ENTRY(							\
+	"htest", 5,	1,	0,	do_htest,			\
+	"htest   - run HYMOD tests\n",					\
+	NULL								\
 ),
+
 int do_fpga (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);
 int do_eecl (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);
+int do_htest(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);
 
 #endif	/* CONFIG_HYMOD */
 /* --------------------------------------------------------------------	*/
@@ -306,6 +324,18 @@ int do_kbd (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);
 #define CMD_TBL_BSP	/* dummy */
 
 #endif  /* AmigaOneG3SE */
+/* ----- PCI405 ------------------------------------------------------- */
+#if defined(CONFIG_PCI405)
+
+#define	CMD_TBL_BSP	MK_CMD_TBL_ENTRY(			\
+	"loadpci",	7,	1,	1,	do_loadpci,	\
+	"loadpci - wait for sync and boot image\n",		\
+	NULL							\
+),
+
+int do_loadpci (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);
+
+#endif	/* CONFIG_PCI405 */
 /* -------------------------------------------------------------------- */
 
 #else

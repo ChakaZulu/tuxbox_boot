@@ -196,4 +196,4 @@ uLong ZEXPORT crc32_no_comp(uLong crc, const Bytef *buf, uInt len)
     return crc;
 }
 
-#endif	/* CFG_CMD_JFFS2 */
+#endif	/* CFG_CMD_JFFS2 || CFG_FS_JFFS2 */

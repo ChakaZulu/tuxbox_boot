@@ -24,7 +24,6 @@
 #include <net.h>
 #include "bootp.h"
 #include "tftp.h"
-#include "arp.h"
 #ifdef CONFIG_STATUS_LED
 #include <status_led.h>
 #endif
@@ -55,11 +54,13 @@ ulong		seed1, seed2;
 
 #if (CONFIG_COMMANDS & CFG_CMD_DHCP)
 dhcp_state_t dhcp_state = INIT;
-unsigned int dhcp_leasetime = 0;
+unsigned long dhcp_leasetime = 0;
+IPaddr_t NetDHCPServerIP = 0;
 static void DhcpHandler(uchar * pkt, unsigned dest, unsigned src, unsigned len);
 
 /* For Debug */
-char *dhcpmsg2str(int type)
+#if 0
+static char *dhcpmsg2str(int type)
 {
 	switch (type) {
 	case 1:  return "DHCPDISCOVER";	break;
@@ -72,6 +73,7 @@ char *dhcpmsg2str(int type)
 	default: return "UNKNOWN/INVALID MSG TYPE"; break;
 	}
 }
+#endif
 
 #if (CONFIG_BOOTP_MASK & CONFIG_BOOTP_VENDOREX)
 extern u8 *dhcp_vendorex_prep (u8 *e); /*rtn new e after add own opts. */
@@ -112,7 +114,7 @@ static int BootpCheckPkt(uchar *pkt, unsigned dest, unsigned src, unsigned len)
 /*
  * Copy parameters of interest from BOOTP_REPLY/DHCP_OFFER packet
  */
-void BootpCopyNetParams(Bootp_t *bp)
+static void BootpCopyNetParams(Bootp_t *bp)
 {
 	NetCopyIP(&NetOurIP, &bp->bp_yiaddr);
 	NetCopyIP(&NetServerIP, &bp->bp_siaddr);
@@ -336,11 +338,9 @@ BootpHandler(uchar * pkt, unsigned dest, unsigned src, unsigned len)
 #ifdef CONFIG_TUXBOX_NETWORK
 	NetState = NETLOOP_SUCCESS;
 #else /* CONFIG_TUXBOX_NETWORK */
-	/* Send ARP request to get TFTP server ethernet address.
-	 * This automagically starts TFTP, too.
-	 */
-	ArpRequest();
-#endif /* CONFIG_TUXBOX_NETWORK */
+#endif /* CONFIG_TUXBOX_NETWORK ????????????????????????????????????????????????????????????*/
+
+	TftpStart();
 }
 #endif	/* !CFG_CMD_DHCP */
 
@@ -679,9 +679,9 @@ BootpRequest (void)
 }
 
 #if (CONFIG_COMMANDS & CFG_CMD_DHCP)
-void DhcpOptionsProcess(char *popt)
+static void DhcpOptionsProcess(uchar *popt)
 {
-	char *end = popt + BOOTP_HDR_SIZE;
+	uchar *end = popt + BOOTP_HDR_SIZE;
 	int oplen, size;
 
 	while ( popt < end && *popt != 0xff ) {
@@ -712,15 +712,15 @@ void DhcpOptionsProcess(char *popt)
 				memcpy(&NetOurRootPath, popt+2, size);
 				NetOurRootPath[size] = 0 ;
 				break;
-			case 28:		/* Ignore Broadcast Address Option */
-				break;
+ 			case 28:                /* Ignore Broadcast Address Option */
+  				break;
 			case 51:
-				dhcp_leasetime = *(unsigned int *)(popt + 2);
+				NetCopyLong (&dhcp_leasetime, (ulong *)(popt + 2));
 				break;
 			case 53:		/* Ignore Message Type Option */
 				break;
 			case 54:
-				NetCopyIP(&NetServerIP, (popt+2));
+				NetCopyIP(&NetDHCPServerIP, (popt+2));
 				break;
 			case 58:		/* Ignore Renewal Time Option */
 				break;
@@ -731,8 +731,7 @@ void DhcpOptionsProcess(char *popt)
 			    if (dhcp_vendorex_proc(popt))
         			break;
 #endif
-				debug_ext("*** Unhandled DHCP Option in OFFER/ACK: %d\n",
-					*popt);
+				debug_ext("*** Unhandled DHCP Option in OFFER/ACK: %d\n", *popt);
 				break;
 		}
 		popt += oplen + 2;	/* Process next option */
@@ -753,7 +752,7 @@ static int DhcpMessageType(unsigned char *popt)
 	return -1;
 }
 
-void DhcpSendRequestPkt(Bootp_t *bp_offer)
+static void DhcpSendRequestPkt(Bootp_t *bp_offer)
 {
 	volatile uchar *pkt, *iphdr;
 	Bootp_t *bp;
@@ -792,7 +791,7 @@ void DhcpSendRequestPkt(Bootp_t *bp_offer)
 	 * Copy options from OFFER packet if present
 	 */
 	NetCopyIP(&OfferedIP, &bp->bp_yiaddr);
-	extlen = DhcpExtended(bp->bp_vend, DHCP_REQUEST, NetServerIP, OfferedIP);
+	extlen = DhcpExtended(bp->bp_vend, DHCP_REQUEST, NetDHCPServerIP, OfferedIP);
 
 	pktlen = BOOTP_SIZE - sizeof(bp->bp_vend) + extlen;
 	iplen = BOOTP_HDR_SIZE - sizeof(bp->bp_vend) + extlen;
@@ -836,11 +835,10 @@ DhcpHandler(uchar * pkt, unsigned dest, unsigned src, unsigned len)
 
 			debug ("TRANSITIONING TO REQUESTING STATE\n");
 			dhcp_state = REQUESTING;
-#if 0
+
 			if (NetReadLong((ulong*)&bp->bp_vend[0]) == htonl(BOOTP_VENDOR_MAGIC))
 				DhcpOptionsProcess(&bp->bp_vend[4]);
 
-#endif
 			BootpCopyNetParams(bp);	/* Store net params from reply */
 
 			NetSetTimeout(TIMEOUT * CFG_HZ, BootpTimeout);
@@ -873,11 +871,8 @@ DhcpHandler(uchar * pkt, unsigned dest, unsigned src, unsigned len)
 #ifdef CONFIG_TUXBOX_NETWORK
 			NetState = NETLOOP_SUCCESS;
 #else /* CONFIG_TUXBOX_NETWORK */
-			/* Send ARP request to get TFTP server ethernet address.
-			 * This automagically starts TFTP, too.
-			 */
-			ArpRequest();
-#endif /* CONFIG_TUXBOX_NETWORK */
+#endif /* CONFIG_TUXBOX_NETWORK ?????????????????????????????????????????????? */
+			TftpStart();
 			return;
 		}
 		break;

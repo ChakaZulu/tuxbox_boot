@@ -49,4 +49,4 @@ long zlib_decompress(unsigned char *data_in, unsigned char *cpage_out,
 
 }
 
-#endif /* CFG_CMD_JFFS2 || CFG_FS_JFFS2 */
+#endif /* (CONFIG_COMMANDS & CFG_CMD_JFFS2) || (CONFIG_FS & CFG_FS_JFFS2) */

@@ -50,6 +50,7 @@ static void print_num(const char *, ulong);
 
 #ifndef CONFIG_ARM	/* PowerPC and other */
 
+#ifdef CONFIG_PPC
 static void print_str(const char *, const char *);
 
 int do_bdinfo ( cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
@@ -70,14 +71,14 @@ int do_bdinfo ( cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 	print_num ("flashoffset",   bd->bi_flashoffset	);
 	print_num ("sramstart",	    bd->bi_sramstart	);
 	print_num ("sramsize",	    bd->bi_sramsize	);
-#if defined(CONFIG_8xx) || defined(CONFIG_8260)
+#if defined(CONFIG_5xx) || defined(CONFIG_8xx) || defined(CONFIG_8260)
 	print_num ("immr_base",	    bd->bi_immr_base	);
 #endif
 	print_num ("bootflags",	    bd->bi_bootflags	);
-#if defined(CONFIG_405GP) || defined(CONFIG_405CR) || defined(CONFIG_405D4)
+#if defined(CONFIG_405GP) || defined(CONFIG_405CR) || defined(CONFIG_405EP) || defined(CONFIG_405D4)
 	print_str ("procfreq",	    strmhz(buf, bd->bi_procfreq));
 	print_str ("plb_busfreq",	    strmhz(buf, bd->bi_plb_busfreq));
-#if defined(CONFIG_405GP)
+#if defined(CONFIG_405GP) || defined(CONFIG_405EP)
 	print_str ("pci_busfreq",	    strmhz(buf, bd->bi_pci_busfreq));
 #endif
 #else
@@ -110,6 +111,34 @@ int do_bdinfo ( cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 	return 0;
 }
 
+#else /* MIPS */
+
+int do_bdinfo ( cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+{
+	DECLARE_GLOBAL_DATA_PTR;
+
+	int i;
+	bd_t *bd = gd->bd;
+
+	print_num ("boot_params",	(ulong)bd->bi_boot_params);
+	print_num ("memstart",		(ulong)bd->bi_memstart);
+	print_num ("memsize",		(ulong)bd->bi_memsize);
+	print_num ("flashstart",	(ulong)bd->bi_flashstart);
+	print_num ("flashsize",		(ulong)bd->bi_flashsize);
+	print_num ("flashoffset",	(ulong)bd->bi_flashoffset);
+
+	printf ("ethaddr     =");
+	for (i=0; i<6; ++i) {
+		printf ("%c%02X", i ? ':' : ' ', bd->bi_enetaddr[i]);
+	}
+	printf ("\nip_addr     = ");
+	print_IPaddr (bd->bi_ip_addr);
+	printf ("\nbaudrate    = %d bps\n", bd->bi_baudrate);
+
+	return 0;
+}
+#endif  /* MIPS */
+
 #else	/* ARM */
 
 int do_bdinfo ( cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
@@ -124,10 +153,9 @@ int do_bdinfo ( cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 	print_num ("boot_params",	(ulong)bd->bi_boot_params);
 
 	for (i=0; i<CONFIG_NR_DRAM_BANKS; ++i) {
-		printf ("DRAM:%02d.start = %08lX\n",
-			i, bd->bi_dram[i].start);
-		printf ("DRAM:%02d.size  = %08lX\n",
-			i, bd->bi_dram[i].size);
+		print_num("DRAM bank",	i);
+		print_num("-> start",	bd->bi_dram[i].start);
+		print_num("-> size",	bd->bi_dram[i].size);
 	}
 
 	printf ("ethaddr     =");
@@ -135,10 +163,10 @@ int do_bdinfo ( cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 		printf ("%c%02X", i ? ':' : ' ', bd->bi_enetaddr[i]);
 	}
 	printf ("\n"
-		"ip_addr       = ");
+		"ip_addr     = ");
 	print_IPaddr (bd->bi_ip_addr);
 	printf ("\n"
-		"baudrate      = %d bps\n", bd->bi_baudrate);
+		"baudrate    = %d bps\n", bd->bi_baudrate);
 
 	return 0;
 }
@@ -150,12 +178,12 @@ static void print_num(const char *name, ulong value)
 	printf ("%-12s= 0x%08lX\n", name, value);
 }
 
-#ifndef	CONFIG_ARM
+#ifdef CONFIG_PPC
 static void print_str(const char *name, const char *str)
 {
 	printf ("%-12s= %6s MHz\n", name, str);
 }
-#endif	/* CONFIG_ARM */
+#endif	/* CONFIG_PPC */
 
 #endif	/* CFG_CMD_BDI */
 
@@ -171,7 +199,7 @@ int do_go (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 
 	addr = simple_strtoul(argv[1], NULL, 16);
 
-	printf ("## Starting application at 0x%08lx ...\n", addr);
+	printf ("## Starting application at 0x%08lX ...\n", addr);
 
 	/*
 	 * pass address parameter as argv[0] (aka command name),
@@ -180,7 +208,7 @@ int do_go (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 	rc = ((ulong (*)(int, char *[]))addr) (--argc, &argv[1]);
 	if (rc != 0) rcode = 1;
 
-	printf ("## Application terminated, rc = 0x%lx\n", rc);
+	printf ("## Application terminated, rc = 0x%lX\n", rc);
 	return rcode;
 }
 
@@ -256,7 +284,7 @@ int do_load_serial (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 		printf ("## S-Record download aborted\n");
 		rcode = 1;
 	} else {
-		printf ("## Start Addr      = 0x%08lx\n", addr);
+		printf ("## Start Addr      = 0x%08lX\n", addr);
 		load_addr = addr;
 	}
 
@@ -304,6 +332,7 @@ load_serial (ulong offset)
 		case SREC_DATA3:
 		case SREC_DATA4:
 		    store_addr = addr + offset;
+#ifndef CFG_NO_FLASH
 		    if (addr2info(store_addr)) {
 			int rc;
 
@@ -312,13 +341,15 @@ load_serial (ulong offset)
 				flash_perror (rc);
 				return (~0);
 			}
-		    } else {
+		    } else
+#endif
+		    {
 			memcpy ((char *)(store_addr), binbuf, binlen);
 		    }
 		    if ((store_addr) < start_addr)
-		    	start_addr = store_addr;
+			start_addr = store_addr;
 		    if ((store_addr + binlen - 1) > end_addr)
-		    	end_addr = store_addr + binlen - 1;
+			end_addr = store_addr + binlen - 1;
 		    break;
 		case SREC_END2:
 		case SREC_END3:
@@ -375,12 +406,13 @@ read_record (char *buf, ulong len)
 		}
 
 	    /* Check for the console hangup (if any different from serial) */
-
+#ifdef CONFIG_PPC	/* we don't have syscall_tbl anywhere else */
 	    if (syscall_tbl[SYSCALL_GETC] != serial_getc) {
 		if (ctrlc()) {
 		    return (-1);
 		}
 	    }
+#endif
 	}
 
 	/* line too long - truncate */
@@ -547,6 +579,7 @@ write_record (char *buf)
 #define XON_CHAR        17
 #define XOFF_CHAR       19
 #define START_CHAR      0x01
+#define ETX_CHAR	0x03
 #define END_CHAR        0x0D
 #define SPACE           0x20
 #define K_ESCAPE        0x23
@@ -577,9 +610,17 @@ int do_load_serial_bin (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 
 	ulong offset = 0;
 	ulong addr;
-	int i;
 	int load_baudrate, current_baudrate;
 	int rcode = 0;
+	char *s;
+
+	/* pre-set offset from CFG_LOAD_ADDR */
+	offset = CFG_LOAD_ADDR;
+
+	/* pre-set offset from $loadaddr */
+	if ((s = getenv("loadaddr")) != NULL) {
+		offset = simple_strtoul(s, NULL, 16);
+	}
 
 	load_baudrate = current_baudrate = gd->baudrate;
 
@@ -606,28 +647,19 @@ int do_load_serial_bin (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 				break;
 		}
 	}
-	printf ("## Ready for binary (kermit) download ...\n");
 
+	printf ("## Ready for binary (kermit) download "
+		"to 0x%08lX at %d bps...\n",
+		offset,
+		current_baudrate);
 	addr = load_serial_bin (offset);
-
-	/*
-	 * Gather any trailing characters (for instance, the ^D which
-	 * is sent by 'cu' after sending a file), and give the
-	 * box some time (100 * 1 ms)
-	 */
-	for (i=0; i<100; ++i) {
-		if (serial_tstc()) {
-			(void) serial_getc();
-		}
-		udelay(1000);
-	}
 
 	if (addr == ~0) {
 		load_addr = 0;
 		printf ("## Binary (kermit) download aborted\n");
 		rcode = 1;
 	} else {
-		printf ("## Start Addr      = 0x%08lx\n", addr);
+		printf ("## Start Addr      = 0x%08lX\n", addr);
 		load_addr = addr;
 	}
 
@@ -660,11 +692,24 @@ int do_load_serial_bin (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 
 static ulong load_serial_bin (ulong offset)
 {
-	int size;
+	int size, i;
 	char buf[32];
 
 	set_kerm_bin_mode ((ulong *) offset);
 	size = k_recv ();
+
+	/*
+	 * Gather any trailing characters (for instance, the ^D which
+	 * is sent by 'cu' after sending a file), and give the
+	 * box some time (100 * 1 ms)
+	 */
+	for (i=0; i<100; ++i) {
+		if (serial_tstc()) {
+			(void) serial_getc();
+		}
+		udelay(1000);
+	}
+
 	flush_cache (offset, size);
 
 	printf("## Total Size      = 0x%08x = %d Bytes\n", size, size);
@@ -968,8 +1013,18 @@ static int k_recv (void)
 #endif
 
 		/* get a packet */
-		/* wait for the starting character */
-		while (serial_getc () != START_CHAR);
+		/* wait for the starting character or ^C */
+		for (;;) {
+			switch (serial_getc ()) {
+			case START_CHAR:	/* start packet */
+				goto START;
+			case ETX_CHAR:		/* ^C waiting for packet */
+				return (0);
+			default:
+				;
+			}
+		}
+START:
 		/* get length of packet */
 		sum = 0;
 		new_char = serial_getc ();

@@ -25,6 +25,11 @@ BINS	= img2srec$(SFX) mkimage$(SFX) envcrc$(SFX) gen_eth_addr$(SFX) bmp_logo$(SF
 
 OBJS	= environment.o img2srec.o mkimage.o crc32.o envcrc.o gen_eth_addr.o bmp_logo.o mktree.o
 
+ifeq ($(ARCH),mips)
+BINS   += inca-swap-bytes$(SFX)
+OBJS   += inca-swap-bytes.o
+endif
+
 LOGO_H	= $(TOPDIR)/include/bmp_logo.h
 
 ifeq ($(LOGO_BMP),)
@@ -130,10 +135,14 @@ gen_eth_addr$(SFX):	gen_eth_addr.o
 		$(STRIP) $@
 
 bmp_logo$(SFX):	bmp_logo.o
+		$(CC) $(CFLAGS) $(HOST_LDFLAGS) -o $@ $^ 
+		$(STRIP) $@ 
+    
+mktree$(SFX):	mktree.o 
 		$(CC) $(CFLAGS) $(HOST_LDFLAGS) -o $@ $^
 		$(STRIP) $@
 
-mktree$(SFX):	mktree.o
+inca-swap-bytes$(SFX):	inca-swap-bytes.o
 		$(CC) $(CFLAGS) $(HOST_LDFLAGS) -o $@ $^
 		$(STRIP) $@
 
@@ -147,6 +156,9 @@ mkimage.o:	mkimage.c
 		$(CC) -g $(CFLAGS) -c $<
 
 gen_eth_addr.o:	gen_eth_addr.c
+		$(CC) -g $(CFLAGS) -c $<
+
+inca-swap-bytes.o:	inca-swap-bytes.c
 		$(CC) -g $(CFLAGS) -c $<
 
 subdirs:

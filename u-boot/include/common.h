@@ -43,6 +43,8 @@ typedef volatile unsigned char	vu_char;
 #endif
 #ifdef	CONFIG_8xx
 #include <asm/8xx_immap.h>
+#elif defined(CONFIG_5xx)
+#include <asm/5xx_immap.h>
 #elif defined(CONFIG_8260)
 #include <asm/immap_8260.h>
 #endif
@@ -50,7 +52,7 @@ typedef volatile unsigned char	vu_char;
 #include <ppc4xx.h>
 #endif
 #ifdef CONFIG_HYMOD
-#include <asm/hymod.h>
+#include <board/hymod/hymod.h>
 #endif
 #ifdef CONFIG_ARM
 #define asmlinkage	/* nothing */
@@ -62,8 +64,10 @@ typedef volatile unsigned char	vu_char;
 
 #ifdef	DEBUG
 #define debug(fmt,args...)	printf (fmt ,##args)
+#define debugX(level,fmt,args...) if (DEBUG>=level) printf(fmt,##args);
 #else
 #define debug(fmt,args...)
+#define debugX(level,fmt,args...)
 #endif	/* DEBUG */
 
 typedef	void (interrupt_handler_t)(void *);
@@ -71,9 +75,21 @@ typedef	void (interrupt_handler_t)(void *);
 #include <asm/u-boot.h>	/* boot information for Linux kernel */
 #include <asm/global_data.h>	/* global data used for startup functions */
 
-/* enable common handling for all TQM8xxL boards */
+/*
+ * enable common handling for all TQM8xxL/M boards:
+ * - CONFIG_TQM8xxM will be defined for all TQM8xxM boards
+ * - CONFIG_TQM8xxL will be defined for all TQM8xxL _and_ TQM8xxM boards
+ */
+#if defined(CONFIG_TQM823M) || defined(CONFIG_TQM850M) || \
+    defined(CONFIG_TQM855M) || defined(CONFIG_TQM860M) || \
+    defined(CONFIG_TQM862M)
+# ifndef CONFIG_TQM8xxM
+#  define CONFIG_TQM8xxM
+# endif
+#endif
 #if defined(CONFIG_TQM823L) || defined(CONFIG_TQM850L) || \
-    defined(CONFIG_TQM855L) || defined(CONFIG_TQM860L)
+    defined(CONFIG_TQM855L) || defined(CONFIG_TQM860L) || \
+    defined(CONFIG_TQM862L) || defined(CONFIG_TQM8xxM)
 # ifndef CONFIG_TQM8xxL
 #  define CONFIG_TQM8xxL
 # endif
@@ -115,6 +131,7 @@ void	print_size (ulong, const char *);
 void	main_loop	(void);
 int	run_command	(const char *cmd, int flag);
 int	readline	(const char *const prompt);
+void	init_cmd_timeout(void);
 void	reset_cmd_timeout(void);
 
 /* common/board.c */
@@ -125,6 +142,7 @@ int	checkflash    (void);
 int	checkdram     (void);
 char *	strmhz(char *buf, long hz);
 int	last_stage_init(void);
+extern ulong monitor_flash_len;
 
 /* common/flash.c */
 void flash_perror (int);
@@ -149,10 +167,11 @@ void    setenv       (char *, char *);
 # include <asm/u-boot-arm.h>	/* ARM version to be fixed! */
 #endif /* CONFIG_ARM */
 #ifdef CONFIG_I386		/* x86 version to be fixed! */
-# include <asm/ppcboot-i386.h>  
+# include <asm/u-boot-i386.h>  
 #endif /* CONFIG_I386 */
 
 void    pci_init      (void);
+void    pci_init_board(void);
 void    pciinfo       (int, int);
 
 #if defined(CONFIG_PCI) && defined(CONFIG_440)
@@ -177,6 +196,9 @@ void    fdc_hw_init   (void);
 
 /* $(BOARD)/eeprom.c */
 void eeprom_init  (void);
+#ifndef CONFIG_SPI
+int  eeprom_probe (unsigned dev_addr, unsigned offset);
+#endif
 int  eeprom_read  (unsigned dev_addr, unsigned offset, uchar *buffer, unsigned cnt);
 int  eeprom_write (unsigned dev_addr, unsigned offset, uchar *buffer, unsigned cnt);
 #ifdef CONFIG_LWMON
@@ -194,7 +216,7 @@ extern void  pic_write (uchar reg, uchar val);
 # define CFG_DEF_EEPROM_ADDR CFG_I2C_EEPROM_ADDR
 #endif /* CONFIG_SPI || !defined(CFG_I2C_EEPROM_ADDR) */
 
-#if defined(CONFIG_PCU_E) || defined(CONFIG_CCM)
+#if defined(CONFIG_PCU_E) || defined(CONFIG_CCM) || defined(CONFIG_ATC)
 extern void spi_init_f (void);
 extern void spi_init_r (void);
 extern ssize_t spi_read  (uchar *, int, uchar *, int);
@@ -232,6 +254,7 @@ void	load_sernum_ethaddr (void);
 
 /* $(BOARD)/$(BOARD).c */
 int board_pre_init (void);
+int board_post_init (void);
 int board_postclk_init (void); /* after clocks/timebase, before env/serial */
 void board_poweroff (void);
 
@@ -240,7 +263,8 @@ int testdram(void);
 #endif /* CFG_DRAM_TEST */
 
 /* $(CPU)/start.S */
-#ifdef	CONFIG_8xx
+#if defined(CONFIG_5xx)	|| \
+    defined(CONFIG_8xx)
 uint	get_immr      (uint);
 #endif
 uint	get_pvr	      (void);
@@ -369,6 +393,7 @@ ulong	video_setmem (ulong);
 /* ppc/cache.c */
 void	flush_cache   (unsigned long, unsigned long);
 
+
 /* ppc/ticks.S */
 unsigned long long get_ticks(void);
 void	wait_ticks    (unsigned long);
@@ -416,6 +441,7 @@ int	tstc(void);
 void	putc(const char c);
 void	puts(const char *s);
 void	printf(const char *fmt, ...);
+void	vprintf(const char *fmt, va_list args);
 
 /* stderr */
 #define eputc(c)		fputc(stderr, c)

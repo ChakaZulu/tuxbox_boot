@@ -66,8 +66,9 @@
 	GOT_ENTRY(_end_of_vectors)
 	GOT_ENTRY(transfer_to_handler)
 
+	GOT_ENTRY(__init_end)
 	GOT_ENTRY(_end)
-	GOT_ENTRY(.bss)
+	GOT_ENTRY(__bss_start)
 #if defined(CONFIG_HYMOD)
 	GOT_ENTRY(environment)
 #endif
@@ -160,6 +161,7 @@ _hrcw_table:
 	.globl	_start
 _start:
 	li	r21, BOOTFLAG_COLD	/* Normal Power-On: Boot from FLASH*/
+	nop
 	b	boot_cold
 
 	. = EXC_OFF_SYS_RESET + 0x10
@@ -170,6 +172,18 @@ _start_warm:
 	b	boot_warm
 
 boot_cold:
+#if defined(CONFIG_MPC8260ADS)
+	lis	r3, CFG_DEFAULT_IMMR@h
+	nop
+	lwz	r4, 0(r3)
+	nop
+	rlwinm	r4, r4, 0, 8, 5
+	nop
+	oris	r4, r4, 0x0200
+	nop
+	stw	r4, 0(r3)
+	nop
+#endif /* CONFIG_MPC8260ADS */
 boot_warm:
 	mfmsr	r5			/* save msr contents		*/
 
@@ -863,8 +877,8 @@ relocate_code:
 	mr	r3,  r5				/* Destination Address	*/
 	lis	r4, CFG_MONITOR_BASE@h		/* Source      Address	*/
 	ori	r4, r4, CFG_MONITOR_BASE@l
-	lis	r5, CFG_MONITOR_LEN@h		/* Length in Bytes	*/
-	ori	r5, r5, CFG_MONITOR_LEN@l
+	lwz	r5, GOT(__init_end)
+	sub	r5, r5, r4
 	li	r6, CFG_CACHELINE_SIZE		/* Cache Line Size	*/
 
 	/*
@@ -987,7 +1001,7 @@ clear_bss:
 	/*
 	 * Now clear BSS segment
 	 */
-	lwz	r3,GOT(.bss)
+	lwz	r3,GOT(__bss_start)
 #if defined(CONFIG_HYMOD)
 	/*
 	 * For HYMOD - the environment is the very last item in flash.
@@ -1016,12 +1030,6 @@ clear_bss:
 	mr	r4, r10		/* Destination Address		*/
 	bl	board_init_r
 
-	/* Problems accessing "end" in C, so do it here */
-	.globl	get_endaddr
-get_endaddr:
-	lwz	r3,GOT(_end)
-	blr
-
 	/*
 	 * Copy exception vector code to low memory
 	 *
@@ -1033,7 +1041,7 @@ trap_init:
 	lwz	r7, GOT(_start)
 	lwz	r8, GOT(_end_of_vectors)
 
-	rlwinm	r9, r7, 0, 18, 31	/* _start & 0x3FFF	*/
+	li	r9, 0x100		/* reset vector always at 0x100 */
 
 	cmplw	0, r7, r8
 	bgelr				/* return if r7>=r8 - just in case */

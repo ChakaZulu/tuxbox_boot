@@ -45,6 +45,8 @@
 #define IH_OS_PSOS		15	/* pSOS		*/
 #define IH_OS_QNX		16	/* QNX		*/
 #define IH_OS_U_BOOT		17	/* Firmware	*/
+#define IH_OS_RTEMS		18	/* RTEMS	*/
+#define IH_OS_ARTOS		19	/* ARTOS	*/
 
 /*
  * CPU Architecture Codes (supported by Linux)
@@ -118,14 +120,12 @@
 
 #define IH_MAGIC	0x27051956	/* Image Magic Number		*/
 #define IH_NMLEN		32	/* Image Name Length		*/
-
 #if 0
 #ifdef __CYGWIN__
 typedef unsigned long uint32_t;
 typedef unsigned char uint8_t;
 #endif /* __CYGWIN__ */
 #endif
-
 /*
  * all data in network byte order (aka natural aka bigendian)
  */

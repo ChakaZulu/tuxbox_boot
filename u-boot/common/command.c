@@ -58,6 +58,7 @@
 #include <cmd_mii.h>
 #include <cmd_dcr.h>		/* 4xx DCR register access */
 #include <cmd_doc.h>
+#include <cmd_nand.h>
 #include <cmd_jffs2.h>
 #include <cmd_fpga.h>
 #include <cmd_fs.h>
@@ -72,6 +73,9 @@
 #include <cmd_vfd.h>		/* load a bitmap to the VFDs on TRAB */
 #include <cmd_log.h>
 #include <cmd_fdos.h>
+#include <cmd_bmp.h>
+#include <cmd_portio.h>
+#include <cmd_mmc.h>
 
 #ifdef CONFIG_AMIGAONEG3SE
 #include <cmd_menu.h>
@@ -129,13 +133,14 @@ do_echo (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 
 		if (i > 1)
 			putc(' ');
-		while ((c = *p++) != '\0')
+		while ((c = *p++) != '\0') {
 			if (c == '\\' && *p == 'c') {
 				putnl = 0;
 				p++;
-			}
-			else
+			} else {
 				putc(c);
+			}
+		}
 	}
 
 	if (putnl)
@@ -188,8 +193,7 @@ do_help (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 			if (cmdtp->usage)
 				puts (cmdtp->usage);
 #endif	/* CFG_LONGHELP */
-		}
-		else {
+		} else {
 			printf ("Unknown command '%s' - try 'help'"
 				" without arguments for list of all"
 				" known commands\n\n",
@@ -231,6 +235,7 @@ cmd_tbl_t cmd_tbl[] = {
 	CMD_TBL_AUTOSCRIPT
 	CMD_TBL_BASE
 	CMD_TBL_BDINFO
+	CMD_TBL_BMP
 #ifdef CONFIG_AMIGAONEG3SE
 	CMD_TBL_BOOTA
 #endif
@@ -263,8 +268,8 @@ cmd_tbl_t cmd_tbl[] = {
 	CMD_TBL_FCCINFO
 	CMD_TBL_FLERASE
 	CMD_TBL_FDC
-        CMD_TBL_FDOS_BOOT
-        CMD_TBL_FDOS_LS
+	CMD_TBL_FDOS_BOOT
+	CMD_TBL_FDOS_LS
 	CMD_TBL_FLINFO
 	CMD_TBL_FPGA
 	CMD_TBL_JFFS2_FSINFO
@@ -284,6 +289,7 @@ cmd_tbl_t cmd_tbl[] = {
 	CMD_TBL_IMM
 	CMD_TBL_INM
 	CMD_TBL_IMW
+	CMD_TBL_PORTIO_IN
 	CMD_TBL_ICRC
 	CMD_TBL_IPROBE
 	CMD_TBL_ILOOP
@@ -301,6 +307,7 @@ cmd_tbl_t cmd_tbl[] = {
 	CMD_TBL_JFFS2_LS
 	CMD_TBL_FS_LS
 	CMD_TBL_MCCINFO
+	CMD_TBL_MMC
 	CMD_TBL_MD
 	CMD_TBL_MEMCINFO
 #ifdef CONFIG_AMIGAONEG3SE
@@ -311,8 +318,12 @@ cmd_tbl_t cmd_tbl[] = {
 	CMD_TBL_MTEST
 	CMD_TBL_MUXINFO
 	CMD_TBL_MW
+	CMD_TBL_NAND
+	CMD_TBL_NANDBOOT
 	CMD_TBL_NEXT
 	CMD_TBL_NM
+	CMD_TBL_PING
+	CMD_TBL_PORTIO_OUT
 	CMD_TBL_PCI
 	CMD_TBL_PRINTENV
 	CMD_TBL_PROTECT

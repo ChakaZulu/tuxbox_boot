@@ -30,8 +30,8 @@ LIB	= lib$(CPU).a
 START	= start.o kgdb.o
 OBJS	= bedbug_860.o commproc.o cpu.o cpu_init.o	\
 	  fec.o i2c.o interrupts.o lcd.o scc.o		\
-	  serial.o speed.o spi.o status_led.o\
-	  traps.o upatch.o video.o wlkbd.o
+	  serial.o speed.o spi.o \
+	  traps.o upatch.o video.o
 
 all:	.depend $(START) $(LIB)
 

@@ -142,10 +142,7 @@ TftpSend (void)
 		break;
 	}
 
-	NetSetEther (NetTxPacket, NetServerEther, PROT_IP);
-	NetSetIP (NetTxPacket + ETHER_HDR_SIZE, NetServerIP,
-					TftpServerPort, TftpOurPort, len);
-	NetSendPacket (NetTxPacket, ETHER_HDR_SIZE + IP_HDR_SIZE + len);
+	NetSendUDPPacket(NetServerEther, NetServerIP, TftpServerPort, TftpOurPort, len);
 }
 
 
@@ -237,6 +234,7 @@ TftpHandler (uchar * pkt, unsigned dest, unsigned src, unsigned len)
 		while (len--)
 			printf("%c", *pkt++);
 		printf("\n");
+
 #ifdef CONFIG_TUXBOX_NETWORK
 		NetState = NETLOOP_SUCCESS;
 #else /* CONFIG_TUXBOX_NETWORK */
@@ -265,17 +263,6 @@ TftpTimeout (void)
 void
 TftpStart (void)
 {
-#ifdef ET_DEBUG
-	printf ("\nServer ethernet address %02x:%02x:%02x:%02x:%02x:%02x\n",
-		NetServerEther[0],
-		NetServerEther[1],
-		NetServerEther[2],
-		NetServerEther[3],
-		NetServerEther[4],
-		NetServerEther[5]
-	);
-#endif /* DEBUG */
-
 	if (BootFile[0] == '\0') {
 		IPaddr_t OurIP = ntohl(NetOurIP);
 
@@ -327,6 +314,9 @@ TftpStart (void)
 	TftpTimeoutCount = 0;
 	TftpState = STATE_RRQ;
 	TftpOurPort = 1024 + (get_timer(0) % 3072);
+
+	/* zero out server ether in case the server ip has changed */
+	memset(NetServerEther, 0, 6);
 
 	TftpSend ();
 }

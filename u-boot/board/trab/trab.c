@@ -30,6 +30,13 @@
 
 /* ------------------------------------------------------------------------- */
 
+#ifdef CFG_BRIGHTNESS
+static void spi_init(void);
+static void wait_transmit_done(void);
+static void tsc2000_write(unsigned int page, unsigned int reg,
+						  unsigned int data);
+static void tsc2000_set_brightness(void);
+#endif
 #ifdef CONFIG_MODEM_SUPPORT
 static int key_pressed(void);
 extern void disable_putc(void);
@@ -60,44 +67,43 @@ static void udelay_no_timer (int usec)
 
 int board_init ()
 {
-#if defined(CONFIG_MODEM_SUPPORT) && defined(CONFIG_VFD)
-	ulong size;
-	unsigned long addr;
-	extern void mem_malloc_init (ulong);
-	extern int drv_vfd_init(void);
+#if defined(CONFIG_VFD)
+	extern int vfd_init_clocks(void);
 #endif
 	DECLARE_GLOBAL_DATA_PTR;
+	S3C24X0_CLOCK_POWER * const clk_power = S3C24X0_GetBase_CLOCK_POWER();
+	S3C24X0_GPIO * const gpio = S3C24X0_GetBase_GPIO();
 
 	/* memory and cpu-speed are setup before relocation */
 #ifdef CONFIG_TRAB_50MHZ
 	/* change the clock to be 50 MHz 1:1:1 */
 	/* MDIV:0x5c PDIV:4 SDIV:2 */
-	rMPLLCON = 0x5c042;
-	rCLKDIVN = 0;
+	clk_power->MPLLCON = 0x5c042;
+	clk_power->CLKDIVN = 0;
 #else
 	/* change the clock to be 133 MHz 1:2:4 */
 	/* MDIV:0x7d PDIV:4 SDIV:1 */
-	rMPLLCON = 0x7d041;
-	rCLKDIVN = 3;
+	clk_power->MPLLCON = 0x7d041;
+	clk_power->CLKDIVN = 3;
 #endif
 
 	/* set up the I/O ports */
-	rPACON = 0x3ffff;
-	rPBCON = 0xaaaaaaaa;
-	rPBUP  = 0xffff;
+	gpio->PACON = 0x3ffff;
+	gpio->PBCON = 0xaaaaaaaa;
+	gpio->PBUP  = 0xffff;
 	/* INPUT nCTS0 nRTS0 TXD[1] TXD[0] RXD[1] RXD[0]	*/
 	/*  00,    10,      10,      10,      10,      10,      10 	*/
-	rPFCON = (2<<0) | (2<<2) | (2<<4) | (2<<6) | (2<<8) | (2<<10);
+	gpio->PFCON = (2<<0) | (2<<2) | (2<<4) | (2<<6) | (2<<8) | (2<<10);
 #ifdef CONFIG_HWFLOW
 	/* do not pull up RXD0, RXD1, TXD0, TXD1, CTS0, RTS0 */
-	rPFUP  = (1<<0) | (1<<1) | (1<<2) | (1<<3) | (1<<4) | (1<<5);
+	gpio->PFUP  = (1<<0) | (1<<1) | (1<<2) | (1<<3) | (1<<4) | (1<<5);
 #else
 	/* do not pull up RXD0, RXD1, TXD0, TXD1 */
-	rPFUP  = (1<<0) | (1<<1) | (1<<2) | (1<<3);
+	gpio->PFUP  = (1<<0) | (1<<1) | (1<<2) | (1<<3);
 #endif
-	rPGCON = 0x0;
-	rPGUP  = 0x0;
-	rOPENCR= 0x0;
+	gpio->PGCON = 0x0;
+	gpio->PGUP  = 0x0;
+	gpio->OPENCR= 0x0;
 
 	/* arch number of SAMSUNG-Board */
 	/* MACH_TYPE_SMDK2400 */
@@ -107,26 +113,15 @@ int board_init ()
 	/* adress of boot parameters */
 	gd->bd->bi_boot_params = 0x0c000100;
 
-#ifdef CONFIG_MODEM_SUPPORT
+	/* Make sure both buzzers are turned off */
+	gpio->PDCON |= 0x5400;
+	gpio->PDDAT &= ~0xE0;
+
 #ifdef CONFIG_VFD
-#ifndef PAGE_SIZE
-#define PAGE_SIZE 4096
-#endif
-	/*
-	 * reserve memory for VFD display (always full pages)
-	 */
-	/* armboot_real_end is defined in the board-specific linker script */
-	addr = (_armboot_real_end + (PAGE_SIZE - 1)) & ~(PAGE_SIZE - 1);
-	size = vfd_setmem (addr);
-	gd->fb_base = addr;
-	/* round to the next page boundary */
-	addr += size;
-	addr = (addr + (PAGE_SIZE - 1)) & ~(PAGE_SIZE - 1);
-	mem_malloc_init (addr);
-	/* must do this after the framebuffer is allocated */
-	drv_vfd_init();
+	vfd_init_clocks();
 #endif /* CONFIG_VFD */
 
+#ifdef CONFIG_MODEM_SUPPORT
 	udelay_no_timer (KBD_MDELAY);
 
 	if (key_pressed()) {
@@ -182,6 +177,9 @@ int misc_init_r (void)
 		free (str);
 	}
 
+#ifdef CFG_BRIGHTNESS
+	tsc2000_set_brightness();
+#endif
 	return (0);
 }
 
@@ -306,3 +304,91 @@ static int key_pressed(void)
 	return (compare_magic(KBD_DATA, CONFIG_MODEM_KEY_MAGIC) == 0);
 }
 #endif	/* CONFIG_MODEM_SUPPORT */
+
+#ifdef CFG_BRIGHTNESS
+
+static inline void SET_CS_TOUCH(void)
+{
+	S3C24X0_GPIO * const gpio = S3C24X0_GetBase_GPIO();
+
+	gpio->PDDAT &= 0x5FF;
+}
+
+static inline void CLR_CS_TOUCH(void)
+{
+	S3C24X0_GPIO * const gpio = S3C24X0_GetBase_GPIO();
+
+	gpio->PDDAT |= 0x200;
+}
+
+static void spi_init(void)
+{
+	S3C24X0_GPIO * const gpio = S3C24X0_GetBase_GPIO();
+	S3C24X0_SPI * const spi = S3C24X0_GetBase_SPI();
+	int i;
+
+	/* Configure I/O ports. */
+ 	gpio->PDCON = (gpio->PDCON & 0xF3FFFF) | 0x040000;
+	gpio->PGCON = (gpio->PGCON & 0x0F3FFF) | 0x008000;
+	gpio->PGCON = (gpio->PGCON & 0x0CFFFF) | 0x020000;
+	gpio->PGCON = (gpio->PGCON & 0x03FFFF) | 0x080000;
+
+	CLR_CS_TOUCH();
+
+	spi->ch[0].SPPRE = 0x1F; /* Baudrate ca. 514kHz */
+	spi->ch[0].SPPIN = 0x01;  /* SPI-MOSI holds Level after last bit */
+	spi->ch[0].SPCON = 0x1A;  /* Polling, Prescaler, Master, CPOL=0, CPHA=1 */
+
+	/* Dummy byte ensures clock to be low. */
+	for (i = 0; i < 10; i++) {
+		spi->ch[0].SPTDAT = 0xFF;
+	}
+	wait_transmit_done();
+}
+
+static void wait_transmit_done(void)
+{
+	S3C24X0_SPI * const spi = S3C24X0_GetBase_SPI();
+
+	while (!(spi->ch[0].SPSTA & 0x01)); /* wait until transfer is done */
+}
+
+static void tsc2000_write(unsigned int page, unsigned int reg,
+						  unsigned int data)
+{
+	S3C24X0_SPI * const spi = S3C24X0_GetBase_SPI();
+	unsigned int command;
+
+	SET_CS_TOUCH();
+	command = 0x0000;
+	command |= (page << 11);
+	command |= (reg << 5);
+
+	spi->ch[0].SPTDAT = (command & 0xFF00) >> 8;
+	wait_transmit_done();
+	spi->ch[0].SPTDAT = (command & 0x00FF);
+	wait_transmit_done();
+	spi->ch[0].SPTDAT = (data & 0xFF00) >> 8;
+	wait_transmit_done();
+	spi->ch[0].SPTDAT = (data & 0x00FF);
+	wait_transmit_done();
+
+	CLR_CS_TOUCH();
+}
+
+static void tsc2000_set_brightness(void)
+{
+	uchar tmp[10];
+	int i, br;
+
+	spi_init();
+	tsc2000_write(1, 2, 0x0); /* Power up DAC */
+
+	i = getenv_r("brightness", tmp, sizeof(tmp));
+	br = (i > 0)
+		? (int) simple_strtoul (tmp, NULL, 10)
+		: CFG_BRIGHTNESS;
+
+	tsc2000_write(0, 0xb, br & 0xff);
+}
+#endif

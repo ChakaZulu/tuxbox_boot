@@ -41,39 +41,41 @@
 #define	CONFIG_8xx_CONS_SMC1	1	/* Console is on SMC1		*/
 #undef	CONFIG_8xx_CONS_SMC2
 #undef	CONFIG_8xx_CONS_NONE
-#define CONFIG_BAUDRATE		9600	/* console baudrate		*/
+#define CONFIG_BAUDRATE		115200	/* console baudrate		*/
 #if 0
 #define CONFIG_BOOTDELAY	-1	/* autoboot disabled		*/
 #else
-#define CONFIG_BOOTDELAY	5	/* autoboot after 1 second	*/
+#define CONFIG_BOOTDELAY	1	/* autoboot after 1 second	*/
 #endif
 
 #define	CONFIG_CLOCKS_IN_MHZ	1	/* clocks passsed to Linux in MHz */
 
 #define CONFIG_BOARD_TYPES	1	/* support board types		*/
 
-#if 0
-#define CONFIG_PREBOOT	"echo;echo Type \"run flash_nfs\" to mount root filesystem over NFS;echo"
-#endif
 
 #undef	CONFIG_BOOTARGS
 
-#define CONFIG_NFSBOOTCOMMAND \
-    "dhcp ;"\
-	"setenv bootargs root=/dev/nfs ro nfsroot=$(nfsip):$(rootpath) "\
-	"ip=$(ipaddr):$(nfsip):$(gatewayip):"\
-	"$(netmask):heydeck.eva:eth0:off; "\
-    "bootm 100000"
 
-#define CONFIG_RAMBOOTCOMMAND	\
-    "diskboot 100000 0:1; "\
-    "setenv bootargs root=/dev/hda2 panic=1 "\
-	"ip=192.168.0.71:192.168.0.100:192.168.0.2:255.255.255.0; "\
-    "bootm"
+#define	CONFIG_EXTRA_ENV_SETTINGS					  \
+"slot_a_boot=setenv bootargs root=/dev/hda2 ip=off panic=1;\
+ diskboot 200000 0:1; bootm 200000\0"                                     \
+"slot_b_boot=setenv bootargs root=/dev/hda2 ip=off panic=1;\
+ diskboot 200000 2:1; bootm 200000\0"                                     \
+"nfs_boot=dhcp; run nfsargs addip; bootm 200000\0"                        \
+"panic_boot=echo No Bootdevice !!! reset\0"                               \
+"nfsargs=setenv bootargs root=/dev/nfs rw nfsroot=$(nfsip):$(rootpath)\0" \
+"ramargs=setenv bootargs root=/dev/ram rw\0"			          \
+"addip=setenv bootargs $(bootargs) ip=$(ipaddr):$(nfsip):$(gatewayip)\
+:$(netmask):$(hostname):$(netdev):off panic=1\0"                          \
+"netdev=eth0\0"                                                           \
+"load=tftp 200000 bootloader.bitmap;tftp 100000 u-boot.bin\0"             \
+"update=protect off 1:0-8;era 1:0-8;cp.b 100000 40000000 $(filesize);\
+cp.b 200000 40040000 14000\0"                                                   \
+"nfsip=192.168.2.19\0"
 
-#define CONFIG_BOOTCOMMAND	\
-    "run ramboot "\
-    "run nfsboot"
+#define CONFIG_BOOTCOMMAND  \
+    "run slot_a_boot;run slot_b_boot;run nfs_boot;run panic_boot"
+
 
 #define CONFIG_MISC_INIT_R  1
 
@@ -124,11 +126,13 @@
 #define CFG_MEMTEST_START	0x0400000	/* memtest works on	*/
 #define CFG_MEMTEST_END		0x0C00000	/* 4 ... 12 MB in DRAM	*/
 
-#define	CFG_LOAD_ADDR		0x100000	/* default load address	*/
+#define	CFG_LOAD_ADDR		0x200000	/* default load address	*/
 
 #define	CFG_HZ		1000		/* decrementer freq: 1 ms ticks	*/
 
 #define CFG_BAUDRATE_TABLE	{ 9600, 19200, 38400, 57600, 115200 }
+
+#define CFG_CONSOLE_INFO_QUIET 1
 
 /*
  * Low Level Configuration Settings
@@ -250,7 +254,7 @@
  *
  * If this is a 80 MHz CPU, set PLL multiplication factor to 5 (5*16=80)!
  */
-#define CFG_PLPRCR ( (3-1)<<PLPRCR_MF_SHIFT | PLPRCR_TEXPS | PLPRCR_TMIST )
+#define CFG_PLPRCR ( (5-1)<<PLPRCR_MF_SHIFT | PLPRCR_TEXPS | PLPRCR_TMIST )
 
 /*-----------------------------------------------------------------------
  * SCCR - System Clock and reset Control Register		15-27
@@ -259,7 +263,7 @@
  * power management and some other internal clocks
  */
 #define SCCR_MASK	SCCR_EBDF00
-#define CFG_SCCR	( SCCR_TBS  |   SCCR_EBDF00 |  \
+#define CFG_SCCR	(SCCR_TBS | SCCR_EBDF01 |  \
 			 SCCR_COM00   | SCCR_DFSYNC00 | SCCR_DFBRG00  | \
 			 SCCR_DFNL000 | SCCR_DFNH000  | SCCR_DFLCD000 | \
 			 SCCR_DFALCD00)
@@ -271,7 +275,7 @@
  */
 
 /* KUP4K use both slots, SLOT_A as "primary". */
-#define	CONFIG_PCMCIA_SLOT_A 1	
+#define	CONFIG_PCMCIA_SLOT_A 1
 
 #define CFG_PCMCIA_MEM_ADDR	(0xE0000000)
 #define CFG_PCMCIA_MEM_SIZE	( 64 << 20 )
@@ -319,7 +323,6 @@
  *-----------------------------------------------------------------------
  *
  */
-/*#define	CFG_DER	0x2002000F*/
 #define CFG_DER	0
 
 /*
@@ -429,12 +432,12 @@
 #define BOOTFLAG_WARM	0x02		/* Software reboot			*/
 
 
-#if NOT_USED_FOR_NOW
+
 #define CONFIG_AUTOBOOT_KEYED		/* use key strings to stop autoboot */
 #if 0
 #define CONFIG_AUTOBOOT_PROMPT		"Boote in %d Sekunden - stop mit \"2\"\n"
 #endif
-#define CONFIG_AUTOBOOT_STOP_STR	"2" /* easy to stop for now */
-#endif /* NOT_USED_FOR_NOW */
+#define CONFIG_AUTOBOOT_STOP_STR	"." /* easy to stop for now */
+
 
 #endif	/* __CONFIG_H */
