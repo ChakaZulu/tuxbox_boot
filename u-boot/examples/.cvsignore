@@ -3,3 +3,8 @@ hello_world
 hello_world.srec
 timer
 timer.srec
+hello_world.bin
+sched
+sched.bin
+sched.srec
+timer.bin
