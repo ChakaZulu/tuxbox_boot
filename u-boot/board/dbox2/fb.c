@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *
- * $Id: fb.c,v 1.4 2003/02/17 13:41:24 alexw Exp $
+ * $Id: fb.c,v 1.5 2003/03/06 18:03:03 waldi Exp $
  */
 
 #include <common.h>
@@ -32,7 +32,7 @@
 #include <net.h>
 #endif /* CONFIG_DBOX2_FB_LOGO_TFTP */
 
-extern unsigned char *hwi;
+extern unsigned char mid;
 
 extern void saa7126_init (int);
 extern void avs_init (int);
@@ -45,9 +45,9 @@ int fb_init (void)
 {
 	puts ("FB:    ");
 
-	avs_blank (hwi[0]);
-	saa7126_init (hwi[0]);
-	avia_init_pre (hwi[0]);
+	avs_blank (mid);
+	saa7126_init (mid);
+	avia_init_pre (mid);
 
 	puts ("ready\n");
 
@@ -90,11 +90,11 @@ int fb_load (void)
 # endif /* CONFIG_DBOX2_FB_LOGO_TFTP */
 load_logo:
 	avia_init_load (fb_logo);
-	avia_init_post (hwi[0]);
-	avs_init (hwi[0]);
-#endif /* CONFIG_DBOX2_FB_LOGO */
+	avia_init_post (mid);
+	avs_init (mid);
 
 	return 0;
 }
+#endif /* CONFIG_DBOX2_FB_LOGO */
 
 #endif

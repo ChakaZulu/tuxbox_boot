@@ -72,9 +72,9 @@ int last_stage_init (void)
 	fb_load ();
 #endif /* CONFIG_DBOX2_FB_LOGO */
 
-#ifdef CONFIG_DBOX2_FB_LOGO
+#ifdef CONFIG_DBOX2_LCD_LOGO
 	lcd_load ();
-#endif /* CONFIG_DBOX2_FB_LOGO */
+#endif /* CONFIG_DBOX2_LCD_LOGO */
 
 	return 1;
 }

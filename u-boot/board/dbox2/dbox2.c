@@ -68,21 +68,21 @@ const uint sdram_table_upmb_nokia[] =
  */
 
 const char *id2name[] = { "EMPTY", "Nokia", "Phillips", "Sagem" };
-unsigned char *hwi = (unsigned char *) (CFG_FLASH_BASE + CFG_HWINFO_OFFSET);
-static unsigned char id = 0;
+static unsigned char *hwi = (unsigned char *) (CFG_FLASH_BASE + CFG_HWINFO_OFFSET);
+unsigned char mid = 0;
 
 int checkboard (void)
 {
-	id = hwi[0];
+	mid = hwi[0];
 
-	if (id < 1 && id > 3)
+	if (mid < 1 && mid > 3)
 	{
-		printf ("Board: unknown (0x%02x)\n", id);
+		printf ("Board: unknown (0x%02x)\n", mid);
 		return -1;
 	}
 
 	puts ("Board: DBOX2, ");
-	puts (id2name[id]);
+	puts (id2name[mid]);
 	puts ("\n");
 
 	return 0;
@@ -96,7 +96,7 @@ long int initdram (int board_type)
 	volatile memctl8xx_t *memctl = &immap->im_memctl;
 	int size = 0;
 
-	if (id == 1)
+	if (mid == 1)
 		upmconfig (UPMB, (uint *) sdram_table_upmb_nokia, sizeof (sdram_table_upmb_nokia) / sizeof (uint));
 
 	if ( memctl->memc_br1 & 0x1 )
@@ -165,7 +165,7 @@ void load_env_fs (void)
 u8 *dhcp_vendorex_prep (u8 *e)
 {
 	const char *part1 = "DBOX2, ";
-	const char *part2 = id2name[id];
+	const char *part2 = id2name[mid];
 
 	/* DHCP vendor-class-identifier = 60 */
 	*e++ = 60;
