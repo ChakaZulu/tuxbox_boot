@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *
- * $Id: saa7126.c,v 1.2 2003/02/16 22:23:03 alexw Exp $
+ * $Id: saa7126.c,v 1.3 2003/03/09 17:03:37 zwen Exp $
  */
 
 #include <common.h>
@@ -63,7 +63,7 @@ static struct saa7126_initdata saa7126_inittab_pal [] =
 			    0xbf, 0x60, 0x42, 0x07, 0x00, 0x05, 0x16, 0x04,
 			    0x16, 0x16, 0x36, 0x60 } },				/* sagem */
 
-	{ 0x07, 0x7e,  2, { 0x00, 0x00 } },					/* common */
+	{ 0x07, 0x7d,  3, { 0x00, 0x00, 0x00 } },					/* common */
 
 	{ 0xff },								/* end */
 };
