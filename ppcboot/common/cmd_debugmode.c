@@ -52,20 +52,25 @@ static char *manufacturers[3] = {
 	"sagem"
 };
 
-static int bmon_version(unsigned char *ver) {
-
+static int bmon_version(unsigned char *ver)
+{
 	char *bmon = (char *) 0x10000000;
 	char *p;
 
-	for (p = bmon; p < bmon + 131072; p++)
-		if ((p - bmon + 11 <= 131072) && (!memcmp(p, "dbox2:", 6))) {
+	/*
+	 * address of the ascii bmon version
+	 * number seems to be always higher
+	 * than 0x14000, 32 bit aligned, directly
+	 * following the "dbox2:" prompt.
+	 */
+	for (p = &bmon[0x14000]; p < &bmon[0x20000 - 11]; p += 4)
+		if (!memcmp(p, "dbox2:", 6)) {
 			memcpy(ver, &p[8], 3);
 			return 0;
 		}
 
 	return -1;
 }
-
 
 static int *product_ptr(void)
 {
@@ -78,12 +83,11 @@ static int *product_ptr(void)
 		return NULL;
 	}
 
-	for (i = 0; i < 7; i++) {
+	for (i = 0; i < 7; i++)
 		if ((models[i].mid == mid) && (!memcmp(models[i].ver, ver, 3))) {
 			printf("%s bmon %c%c%c\n", manufacturers[mid - 1], ver[0], ver[1], ver[2]);
 			return models[i].addr;
 		}
-	}
 
 	printf("unknown %s bmon version %c%c%c. please report!\n", manufacturers[mid - 1], ver[0], ver[1], ver[2]);
 	return NULL;
@@ -107,13 +111,37 @@ static void debugmode_status(int *product)
 static void debugmode_enable(int *product)
 {
 	printf("+++ debugmode_enable\n");
-	//product[0] = 0;
+
+	if (product[0] != -1) {
+		/*
+		 * TODO:
+		 * ask user whether to continue
+		 * even if "product?" does not equal -1
+		 */
+	}
+
+	product[0] = 0;
 }
 
 static void debugmode_disable(int *product)
 {
 	printf("+++ debugmode_disable\n");
-	//product[0] = -1;
+
+	if (product[0] != 0) {
+		/*
+		 * TODO:
+		 * ask user whether to continue
+		 * even if "product?" does not equal 0
+		 */
+	}
+
+	/*
+	 * TODO:
+	 * copy boot sector to ram,
+	 * set "product?" to -1,
+	 * erase boot sector,
+	 * copy ram to boot sector
+	 */
 }
 
 static int on_off(const char *s)
