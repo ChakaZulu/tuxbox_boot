@@ -45,9 +45,12 @@ void main_loop(bd_t *bd)
 	char *s = getenv ("bootdelay");
 	int bootdelay = s ? (int)simple_strtoul(s, NULL, 10) : 0;
 	int autoboot  = 1;
-        char imageselect;
 
 #endif	/* CONFIG_BOOTDELAY */
+
+#ifdef CONFIG_BOOTIMGSELECT
+        char imageselect;
+#endif
 
 #if 0
 	printf ("### main_loop entered:\n\n");
@@ -61,21 +64,23 @@ void main_loop(bd_t *bd)
 		int flag = 0;
 		int len;
 
-                if ( autoboot && bootdelay > 0 )
-                { 
-                  printf("Images:");
-                  printf("\n 1: "); printf(CONFIG_BOOTIMG1);
-                  printf("\n 2: "); printf(CONFIG_BOOTIMG2);
-                  printf("\n 3: "); printf(CONFIG_BOOTIMG3);
-                  printf("\n 4: "); printf(CONFIG_BOOTIMG4);
-                  printf("\n 5: "); printf(CONFIG_BOOTIMG5);
-                  printf("\n");
-                  imageselect = '1';
-                }
-#if (CONFIG_BOOTDELAY >= 0)      
+#if (CONFIG_BOOTDELAY >= 0)
 
 		if (autoboot)
-		  printf("Select image (1-5), other keys to stop autoboot: %2d ", bootdelay);
+		{ 
+#ifdef CONFIG_BOOTIMGSELECT
+			printf("Images:\n");
+			printf("1: " CONFIG_BOOTIMG1 "\n");
+			printf("2: " CONFIG_BOOTIMG2 "\n");
+			printf("3: " CONFIG_BOOTIMG3 "\n");
+			printf("4: " CONFIG_BOOTIMG4 "\n");
+			printf("5: " CONFIG_BOOTIMG5 "\n");
+			imageselect = '1';
+			printf("Select image (1-5), other keys to stop autoboot: %2d ", bootdelay);
+#else
+			printf ("Hit any key to stop autoboot: %2d ", bootdelay);
+#endif
+		}
 
 		while (bootdelay > 0) {
 			int i;
@@ -84,10 +89,15 @@ void main_loop(bd_t *bd)
 			/* delay 100 * 10ms */
 			for (i=0; i<100; ++i) {
 				if (tstc()) {	/* we got a key press	*/
-                                        imageselect = getc();
-                                        if ( imageselect<'1' || imageselect>'5' )
-                                          autoboot = 0;
 					bootdelay = 0;	/* no more delays	*/
+#ifdef CONFIG_BOOTIMGSELECT
+					imageselect = getc();
+					if (imageselect<'1' || imageselect>'5')
+#endif
+					autoboot  = 0;	/* don't auto boot	*/
+#ifndef CONFIG_BOOTIMGSELECT
+					(void) getc();  /* consume input */
+#endif
 					break;
 				}
 				udelay (10000);
@@ -98,12 +108,14 @@ void main_loop(bd_t *bd)
 
 		putc ('\n');
 
-                // Image speichern
-                if ( imageselect == '1' ) setenv("img", CONFIG_BOOTIMG1);
-                if ( imageselect == '2' ) setenv("img", CONFIG_BOOTIMG2);
-                if ( imageselect == '3' ) setenv("img", CONFIG_BOOTIMG3);
-                if ( imageselect == '4' ) setenv("img", CONFIG_BOOTIMG4);
-                if ( imageselect == '5' ) setenv("img", CONFIG_BOOTIMG5);
+#ifdef CONFIG_BOOTIMGSELECT
+                /* save image */
+                if (imageselect == '1') setenv("img", CONFIG_BOOTIMG1);
+                if (imageselect == '2') setenv("img", CONFIG_BOOTIMG2);
+                if (imageselect == '3') setenv("img", CONFIG_BOOTIMG3);
+                if (imageselect == '4') setenv("img", CONFIG_BOOTIMG4);
+                if (imageselect == '5') setenv("img", CONFIG_BOOTIMG5);
+#endif
 
 		if (autoboot) {
 			autoboot = 0;
@@ -482,8 +494,8 @@ static void run_command (int len,
 
 		if (!str)
 			return;
-	  	strcpy (lastcommand, str);
-  	  	  
+
+		strcpy (lastcommand, str);
 		lastlen = len;
 	} else {			/* Process last command (len = 0)	*/
 		/* Check if we have a valid command stored */
