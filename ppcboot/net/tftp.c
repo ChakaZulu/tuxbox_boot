@@ -182,8 +182,9 @@ TftpHandler (uchar * pkt, unsigned dest, unsigned src, unsigned len)
 	case TFTP_ERROR:
 		printf ("\nTFTP error: '%s' (%d)\n",
 					pkt + 2, SWAP16(*(ushort *)pkt));
-		puts ("Starting again\n\n");
-		NetStartAgain ();
+		//puts ("Starting again\n\n");
+		//NetStartAgain ();		// quick and durty , wenn tftp fails dann gehts einfach weiter ...
+		NetState = NETLOOP_SUCCESS;
 		break;
 	}
 }
@@ -208,6 +209,7 @@ void process_macros (char *input, char *output, char delim);
 void
 TftpStart (ulong loadAdr)
 {
+int tftpwiederholung = 1;
 char BootFile2[CFG_CBSIZE];
 
 #ifdef ET_DEBUG
