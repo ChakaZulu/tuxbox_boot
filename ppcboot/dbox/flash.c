@@ -21,6 +21,11 @@
  *
  *
  *   $Log: flash.c,v $
+ *   Revision 1.5  2001/11/15 23:58:05  derget
+ *   grossen bug gefixxt
+ *   das bloede array vom ppcboot wurde nicht aktualisier
+ *   beim un/protecten ....
+ *
  *   Revision 1.4  2001/11/13 01:34:00  derget
  *   strata Protect und unprotect implementiert
  *   protect und unprotect debug messages rausgenommen ==> schneller ...
@@ -30,7 +35,7 @@
  *   thanks to Marko
  *
  *
- *   $Revision: 1.4 $
+ *   $Revision: 1.5 $
  *   
  */
 
@@ -1006,9 +1011,11 @@ void flash_protect_sector(flash_info_t *info, int i, int p)  /* is nur für 28f54
 			switch (p) {	   
 				case 1:		
                         		flash_put(addr, 0, 0x00010001); /* protekten */
+					 info->protect[i]=1;
 					break;
 				case 0:
                                         flash_put(addr, 0, 0x00D000D0);	/* unprotekten */
+					info->protect[i]=0;
 					break;
 				default:      
 					break;
