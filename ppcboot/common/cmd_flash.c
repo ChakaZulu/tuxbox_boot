@@ -234,6 +234,26 @@ void flash_sect_erase (ulong addr_first, ulong addr_last)
 	}
 }
 
+void protect_sector (flash_info_t *info, int i, int p)
+{
+        printf("unprotecting %x\n", i);
+        if ((info->flash_id & FLASH_VENDMASK)==FLASH_MAN_INTEL)
+        {
+                volatile vu_long *addr = (volatile vu_long*)(info->start[i]);
+                addr[0]=0x00500050;     /* clear status register */
+                addr[0]=0x00900090;     /* read configuration */
+                printf("[%x]-> ", addr[2]);
+                addr[0]=0x00600060;     /* configuration setup */
+                addr[0]=p?0x00010001:0x00D000D0;     /* unlock block */
+                addr[0]=0x00900090;     /* read configuration */
+                info->protect[i]=addr[2];
+                printf("[%x] ", info->protect[i]);
+                addr[0]=0x00700070;
+                printf("[S%x] ", addr[0]);
+                addr[0]=0x00FF00FF;
+        } else
+  	        info->protect[i] = p;
+}
 
 void do_protect(cmd_tbl_t *cmdtp, bd_t *bd, int flag, int argc, char *argv[])
 {
@@ -265,7 +285,7 @@ void do_protect(cmd_tbl_t *cmdtp, bd_t *bd, int flag, int argc, char *argv[])
 				p ? "" : "Un-", bank);
 
 			for (i=0; i<info->sector_count; ++i) {
-				info->protect[i] = p;
+				protect_sector(info, i, p);
 			}
 		}
 		return;
@@ -280,7 +300,7 @@ void do_protect(cmd_tbl_t *cmdtp, bd_t *bd, int flag, int argc, char *argv[])
 			p ? "" : "Un-", sect_first, sect_last,
 			(info-flash_info)+1);
 		for (i = sect_first; i <= sect_last; i++) {
-			info->protect[i] = p;
+			protect_sector(info, i, p);
 		}
 		return;
 	}
@@ -306,7 +326,7 @@ void do_protect(cmd_tbl_t *cmdtp, bd_t *bd, int flag, int argc, char *argv[])
 			return;
 		}
 		for (i=0; i<info->sector_count; ++i) {
-			info->protect[i] = p;
+                        protect_sector(info, i, p);
 		}
 		return;
 	}
@@ -367,7 +387,7 @@ void flash_sect_protect (int p, ulong addr_first, ulong addr_last)
 		if (s_first>=0 && s_first<=s_last) {
 			protected += s_last - s_first + 1;
 			for (i=s_first; i<=s_last; ++i) {
-				info->protect[i] = p;
+                                protect_sector(info, i, p);
 			}
 		}
 	}

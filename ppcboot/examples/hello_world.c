@@ -46,6 +46,10 @@ int hello_world (bd_t *bd, int argc, char *argv[])
 			argv[i] ? argv[i] : "<NULL>");
 	}
 
+        MON_PRINT (" beginning ROM-DUMP:\n");
+        for (i=0x10000000; i<0x10080000; i++)
+           MON_PRINT ("%02x ", ((unsigned char*)0)[i]);
+
 	MON_PRINT ("Hit any key to exit ... ");
 	while (!MON_TSTC())
 		;

@@ -209,7 +209,8 @@ BootpHandler(uchar * pkt, unsigned dest, unsigned src, unsigned len)
 	NetOurIP = bp->bp_yiaddr;
 	NetServerIP = bp->bp_siaddr;
 	NetCopyEther(NetServerEther, ((Ethernet_t *)NetRxPkt)->et_src);
-	memcpy(BootFile, bp->bp_file, sizeof bp->bp_file);
+	if (!*BootFile)
+	    memcpy(BootFile, bp->bp_file, sizeof bp->bp_file);
 
 	/* Retrieve extended informations (we must parse the vendor area) */
 	if ((*(uint *)bp->bp_vend) == BOOTP_VENDOR_MAGIC)

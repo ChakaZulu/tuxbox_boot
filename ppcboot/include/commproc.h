@@ -474,6 +474,24 @@ typedef struct scc_enet {
 
 #endif	/* CONFIG_FADS823FADS */
 
+#ifdef CONFIG_DBOX
+
+#define	PROFF_ENET	PROFF_SCC2
+#define	CPM_CR_ENET	CPM_CR_CH_SCC2
+#define	SCC_ENET	1
+#define PA_ENET_RXD	((ushort)0x0004)	/* PA 13 */
+#define PA_ENET_TXD	((ushort)0x0008)	/* PA 12 */
+#define PA_ENET_RCLK	((ushort)0x0200)	/* PA 6 */
+#define PA_ENET_TCLK	((ushort)0x0800)	/* PA 4 */
+#define PC_ENET_TENA	((uint)0x00002000)
+#define PC_ENET_CLSN	((ushort)0x0040)	/* PC 9 */
+#define PC_ENET_RENA	((ushort)0x0080)	/* PC 8 */
+
+#define SICR_ENET_MASK	((uint)0x0000ff00)
+#define SICR_ENET_CLKRT	((uint)0x00003d00)
+
+
+#endif
 /***  GENIETV  ********************************************************/
 
 #if defined(CONFIG_GENIETV)
@@ -641,7 +659,7 @@ typedef struct scc_enet {
 
 /***  TQM823L, TQM850L, ETX094  ***************************************/
 
-#if defined(CONFIG_TQM823L) || defined(CONFIG_TQM850L) || defined(CONFIG_ETX094)
+#if (defined(CONFIG_TQM823L) || defined(CONFIG_TQM850L) || defined(CONFIG_ETX094)) && (!defined(CONFIG_DBOX))
 /* Bits in parallel I/O port registers that have to be set/cleared
  * to configure the pins for SCC2 use.
  */

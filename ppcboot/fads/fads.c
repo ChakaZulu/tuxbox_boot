@@ -362,9 +362,13 @@ int _draminit(uint base, uint noMbytes, uint edo, uint delay)
 			break;
 		}
 
-		case 16: /* 16 Mbyte uses both CS2 and CS3 */
+		case 16: /* 16 Mbyte uses only CS2 */
 		{
+#ifdef CONFIG_ADS
 			memctl->memc_mamr = 0x60b21114;
+#else
+			memctl->memc_mamr = 0x13b01114;
+#endif
 			memctl->memc_or2 = 0xff000800;
 			break;
 		}
@@ -601,7 +605,13 @@ int initsdram(uint base, uint *noMbytes)
 
 long int initdram (int board_type)
 {
+#ifdef CONFIG_ADS
+	/* ADS: has no SDRAM, so start DRAM at 0 */
 	uint base = (unsigned long)0x0;
+#else
+	/* FADS: has 4MB SDRAM, put DRAM above it */
+	uint base = (unsigned long)0x00400000;
+#endif
 	uint k, m, s;
 
 	k = (*((uint *)BCSR2) >> 23) & 0x0f;
@@ -735,7 +745,7 @@ int pcmcia_init(void)
 	/* enable PCMCIA buffers */
 	*((uint *)BCSR1) &= ~BCSR1_PCCEN;
 
-	/* Check if any PCMCIA card is luged in. */
+	/* Check if any PCMCIA card is plugged in. */
 
 	slota = (pcmp->pcmc_pipr & 0x18000000) == 0 ;
 	slotb = (pcmp->pcmc_pipr & 0x00001800) == 0 ;
@@ -751,8 +761,8 @@ int pcmcia_init(void)
 #endif
 		return -1;
 	}
-	    else
-	printf("Card present (");
+	else
+		printf("Card present (");
 
 	v = 0;
 

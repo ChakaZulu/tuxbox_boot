@@ -277,10 +277,20 @@ board_init_f (ulong bootflag)
 	board_get_enetaddr(bd->bi_enetaddr);
     else
 #endif
+#ifdef CONFIG_DBOX
+    if (s == NULL)
+      memcpy(bd->bi_enetaddr, (void*)0x1001FFE3, 6);
+    else
+#endif
     for (reg=0; reg<6; ++reg) {
 	bd->bi_enetaddr[reg] = s ? simple_strtoul(s, &e, 16) : 0;
 	if (s)
 		s = (*e) ? e+1 : e;
+    }
+    
+    printf("  Ethernet: ");
+    for (reg=0; reg<6; reg++)  {
+      printf("%02x%s", bd->bi_enetaddr[reg], reg==5?"\n":"-");
     }
 
 #if defined(CFG_CLKS_IN_HZ)

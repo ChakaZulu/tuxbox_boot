@@ -49,6 +49,16 @@ void	flash_erase	 (flash_info_t *, int, int);
 #define STM_MANUFACT	0x00200020	/* STM (Thomson) manuf. ID in D23.. -"-	*/
 #define SST_MANUFACT	0x00BF00BF	/* SST     manuf. ID in D23..D16, D7..D0 */
 #define MT_MANUFACT	0x00890089	/* MT      manuf. ID in D23..D16, D7..D0 */
+#define INT_MANUFACT    0x00890089      /* INTEL   manuf. ID in D23..D16, D7..D0 */
+
+#define INT_ID_28F800T  0x88C088C0      /* 28F800C3 ID ( 1 M, top boot sector)  */
+#define INT_ID_28F800B  0x88C188C1      /* 28F800C3 ID ( 1 M, bottom boot sect) */
+#define INT_ID_28F160T  0x88C288C2      /* 28F160C3 ID ( 2 M, top boot sector)  */
+#define INT_ID_28F160B  0x88C388C3      /* 28F160C3 ID ( 2 M, bottom boot sect) */
+#define INT_ID_28F320T  0x88C488C4      /* 28F320C3 ID ( 4 M, top boot sector)  */
+#define INT_ID_28F320B  0x88C588C5      /* 28F320C3 ID ( 4 M, bottom boot sect) */
+#define INT_ID_28F640B  0x88CC88CC      /* 28F640C3 ID ( 8 M, top boot sector)  */
+#define INT_ID_28F640T  0x88CD88CD      /* 28F640C3 ID ( 8 M, bottom boot sect) */
 
 #define	MT_ID_28F400_T	0x44704470	/* 28F400B3 ID ( 4 M, top boot sector)	*/
 #define MT_ID_28F400_B	0x44714471	/* 28F400B3 ID ( 4 M, bottom boot sect)	*/
@@ -86,10 +96,18 @@ void	flash_erase	 (flash_info_t *, int, int);
 #define FLASH_AM400B	0x0003
 #define FLASH_AM800T	0x0004		/* AMD AM29LV800			*/
 #define FLASH_AM800B	0x0005
+#define FLASH_INT800T   0x0034
+#define FLASH_INT800B   0x0035
 #define FLASH_AM160T	0x0006		/* AMD AM29LV160			*/
 #define FLASH_AM160B	0x0007
+#define FLASH_INT160T	0x0036
+#define FLASH_INT160B	0x0037
 #define FLASH_AM320T	0x0008		/* AMD AM29LV320			*/
 #define FLASH_AM320B	0x0009
+#define FLASH_INT320T	0x0038
+#define FLASH_INT320B	0x0039
+#define FLASH_INT640T	0x003A
+#define FLASH_INT640B	0x003B
 
 #define	FLASH_SST200A	0x000A		/* SST 39xF200A ID ( 2M = 128K x 16 )	*/
 #define	FLASH_SST400A	0x000B		/* SST 39xF400A ID ( 4M = 256K x 16 )	*/

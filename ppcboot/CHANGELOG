@@ -58,6 +58,14 @@ To do:
   (and it uses default address).
 
 ======================================================================
+Modifications since 0.6.4:
+======================================================================
+
+* Modify "initrd_high" feature to allow for specifying a memory limit
+
+* Fixes for (F)ADS configuration
+
+======================================================================
 Modifications for 0.6.4:
 ======================================================================
 

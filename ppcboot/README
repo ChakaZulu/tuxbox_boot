@@ -327,10 +327,10 @@ Configuration Settings:
 		Size of DRAM reserved for malloc() use.
 
 - CFG_BOOTMAPSZ:
-		Maximum size of memory mapped by the startup code of
-		the Linux kernel; all data that must be processed by
-		the Linux kernel (bd_info, boot arguments, initrd
-		image) must be put below this limit.
+                Maximum size of memory mapped by the startup code of
+                the Linux kernel; all data that must be processed by
+                the Linux kernel (bd_info, boot arguments, eventually
+                initrd image) must be put below this limit.
 
 - CFG_MAX_FLASH_BANKS:
 		Max number of Flash memory banks
@@ -583,6 +583,27 @@ autostart	- if set to "yes", an image loaded using the "bootp",
 		  automatically started (by internally calling
 		  "bootm")
 
+initrd_high	- restrict positioning of initrd images:
+                  If this variable is not set, initrd images will be
+                  copied to the highest possible address in RAM; this
+                  is usually what you want since it allows for
+                  maximum initrd size. If for some reason you want to
+                  make sure that the initrd image is loaded below the
+                  CFG_BOOTMAPSZ limit, you can set this environment
+                  variable to a value of "no" or "off" or "0".
+                  Alternatively, you can set it to a maximum upper
+                  address to use (PPCBoot will still check that it
+                  does not overwrite the PCBoot stack and data).
+
+                  For instance, when you have a system with 16 MB
+                  RAM, and want to resever 4 MB from use by Linux,
+                  you can do this by adding "mem=12M" to the value of
+                  the "bootargs" variable. However, now you must make
+                  sure, that the initrd image is placed in t he first
+                  12 MB as well - this can be done with
+
+		  setenv initrd_high 00c00000
+                  
 
 There are two special Environment Variables:
 

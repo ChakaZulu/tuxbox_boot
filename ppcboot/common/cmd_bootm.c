@@ -53,7 +53,8 @@ void do_bootm (cmd_tbl_t *cmdtp, bd_t *bd, int flag, int argc, char *argv[])
 	ulong	initrd_start, initrd_end;
 	ulong	cmd_start, cmd_end;
 	ulong  *len_ptr;
-	int	i, verify, initrd_high;
+	ulong	initrd_high;
+	int	i, verify;
 	char    *cmdline;
 	char	*name, *s;
 	bd_t	*kbd;
@@ -64,8 +65,14 @@ void do_bootm (cmd_tbl_t *cmdtp, bd_t *bd, int flag, int argc, char *argv[])
 	s = getenv ("verify");
 	verify = (s && (*s == 'n')) ? 0 : 1;
 
-	s = getenv ("initrd_high");
-	initrd_high = (s && (*s == 'n')) ? 0 : 1;
+	if ((s = getenv ("initrd_high")) != NULL) {
+		/* a value of "no" or a similar string will act like 0,
+		 * truning the "load high" feature off. This is intentional.
+		 */
+		initrd_high = simple_strtoul(s, NULL, 16);
+	} else {			/* not set, no restrictions to load high */
+		initrd_high = ~0;
+	}
 
 	if (argc < 2) {
 		addr = load_addr;
@@ -302,6 +309,8 @@ void do_bootm (cmd_tbl_t *cmdtp, bd_t *bd, int flag, int argc, char *argv[])
 			asm( "mr %0,1": "=r"(nsp) : );
 			nsp -= 1024;		/* just to be sure */
 			nsp &= ~0xF;
+			if (nsp > initrd_high)	/* limit as specified */
+				nsp = initrd_high;
 			nsp -= hdr->ih_size;
 			nsp &= ~(4096 - 1);	/* align on page */
 			if (nsp >= sp)

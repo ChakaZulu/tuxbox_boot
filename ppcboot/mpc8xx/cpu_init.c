@@ -95,7 +95,7 @@ cpu_init_f (volatile immap_t *immr)
     /*
      * Memory Controller:
      */
-
+#ifndef CONFIG_DBOX
     /* perform BR0 reset that MPC850 Rev. A can't guarantee */
     reg = memctl->memc_br0;
     reg &= BR_PS_MSK;		/* Clear everything except Port Size bits */
@@ -142,10 +142,12 @@ cpu_init_f (volatile immap_t *immr)
     memctl->memc_or3 = CFG_OR3_PRELIM;
     memctl->memc_br3 = CFG_BR3_PRELIM;
 #endif
+#endif  /* ! CONFIG_DBOX */
 
 #endif	/* ! CONFIG_MBX */
 
 
+#ifndef CONFIG_DBOX
     /*
      * Reset CPM
      */
@@ -153,7 +155,7 @@ cpu_init_f (volatile immap_t *immr)
     do {				/* Spin until command processed		*/
 	__asm__ ("eieio");
     } while (immr->im_cpm.cp_cpcr & CPM_CR_FLG);
-
+#endif
 #ifdef CONFIG_MBX
     /*
      * on the MBX, things are a little bit different:

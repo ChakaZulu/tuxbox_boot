@@ -81,6 +81,7 @@
  * r4 - 2nd arg to board_init(): boot flag
  */
 	.text
+        bl EXC_OFF_SYS_RESET
 	.long	0x27051956		/* PPCBOOT Magic Number			*/
 	.globl	version_string
 version_string:
