@@ -145,7 +145,7 @@ int misc_init_r (void)
 void load_env_fs (void)
 {
 	int size, i = 0;
-	char *s = (char *) 0x100000;
+	char *s = (char *) CFG_LOAD_ADDR;
 	char *c = s;
 	int namestart, nameend, valuestart, valueend;
 

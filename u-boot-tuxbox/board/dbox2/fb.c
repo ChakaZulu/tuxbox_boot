@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *
- * $Id: fb.c,v 1.1 2004/05/01 23:38:34 carjay Exp $
+ * $Id: fb.c,v 1.2 2005/02/04 16:56:03 carjay Exp $
  */
 
 #include <common.h>
@@ -58,7 +58,7 @@ int fb_init (void)
 #ifdef CONFIG_DBOX2_FB_LOGO
 int fb_load (void)
 {
-	unsigned char *fb_logo = (unsigned char *) 0x100000;
+	unsigned char *fb_logo = (unsigned char *) CFG_LOAD_ADDR;
 	int size;
 
 # ifdef CONFIG_DBOX2_FB_LOGO_FS
