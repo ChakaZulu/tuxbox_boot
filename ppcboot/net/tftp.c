@@ -184,7 +184,8 @@ TftpHandler (uchar * pkt, unsigned dest, unsigned src, unsigned len)
 					pkt + 2, SWAP16(*(ushort *)pkt));
 		//puts ("Starting again\n\n");
 		//NetStartAgain ();		// quick and durty , wenn tftp fails dann gehts einfach weiter ...
-		NetState = NETLOOP_SUCCESS;
+		// sorry, aber ein bisschen feedback braucht der programmierer
+		NetState = NETLOOP_FAIL;
 		break;
 	}
 }
