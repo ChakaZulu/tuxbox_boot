@@ -21,6 +21,9 @@
  *
  *
  *   $Log: flash.c,v $
+ *   Revision 1.7  2001/12/12 20:22:31  derget
+ *   unnoetiges entfernt um platzt zu sparen
+ *
  *   Revision 1.6  2001/11/16 10:38:52  derget
  *   *wart* zu . gemacht in strata un/protect
  *
@@ -38,7 +41,7 @@
  *   thanks to Marko
  *
  *
- *   $Revision: 1.6 $
+ *   $Revision: 1.7 $
  *   
  */
 
@@ -268,31 +271,9 @@ void flash_print_info  (flash_info_t *info)
 	}
 
 	switch (info->flash_id & FLASH_TYPEMASK) {
-	case FLASH_AM400B:	printf ("AM29LV400B (4 Mbit, bottom boot sect)\n");
-				break;
-	case FLASH_AM400T:	printf ("AM29LV400T (4 Mbit, top boot sector)\n");
-				break;
-	case FLASH_AM800B:	printf ("AM29LV800B (8 Mbit, bottom boot sect)\n");
-				break;
-	case FLASH_AM800T:	printf ("AM29LV800T (8 Mbit, top boot sector)\n");
-				break;
-	case FLASH_AM160B:	printf ("AM29LV160B (16 Mbit, bottom boot sect)\n");
-				break;
-	case FLASH_AM160T:	printf ("AM29LV160T (16 Mbit, top boot sector)\n");
-				break;
 	case FLASH_AM320B:	printf ("AM29LV320B (32 Mbit, bottom boot sect)\n");
 				break;
 	case FLASH_AM320T:	printf ("AM29LV320T (32 Mbit, top boot sector)\n");
-				break;
-	case FLASH_AM323B:	printf ("AM29LV323B (32 Mbit, bottom boot sector)\n");
-				break;
-	case FLASH_INT800B:	printf ("28F800-B   (8 Mbit, bottom boot sect)\n");
-				break;
-	case FLASH_INT800T:	printf ("28F800-T   (8 Mbit, top boot sector)\n");
-				break;
-	case FLASH_INT160B:	printf ("28F160-B  (16 Mbit, bottom boot sect)\n");
-				break;
-	case FLASH_INT160T:	printf ("28F160-T  (16 Mbit, top boot sector)\n");
 				break;
 	case FLASH_INT320B:	printf ("28F320-B  (32 Mbit, bottom boot sect)\n");
 				break;
@@ -377,41 +358,6 @@ static ulong flash_get_size (vu_long *addr, flash_info_t *info)
 	    value |= value << 16;
 
 	switch (value) {
-	case AMD_ID_LV400T:
-		info->flash_id += FLASH_AM400T;
-		info->sector_count = 11;
-		info->size = 0x00100000;
-		break;				/* => 1 MB		*/
-
-	case AMD_ID_LV400B:
-		info->flash_id += FLASH_AM400B;
-		info->sector_count = 11;
-		info->size = 0x00100000;
-		break;				/* => 1 MB		*/
-
-	case AMD_ID_LV800T:
-		info->flash_id += FLASH_AM800T;
-		info->sector_count = 19;
-		info->size = 0x00200000;
-		break;				/* => 2 MB		*/
-
-	case AMD_ID_LV800B:
-		info->flash_id += FLASH_AM800B;
-		info->sector_count = 19;
-		info->size = 0x00200000;
-		break;				/* => 2 MB		*/
-
-	case AMD_ID_LV160T:
-		info->flash_id += FLASH_AM160T;
-		info->sector_count = 35;
-		info->size = 0x00400000;
-		break;				/* => 4 MB		*/
-
-	case AMD_ID_LV160B:
-		info->flash_id += FLASH_AM160B;
-		info->sector_count = 35;
-		info->size = 0x00400000;
-		break;				/* => 4 MB		*/
 #if 0
 	case AMD_ID_LV320T:
 		info->flash_id += FLASH_AM320T;
@@ -425,26 +371,6 @@ static ulong flash_get_size (vu_long *addr, flash_info_t *info)
 		info->size = 0x00800000;
 		break;				/* => 8 MB		*/
 #endif
-	case AMD_ID_LV323B:
-		info->flash_id += FLASH_AM323B;
-		info->sector_count = 63+4;
-		info->size = 0x00800000;
-		break;				/* => 8 MB		*/
-
-        case INT_ID_28F800B:
-                info->flash_id |= FLASH_BTYPE;
-        case INT_ID_28F800T:
-                info->flash_id += FLASH_INT800T;
-                info->sector_count = 15+4;
-                info->size = 0x00200000;
-                break;
-        case INT_ID_28F160B:
-                info->flash_id |= FLASH_BTYPE;
-        case INT_ID_28F160T:
-                info->flash_id += FLASH_INT160T;
-                info->sector_count = 31+4;
-                info->size = 0x00400000;
-                break;
         case INT_ID_28F320B:
                 info->flash_id |= FLASH_BTYPE;
         case INT_ID_28F320T:
