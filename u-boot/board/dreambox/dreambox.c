@@ -219,6 +219,8 @@ int misc_init_r (void)
 			addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]);
 	setenv ("ethaddr", tmp);
 
+	smc_set_mac_addr (addr);
+
 	return 0;
 }
 
