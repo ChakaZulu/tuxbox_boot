@@ -126,6 +126,13 @@ u-boot.srec:	u-boot
 u-boot.bin:	u-boot
 		$(OBJCOPY) ${OBJCFLAGS} -O binary $< $@
 
+u-boot.stripped: u-boot
+		cp $< $@
+		$(STRIP) $@
+
+u-boot.treeboot: u-boot.stripped
+		tools/mktree $< $@
+
 u-boot.dis:	u-boot
 		$(OBJDUMP) -d $< > $@
 
@@ -412,6 +419,9 @@ CRAYL1_config:unconfig
 
 DASA_SIM_config: unconfig
 	@./mkconfig $(@:_config=) ppc ppc4xx dasa_sim esd
+
+DREAMBOX_config:	unconfig
+	@./mkconfig $(@:_config=) ppc ppc4xx dreambox
 
 DU405_config:	unconfig
 	@./mkconfig $(@:_config=) ppc ppc4xx du405 esd
@@ -700,7 +710,7 @@ clean:
 		| xargs rm -f
 	rm -f examples/hello_world examples/timer examples/eepro100_eeprom
 	rm -f tools/img2srec tools/mkimage tools/envcrc tools/gen_eth_addr
-	rm -f tools/easylogo/easylogo tools/bmp_logo
+	rm -f tools/easylogo/easylogo tools/bmp_logo tools/mktree
 	rm -f tools/gdb/astest tools/gdb/gdbcont tools/gdb/gdbsend
 	rm -f tools/env/fw_printenv tools/env/fw_setenv
 
