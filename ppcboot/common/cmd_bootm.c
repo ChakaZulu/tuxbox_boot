@@ -373,10 +373,19 @@ void do_bootm (cmd_tbl_t *cmdtp, bd_t *bd, int flag, int argc, char *argv[])
 void do_bootidxfs (cmd_tbl_t *cmdtp, bd_t *bd, int flag, int argc, char *argv[])
 {
 	unsigned int size, offset = 0;
+	char argv0[20];
+	char argv1[20];
+	char *newargv[2] = {argv0, argv1};
 
 	idxfs_file_info((unsigned char*)0x10040000, 0, "kernel", &offset, &size);
-	printf("Found kernel image at: 0x%X (0x%X bytes)\n", offset, size);
-//        do_bootm (cmdtp, bd, flag, argc, argv);
+	
+	if (!offset) {
+  	  printf("Kernel image at: none\n");
+	} else {  
+  	  sprintf(argv1, "%X", 0x10040000 + offset);
+	  printf("Kernel image at: 0x%X (0x%X bytes)\n", 0x10040000 + offset, size);
+          do_bootm (cmdtp, bd, flag, 2, newargv);
+	}  
 }
 #endif
 	
