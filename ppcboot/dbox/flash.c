@@ -21,6 +21,9 @@
  *
  *
  *   $Log: flash.c,v $
+ *   Revision 1.6  2001/11/16 10:38:52  derget
+ *   *wart* zu . gemacht in strata un/protect
+ *
  *   Revision 1.5  2001/11/15 23:58:05  derget
  *   grossen bug gefixxt
  *   das bloede array vom ppcboot wurde nicht aktualisier
@@ -35,7 +38,7 @@
  *   thanks to Marko
  *
  *
- *   $Revision: 1.5 $
+ *   $Revision: 1.6 $
  *   
  */
 
@@ -1022,7 +1025,7 @@ void flash_protect_sector(flash_info_t *info, int i, int p)  /* is nur für 28f54
 				   }
 
                          flash_put(addr, 0, 0x00900090);               /* read configuration einschalten */
-                         for(;;) { if (flash_get(addr, 7)) printf("*wart*"); break; }  /* warte bis das flash wieder bereit ist */
-                         							      /* *wart* ist als zeitverzögerung da ! */
+                         for(;;) { if (flash_get(addr, 7)) printf("."); break; }  /* warte bis das flash wieder bereit ist */
+                         							      /* . ist als zeitverzögerung da ! */
 			 flash_put(addr, 0, 0x00FF00FF);	      /* in normalen modus schalten */
 }
