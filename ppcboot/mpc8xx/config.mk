@@ -23,4 +23,4 @@
 
 PLATFORM_RELFLAGS += -mrelocatable -ffixed-r14
 
-PLATFORM_CPPFLAGS += -DCONFIG_8xx -ffixed-r2 -mstring -mcpu=860 -msoft-float
+PLATFORM_CPPFLAGS += -DCONFIG_8xx -ffixed-r2 -mstring -mcpu=823 -msoft-float
