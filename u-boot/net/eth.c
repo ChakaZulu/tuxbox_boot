@@ -40,7 +40,7 @@ extern int pcnet_initialize(bd_t*);
 extern int fec_initialize(bd_t*);
 extern int scc_initialize(bd_t*);
 
-static struct eth_device *eth_devices = NULL, *eth_current = NULL;
+static struct eth_device *eth_devices, *eth_current;
 
 struct eth_device *eth_get_dev(void)
 {
