@@ -46,6 +46,8 @@
 #include <malloc.h>
 #include <cmd_fs.h>
 
+#define  SQUASHFS_TRACE 1
+
 #ifdef SQUASHFS_TRACE
 #define TRACE(s, args...)				printf("SQUASHFS: "s, ## args)
 #else
@@ -153,43 +155,29 @@ static int read_block(
 	if(compressed) 
 	{
 		unsigned char buffer[SQUASHFS_FILE_SIZE];
-		unsigned char *uncompressed_buffer = NULL;
+		/* if this is a fragment, we need a temporary decompression buffer */
+		unsigned char uncompressed_buffer[SQUASHFS_FILE_SIZE];
 		int res;
 		long bytes = SQUASHFS_FILE_SIZE;
 
 		TRACE("compressed block @ 0x%x, compressed size %d\n", start, length);
 		read_bytes(info, start + offset, length, buffer);
 
-		/* if this is a fragment, we need a temporary decompression buffer */
-		if (frag_size)
-		{
-			uncompressed_buffer = malloc(sizeof(unsigned char)*SQUASHFS_FILE_SIZE);
-			if (!uncompressed_buffer)
-			{
-				ERROR("out of memory allocating buffer for decompression\n");
-				return 0;
-			}
-		}
 		squashfs_uncompress_init();
 		/* inflate the block (to temporary buffer if we only need a fragment) */
-		res = squashfs_uncompress_block(uncompressed_buffer ? uncompressed_buffer : block, bytes, buffer, length);
+		res = squashfs_uncompress_block(frag_size ? uncompressed_buffer : block, bytes, buffer, length);
 		TRACE("compressed block @ 0x%x, uncompressed size %d\n", start, res);
 		if(!res)
 		{
 			ERROR("zlib::uncompress failed\n");
 			squashfs_uncompress_exit();
-			if (uncompressed_buffer)
-			{
-				free(uncompressed_buffer);
-			}
 			return 0;
 		}
 		squashfs_uncompress_exit();
 		/* if this is a fragment, copy only that part of the block */
-		if (uncompressed_buffer)
+		if (frag_size)
 		{
 			memcpy(block, uncompressed_buffer, frag_size);
-			free(uncompressed_buffer);
 		}
 		/* advance buffer pointer if requested */
 		if(next && !frag_size)
