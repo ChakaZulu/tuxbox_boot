@@ -226,7 +226,8 @@ void env_relocate (void)
 	env_get_char = env_get_char_memory;
 
 	if (gd->env_valid == 0) {
-#if defined(CONFIG_GTH)	|| defined(CFG_ENV_IS_NOWHERE)	/* Environment not changable */
+#if defined(CFG_ENV_IS_NOWHERE)	/* we have no environment */
+#elif defined(CONFIG_GTH)	/* environment not changable */
 		puts ("Using default environment\n\n");
 #else
 		puts ("*** Warning - bad CRC, using default environment\n\n");
