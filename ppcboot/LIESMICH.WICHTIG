@@ -33,6 +33,15 @@ Dazu sind aber ein paar Änderungen im Dateisystem notwendig!
   der verschiedenen Systeme mit den Namen 'kernel-<system>', also
   z.B. 'kernel-cdk' oder 'kernel-tiab'.
 
+ 
+  3. IP-Adresse
+
+  In den meisten Fällen wird das NFS-Root wohl auf der selben Kiste
+  sein, wie der TFTP-Server. Deswegen nimmt ppcboot jetzt die IP-Adresse
+  des TFTP-Servers, und gibt sie als Parameter für das NFS-Root dem
+  Kernel. Dadurch ist es unnötig geworden, das ppcboot für eine bestimmte
+  IP anzupassen. 
+
 
 kju, 24. Mai 2001
   
