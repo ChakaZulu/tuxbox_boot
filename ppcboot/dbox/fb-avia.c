@@ -20,6 +20,9 @@
  *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *   
  *  $Log: fb-avia.c,v $
+ *  Revision 1.9  2001/09/17 20:47:21  TripleDES
+ *  some fixes
+ *
  *  Revision 1.8  2001/08/31 02:34:03  derget
  *
  *  fixxed logo over tftp detection of no tftp logo
@@ -54,7 +57,7 @@
  *  
  *  Reimplementet gtxfb.c
  *
- *  $Revision: 1.8 $
+ *  $Revision: 1.9 $
  *
  */
 #include <stdio.h>
@@ -64,7 +67,8 @@
 #include <idxfs.h>
 #include "enx.h"
 
-int have_logo=0; 
+#define fboffset 1024*1024
+
 static int pal=1;
 unsigned char *gtxmem, *gtxreg;
 unsigned char *enx_mem_addr = (unsigned char*)ENX_MEM_BASE;
@@ -202,7 +206,7 @@ void gtxvideo_init(void)
         rw(GMR)=val;
 
         rh(CCR)=0x7FFF;
-        rw(GVSA)=0;
+        rw(GVSA)=fboffset;
         rh(GVP)=0;
         VCR_SET_HP(2);
         VCR_SET_FP(0);
@@ -240,20 +244,14 @@ void enxvideo_init(void)
         enx_reg_w(GMR2)=0;
 	enx_reg_h(GBLEV1) = 0;
 	enx_reg_h(GBLEV2) = 0;
-	enx_reg_w(GVSA1) = 0;
+	enx_reg_w(GVSA1) = fboffset;
 	enx_reg_w(GVP1) = 0;
 	enx_reg_h(G1CFR)=0;
 	enx_reg_h(G2CFR)=0;
 
-#define ENX_VCR_SET_HP(X)    enx_reg_h(VCR) = ((enx_reg_h(VCR)&(~(3<<10))) | ((X&3)<<10))
-#define ENX_VCR_SET_FP(X)    enx_reg_h(VCR) = ((enx_reg_h(VCR)&(~(3<<8 ))) | ((X&3)<<8 ))
 #define ENX_GVP_SET_X(X)     enx_reg_w(GVP1) = ((enx_reg_w(GVP1)&(~(0x3FF<<16))) | ((X&0x3FF)<<16))
 #define ENX_GVP_SET_Y(X)     enx_reg_w(GVP1) = ((enx_reg_w(GVP1)&(~0x3FF))|(X&0x3FF))
 #define ENX_GVP_SET_COORD(X,Y) ENX_GVP_SET_X(X); ENX_GVP_SET_Y(Y)
-#define ENX_GVS_SET_XSZ(X)   enx_reg_w(GVSZ1) = ((enx_reg_w(GVSZ1)&(~(0x3FF<<16))) | ((X&0x3FF)<<16))
-#define ENX_GVS_SET_YSZ(X)   enx_reg_w(GVSZ1) = ((enx_reg_w(GVSZ1)&(~0x3FF))|(X&0x3FF))
-#define ENX_GVP_SET_SPP(X)   enx_reg_w(GVP1) = ((enx_reg_w(GVP1)&(~(0x01F<<27))) | ((X&0x1F)<<27))
-#define ENX_GVS_SET_IPS(X)   enx_reg_w(GVSZ1) = ((enx_reg_w(GVSZ1)&0xFC000000) | ((X&0x3f)<<27))
 #define ENX_GVS_SET_XSZ(X)   enx_reg_w(GVSZ1) = ((enx_reg_w(GVSZ1)&(~(0x3FF<<16))) | ((X&0x3FF)<<16))
 #define ENX_GVS_SET_YSZ(X)   enx_reg_w(GVSZ1) = ((enx_reg_w(GVSZ1)&(~0x3FF))|(X&0x3FF))
 
@@ -267,51 +265,50 @@ extern int decodestillmpg(void *pic, const void *src, int X_RESOLUTION, int Y_RE
     
 int fb_init(void)
 {
-  unsigned char mID = *(char*)(0x1001ffe0);
-  unsigned int size, offset = 0;
-  unsigned char *iframe_logo;
-  have_logo = 0;
-  idxfs_file_info((unsigned char*)IDXFS_OFFSET, 0, "logo-fb", &offset, &size);
+	unsigned char mID = *(char*)(0x1001ffe0);
+	unsigned int size, offset = 0;
+	unsigned char *iframe_logo;
+	int have_logo = 0;
+	
+	idxfs_file_info((unsigned char*)IDXFS_OFFSET, 0, "logo-fb", &offset, &size);
   
-    if (!offset) 
-        {
-      printf("  No FB Logo in Flash , trying tftp\n");
-      if (1==NetLoop(33161152, "TFTP","%(bootpath)/tftpboot/logo-fb", 0x120000)) {
-      have_logo = 1;
-      iframe_logo = (unsigned char*)(0x120000);
-   	} 
-	else { printf("  FB logo not found\n"); }
+	if (!offset) 
+	{
+		printf("  No FB Logo in Flash , trying tftp\n");
+        	if (1==NetLoop(33161152, "TFTP","%(bootpath)/tftpboot/logo-fb", 0x120000))
+		{
+			have_logo = 1;
+			iframe_logo = (unsigned char*)(0x120000);
+		} 
+		else printf("  FB logo not found\n");
 	}    	
-    else { 
-	   have_logo = 1;
-	   iframe_logo = (unsigned char*)(IDXFS_OFFSET + offset); 
-	 } 
+    	else 
+	{ 
+		have_logo = 1;
+		iframe_logo = (unsigned char*)(IDXFS_OFFSET + offset); 
+	} 
+		
+	i2c_bus_init();
+	saa7126_init(mID);
 
-  i2c_bus_init();
-  saa7126_init(mID);
-
-if (have_logo)
-  switch (mID) {
-    case 1:
-      // NOKIA (GTX + CXA2092)
-      gtxcore_init();
-      printf("  FB driver (AVIA-GTX) initialized\n");
-      decodestillmpg(gtxmem, iframe_logo, XRES, YRES);
-      printf("  FB logo at: 0x%X (0x%X bytes)\n", offset, size);
-      gtxvideo_init();
-    break;
-    case 2:
-      // Philips (eNX + STV6411A)
-    break;
-    case 3:
-      // SAGEM (eNX + CXA2126)
-     enxcore_init();
-     printf("  FB driver (AVIA-ENX) initialized\n");
-     decodestillmpg(enx_mem_addr, iframe_logo, XRES, YRES);
-     printf("  FB logo at: 0x%X (0x%X bytes)\n", offset, size);
-     enxvideo_init();
-    break;
-  }
-  
-  avs_init(mID);
+	if (have_logo)
+	{
+		printf("  FB logo at: 0x%X (0x%X bytes)\n", offset, size);
+		switch (mID)
+		{
+			case 1: //Nokia
+				gtxcore_init();
+				decodestillmpg(gtxmem + fboffset, iframe_logo, XRES, YRES);
+				gtxvideo_init();
+				break;
+			case 2:	// Philips
+			case 3:	// Sagem
+				enxcore_init();
+				decodestillmpg(enx_mem_addr + fboffset, iframe_logo, XRES, YRES);
+				enxvideo_init();
+				break;
+		}
+		printf("  AVIA Frambuffer\n");		
+	}  
+	avs_init(mID);
 }
