@@ -55,8 +55,18 @@
 
 #define CONFIG_BOOTIMG1         "cdk"
 #define CONFIG_BOOTIMG2         "tiab"
-#define CONFIG_BOOTIMG3         "test1"
+#define CONFIG_BOOTIMG3         "flash"
 #define CONFIG_BOOTIMG4         "test2"
+
+// Kurze Beschreibung zu %(bootpath):
+// % wird benutzt da zuerst $(...) von ppcboot wie bisher ersetzt wird.
+// nach dem Empfang der Bootp-Antwort werden dann die die %(...) Variablen
+// ausgewertet.
+// %(bootpath) wird wie folgt gebildet:
+// Wenn der Server als bootfile /dbox/tftpboot/ppcboot schickt,
+// ist %(bootpath) /dbox, d.h. wenn der Server /home/user/dbox/tftpboot/ppcboot
+// schickt, waere %(bootpath) /home/user/dbox.
+// Damit ist kein absoluter Pfad mehr fuer die Images bzw. das nfsroot noetig.
 
 #define CONFIG_BOOTCOMMAND      "bootp 100000 %(bootpath)/tftpboot/kernel-$(img);bootm 100000"
 //#define CONFIG_BOOTCOMMAND      "bootp 100000 %(bootpath)/images/kernel-$(img);bootm 100000"
