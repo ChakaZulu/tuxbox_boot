@@ -54,9 +54,10 @@
 #endif
 
 #define CONFIG_BOOTIMG1         "cdk"
-#define CONFIG_BOOTIMG2         "tiab"
-#define CONFIG_BOOTIMG3         "flash"
-#define CONFIG_BOOTIMG4         "test2"
+#define CONFIG_BOOTIMG2         "yadd"
+#define CONFIG_BOOTIMG3         "debian"
+#define CONFIG_BOOTIMG4         "tiab"
+#define CONFIG_BOOTIMG5         "flash"
 
 // Kurze Beschreibung zu %(bootpath):
 // % wird benutzt da zuerst $(...) von ppcboot wie bisher ersetzt wird.

@@ -68,6 +68,7 @@ void main_loop(bd_t *bd)
                   printf("\n 2: "); printf(CONFIG_BOOTIMG2);
                   printf("\n 3: "); printf(CONFIG_BOOTIMG3);
                   printf("\n 4: "); printf(CONFIG_BOOTIMG4);
+                  printf("\n 5: "); printf(CONFIG_BOOTIMG5);
                   printf("\n");
                   imageselect = '1';
                 }
@@ -102,6 +103,7 @@ void main_loop(bd_t *bd)
                 if ( imageselect == '2' ) setenv("img", CONFIG_BOOTIMG2);
                 if ( imageselect == '3' ) setenv("img", CONFIG_BOOTIMG3);
                 if ( imageselect == '4' ) setenv("img", CONFIG_BOOTIMG4);
+                if ( imageselect == '5' ) setenv("img", CONFIG_BOOTIMG5);
 
 		if (autoboot) {
 			autoboot = 0;
