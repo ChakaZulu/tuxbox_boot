@@ -59,7 +59,7 @@
 #undef	CONFIG_BOOTARGS
 
 #define	CONFIG_BOOTCOMMAND \
-"protect off 10040000 107fffff; " \
+"protect off 10020000 107fffff; " \
 	"fsload; setenv bootargs root=/dev/mtdblock2 rw console=$(console); " \
 	"bootm"
 
