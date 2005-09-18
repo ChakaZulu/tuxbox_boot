@@ -60,7 +60,7 @@
 
 #define	CONFIG_BOOTCOMMAND							\
 	"dhcp; tftp \"$(bootfile)\"; "						\
-	"protect off 10040000 107fffff; "					\
+	"protect off 10020000 107fffff; "					\
         "setenv bootargs root=/dev/nfs rw nfsroot=$(serverip):$(rootpath) "	\
 	"ip=$(ipaddr):$(serverip):$(gatewayip):$(netmask):$(hostname)::off "	\
 	"console=$(console); "							\
