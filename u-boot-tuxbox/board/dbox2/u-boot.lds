@@ -104,6 +104,8 @@ SECTIONS
     *(.sdata)
     *(.sdata2)
     *(.dynamic)
+    *(.data.rel)
+    *(.data.rel.local)
     CONSTRUCTORS
   }
   _edata  =  .;
