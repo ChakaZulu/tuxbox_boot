@@ -63,14 +63,8 @@
 	"protect off 10020000 107fffff; "					\
         "setenv bootargs root=/dev/nfs rw nfsroot=$(serverip):$(rootpath) "	\
 	"ip=$(ipaddr):$(serverip):$(gatewayip):$(netmask):$(hostname)::off "	\
-	"console=$(console); "							\
+	"console=$(console) init=/bin/devinit; "							\
 	"bootm"
-/*
-#define	CONFIG_BOOTCOMMAND							\
-	"protect off 10040000 107fffff; "					\
-	"fsload; setenv bootargs root=/dev/mtdblock2 console=$(console); "	\
-	"bootm"
-*/
 
 #define	CONFIG_EXTRA_ENV_SETTINGS 						\
 	"console=ttyCPM0\0"
@@ -83,8 +77,6 @@
 #define	CONFIG_BOOTP_MASK	( CONFIG_BOOTP_DEFAULT | CONFIG_BOOTP_VENDOREX )
 
 #define	CONFIG_COMMANDS		( CONFIG_CMD_DFL | CFG_CMD_FS | CFG_CMD_DHCP )
-
-//#define	CONFIG_DBOX2_FS_ENV_READ		"1:env"
 
 #define	CONFIG_TUXBOX_NETWORK			1
 
