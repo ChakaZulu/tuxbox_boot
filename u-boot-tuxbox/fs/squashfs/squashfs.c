@@ -382,7 +382,7 @@ static unsigned int squashfs_lookup (struct part_info *info, char *entryname, ch
 		
 		if (!blocksize)
 		{
-			ERROR ("reading inode block");
+			ERROR ("reading inode block\n");
 			break;
 		}
 		memcpy (&diri,blockbuffer+cur_offset,sizeof(squashfs_dir_inode_header));
@@ -414,7 +414,7 @@ static unsigned int squashfs_lookup (struct part_info *info, char *entryname, ch
 			blocksize = read_block(info, cur_ptr, &cur_ptr, blockbuffer, &sBlk, NULL, 0, 0);
 			if (!blocksize)
 			{
-				ERROR ("reading final block");
+				ERROR ("reading final block\n");
 				break;
 			}
 			/* check what kind of inode it is */
