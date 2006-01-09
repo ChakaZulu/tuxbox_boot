@@ -57,13 +57,10 @@
 #define SERROR(s, args...)				if(!silent) printf("SQUASHFS error: "s, ## args)
 #define WARNING(s, args...)				printf("SQUASHFS: "s, ## args)
 
-
 int read_fragment_table(struct part_info *info, squashfs_super_block *sBlk, squashfs_fragment_entry **fragment_table);
-squashfs_fragment_entry *frag_table;
-
 unsigned int uncompr_size;
 
-int squashfs_read_super (struct part_info *info, squashfs_super_block *super)
+int squashfs_read_super (struct part_info *info, squashfs_super_block *super, squashfs_fragment_entry **frag_tbl)
 {
 	if (info->size<sizeof(squashfs_super_block))
 		return 0;
@@ -90,8 +87,9 @@ int squashfs_read_super (struct part_info *info, squashfs_super_block *super)
 	TRACE ("inode_table_start: 0x%x\n", super->inode_table_start);
 	TRACE ("directory_table_start: 0x%x\n", super->directory_table_start);
 
-	if (!read_fragment_table(info, super, &frag_table))
+	if (frag_tbl && (!read_fragment_table(info, super, frag_tbl)))
 	{
+		ERROR ("error reading fragment table\n");
 		return 0;
 	}
 
@@ -200,7 +198,7 @@ static int read_block(
 }
 
 
-/* reads the whole fragment table */
+/* reads the whole fragment table if there is one */
 int read_fragment_table(struct part_info *info, squashfs_super_block *sBlk, squashfs_fragment_entry **fragment_table)
 {
 	int i, indexes = SQUASHFS_FRAGMENT_INDEXES(sBlk->fragments);
@@ -210,9 +208,10 @@ int read_fragment_table(struct part_info *info, squashfs_super_block *sBlk, squa
 	if(sBlk->fragments == 0)
 		return 1;
 
-	if((*fragment_table = (squashfs_fragment_entry *) malloc(sBlk->fragments * sizeof(squashfs_fragment_entry))) == NULL) 
+	*fragment_table = (squashfs_fragment_entry *)malloc(sBlk->fragments*sizeof(squashfs_fragment_entry));
+	if(!*fragment_table) 
 	{
-		ERROR("Failed to allocate fragment table\n");
+		ERROR("Failed to allocate memory for fragment table\n");
 		return 0;
 	}
 
@@ -221,7 +220,7 @@ int read_fragment_table(struct part_info *info, squashfs_super_block *sBlk, squa
 	for(i = 0; i < indexes; i++) 
 	{
 		TRACE("reading fragment table block @ 0x%x\n", fragment_table_index[i]);
-		int length = read_block(info, fragment_table_index[i], NULL, ((unsigned char *) *fragment_table) + (i * SQUASHFS_METADATA_SIZE), sBlk, NULL, 0, 0);
+		read_block(info, fragment_table_index[i], NULL, ((unsigned char *) *fragment_table) + (i * SQUASHFS_METADATA_SIZE), sBlk, NULL, 0, 0);
 	}
 
 	return 1;
@@ -246,20 +245,27 @@ static int squashfs_readdir(struct part_info *info, squashfs_dir_inode_header *d
 	unsigned int start = sBlk->directory_table_start + diri->start_block;
 	unsigned int dirs=0;
 
-	TRACE("initial_offset 0x%x, table_start 0x%x\n", diri->offset, sBlk->directory_table_start);
-	
 	if (!dirblock)
 	{
-		ERROR ("squashfs_readdir: out of memory\n");
+		ERROR ("squashfs_readdir: out of memory allocating dirblock\n");
+		return 0;
+	}
+
+	if (!tmpblock)
+	{
+		free(dirblock);
+		ERROR ("squashfs_readdir: out of memory allocating tmpblock\n");
 		return 0;
 	}
 	
-	block_size = read_block (info, start, NULL, dirblock, sBlk, NULL, 0, 0);
+	TRACE("initial_offset 0x%x, table_start 0x%x\n", diri->offset, sBlk->directory_table_start);
 	
+	block_size = read_block (info, start, NULL, dirblock, sBlk, NULL, 0, 0);
 	if (!block_size)
 	{
 		ERROR ("squashfs_readdir: read_block\n");
-		free (dirblock);
+		free(tmpblock);
+		free(dirblock);
 		return 0;
 	}
 
@@ -281,8 +287,9 @@ static int squashfs_readdir(struct part_info *info, squashfs_dir_inode_header *d
 		
 		if (!block_size)
 		{
-		    ERROR ("squashfs_readdir: read_block\n");
-		    free (tmpblock);
+			ERROR ("squashfs_readdir: read_block\n");
+			free(tmpblock);
+			free(dirblock);
 		    return 0;
 		}
 	}	
@@ -310,7 +317,8 @@ static int squashfs_readdir(struct part_info *info, squashfs_dir_inode_header *d
 			{
 				TRACE ("entry found: %s\n", dire->name);
 				*inode = SQUASHFS_MKINODE(dirh->start_block,dire->offset);
-				free (dirblock);
+				free(tmpblock);
+				free(dirblock);
 				return 1;
 			}
 			bytes += dire->size + 1;
@@ -338,6 +346,7 @@ static unsigned int squashfs_lookup (struct part_info *info, char *entryname, ch
 	unsigned int root_inode_start;
 	unsigned int root_inode_offset;
 
+	squashfs_fragment_entry *frag_table = NULL;
 	unsigned char *blockbuffer;
 	unsigned int blocksize;
 	unsigned int cur_ptr;
@@ -348,7 +357,7 @@ static unsigned int squashfs_lookup (struct part_info *info, char *entryname, ch
 
 	squashfs_inode inode;
 
-	if (!squashfs_read_super(info,&sBlk))
+	if (!squashfs_read_super(info,&sBlk,&frag_table))
 	{
 		return 0;
 	}
@@ -363,6 +372,8 @@ static unsigned int squashfs_lookup (struct part_info *info, char *entryname, ch
 	if (!blockbuffer)
 	{
 		ERROR ("out of memory allocating blockbuffer\n");
+		if (frag_table)
+			free(frag_table);
 		return 0;
 	}
 
@@ -467,11 +478,13 @@ static unsigned int squashfs_lookup (struct part_info *info, char *entryname, ch
 
 					TRACE("regular file, size %d, blocks %d, start_block 0x%x\n", dirreg.file_size, blocks, dirreg.start_block);
 					
-					blocklist=malloc (blocks*sizeof(unsigned int));
+					blocklist=(unsigned int*)malloc(blocks*sizeof(unsigned int));
 					if (!blocklist)
 					{
 						ERROR("out of memory allocating blocklist\n");
 						free (blockbuffer);
+						if (frag_table)
+							free(frag_table);
 						return 0;
 					}
 					cur_offset += sizeof(dirreg);
@@ -482,15 +495,15 @@ static unsigned int squashfs_lookup (struct part_info *info, char *entryname, ch
 						TRACE("reading block %d\n", i);
 						bytes += read_block(info, cur_ptr, &cur_ptr, (unsigned char*)(loadoffset+bytes), &sBlk, blocklist+i, 0, 0);
 					}
-					if (frag_bytes)
+					if (frag_table && frag_bytes)
 					{
-	    					squashfs_fragment_entry *frag_entry = frag_table + dirreg.fragment;
-						
+	    				squashfs_fragment_entry *frag_entry = frag_table + dirreg.fragment;
+				
 						TRACE("%d bytes in fragment %d, offset %d\n",
-						 frag_bytes, dirreg.fragment, dirreg.offset);
+							frag_bytes, dirreg.fragment, dirreg.offset);
 
 						TRACE("fragment %d, start_block=0x%x, size=%d\n",
-						 dirreg.fragment, frag_entry->start_block, SQUASHFS_COMPRESSED_SIZE_BLOCK(frag_entry->size));
+							dirreg.fragment, frag_entry->start_block, SQUASHFS_COMPRESSED_SIZE_BLOCK(frag_entry->size));
 						bytes += read_block(info, frag_entry->start_block, NULL, (unsigned char*)(loadoffset+bytes), &sBlk, &(frag_entry->size), dirreg.offset, frag_bytes);
 					}
 					*size=bytes;
@@ -501,6 +514,8 @@ static unsigned int squashfs_lookup (struct part_info *info, char *entryname, ch
 				{
 					printf ("loading symlinks is not supported\n");
 					free (blockbuffer);
+					if (frag_table)
+						free(frag_table);
 					return 0;
 					break;
 				}
@@ -508,6 +523,8 @@ static unsigned int squashfs_lookup (struct part_info *info, char *entryname, ch
 				{
 					printf ("loading ldirs is not supported\n");
 					free (blockbuffer);
+					if (frag_table)
+						free(frag_table);
 					return 0;
 					break;
 				}
@@ -519,6 +536,9 @@ static unsigned int squashfs_lookup (struct part_info *info, char *entryname, ch
 	}
 
 	free (blockbuffer);
+	if (frag_table)
+		free(frag_table);
+
 	if (!parsed)
 		return 0;
 	else
@@ -552,7 +572,7 @@ int squashfs_info (struct part_info *info)
 {
 	squashfs_super_block super;
 
-	if (!squashfs_read_super(info,&super))
+	if (!squashfs_read_super(info,&super,NULL))
 	{
 		ERROR ("reading superblock\n");
 		return 0;
