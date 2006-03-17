@@ -81,7 +81,7 @@
 #define	CFG_FS_PART0_OFFSET	0x10040000
 #define	CFG_FS_PART0_SIZE	0x7c0000
 
-#define	CONFIG_DBOX2_FS_ENV_READ_FS	"0:var/tuxbox/boot/boot.conf"
+#define	CONFIG_DBOX2_ENV_READ_FS	"0:var/tuxbox/boot/boot.conf"
 
 #define	CONFIG_TUXBOX_NETWORK			1
 
