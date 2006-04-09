@@ -70,6 +70,8 @@
 #define CONFIG_BAUDRATE		9600	/* console baudrate = 9.6kbps	*/
 #undef	CFG_LOADS_BAUD_CHANGE		/* don't allow baudrate change	*/
 
+//#define CONFIG_DBOX2_ENV_READ_TFTP    "boot.conf"
+
 #define	CONFIG_WATCHDOG		1	/* watchdog enabled		*/
 
 #define	CONFIG_BOOTP_MASK	( CONFIG_BOOTP_DEFAULT | CONFIG_BOOTP_VENDOREX )
@@ -109,6 +111,14 @@
 #define	CONFIG_LAST_STAGE_INIT
 #endif
 #define	CONFIG_MISC_INIT_R
+
+#if defined(CONFIG_DBOX2_ENV_READ_NFS) || defined(CONFIG_DBOX2_ENV_READ_TFTP) 
+#define CONFIG_DBOX2_ENV_READ                   1
+#ifndef CONFIG_LAST_STAGE_INIT
+#define CONFIG_LAST_STAGE_INIT
+#endif
+#endif
+
 
 
 /* this must be included AFTER the definition of CONFIG_COMMANDS (if any) */

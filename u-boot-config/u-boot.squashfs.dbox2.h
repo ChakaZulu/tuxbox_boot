@@ -117,6 +117,11 @@
 #endif
 #define	CONFIG_MISC_INIT_R
 
+#if defined(CONFIG_DBOX2_ENV_READ_FS)
+#define CONFIG_DBOX2_ENV_READ			1
+#endif
+
+
 
 /* this must be included AFTER the definition of CONFIG_COMMANDS (if any) */
 #include <cmd_confdefs.h>

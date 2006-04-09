@@ -24,6 +24,10 @@
 #include <common.h>
 #include <devices.h>
 
+#if defined(CONFIG_DBOX2_ENV_READ_NFS) || defined(CONFIG_DBOX2_ENV_READ_TFTP)
+void load_env_net (void);
+#endif
+
 #ifdef CONFIG_DBOX2_FB
 static device_t fbdev;
 
@@ -68,6 +72,10 @@ int drv_dbox2_init (void)
 #ifdef CONFIG_LAST_STAGE_INIT
 int last_stage_init (void)
 {
+#if defined(CONFIG_DBOX2_ENV_READ_NFS) || defined(CONFIG_DBOX2_ENV_READ_TFTP)
+	load_env_net ();
+#endif
+	
 #ifdef CONFIG_DBOX2_LCD_LOGO
 	lcd_load ();
 #endif /* CONFIG_DBOX2_LCD_LOGO */

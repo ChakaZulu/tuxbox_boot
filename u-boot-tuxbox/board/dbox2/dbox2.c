@@ -28,10 +28,10 @@
 #include <config.h>
 #include "mpc8xx.h"
 
-#ifdef CONFIG_DBOX2_ENV_READ_FS
+#ifdef CONFIG_DBOX2_ENV_READ
 #include <cmd_fs.h>
 #include <net.h>
-#endif /* CONFIG_DBOX2_ENV_READ_FS */
+#endif /* CONFIG_DBOX2_ENV_READ */
 
 #if (CONFIG_COMMANDS & CFG_CMD_DHCP) && (CONFIG_BOOTP_MASK & CONFIG_BOOTP_VENDOREX)
 #include <version.h>
@@ -141,6 +141,7 @@ int misc_init_r (void)
 
 /* ------------------------------------------------------------------------- */
 
+#ifdef CONFIG_DBOX2_ENV_READ
 #ifdef CONFIG_DBOX2_ENV_READ_FS
 void load_env_fs (void)
 {
@@ -151,8 +152,7 @@ void load_env_fs (void)
 
 	size = fs_fsload ((unsigned long) s, CONFIG_DBOX2_ENV_READ_FS);
 
-	while (1)
-	{
+	while (1) {
 		if (i >= size)
 			break;
 		namestart = i;
@@ -176,11 +176,121 @@ void load_env_fs (void)
 			setenv ("lcd_contrast", &s[valuestart]); 
 		else if (!strcmp (&s[namestart], "lcd_inverse")) 
 			setenv ("lcd_inverse", &s[valuestart]); 
+/*		else if (!strcmp (&s[namestart], "mhz")) {
+			printf("clock should be: %s MHz\n",&s[valuestart]);
+			if (strlen(&s[valuestart]) == 2) 
+				dbox2_set_clk(&s[valuestart]);
+			else printf("using default clock\n");
+		}
+*/
 		else
 			printf ("env: can't set \"%s\"\n", &s[namestart]);
 	}
 }
-#endif /* CONFIG_DBOX2_ENV_READ_FS */
+#elif defined CONFIG_DBOX2_ENV_READ_NFS
+void load_env_net (void)
+{
+	int size, i = 0;
+	char *s = (char *) CFG_LOAD_ADDR;
+	char *c = s;
+	int namestart, nameend, valuestart, valueend;
+	char *r;
+	char tmp[256];
+
+	NetLoop (BOOTP);
+	if (getenv_r("rootpath", tmp, sizeof(tmp)) > 0) {
+		r = tmp;
+		strncat(r, CONFIG_DBOX2_ENV_READ_NFS, strlen(CONFIG_DBOX2_ENV_READ_NFS));
+	} else {
+		return;
+	}
+
+	copy_filename (BootFile, r, sizeof (BootFile));
+	size = NetLoop (NFS);
+
+	if (size <= 0) {
+		printf ("can't find boot.conf\n");
+		return;
+	}
+
+	while (1) {
+		if (i >= size)
+			break;
+		namestart = i;
+		while (i < size && *c != '\n' && *c != '=') { i++; c++; }
+		nameend = i;
+		if (i >= size)
+			break;
+		i++; c++;
+		valuestart = i;
+		while (i < size && *c != '\n') { i++; c++; };
+		valueend = i;
+		i++; c++;
+                s[nameend] = '\0';
+		s[valueend] = '\0';
+
+		if (!strcmp (&s[namestart], "bootcmd"))
+			setenv ("bootcmd", &s[valuestart]);
+		else if (!strcmp (&s[namestart], "console"))
+			setenv ("console", &s[valuestart]);
+		else if (!strcmp (&s[namestart], "lcd_contrast"))
+			setenv ("lcd_contrast", &s[valuestart]);
+		else if (!strcmp (&s[namestart], "lcd_inverse"))
+			setenv ("lcd_inverse", &s[valuestart]);
+		else 
+			printf ("env: can't set \"%s\"\n", &s[namestart]);
+		
+	}
+}
+
+#elif defined CONFIG_DBOX2_ENV_READ_TFTP
+void load_env_net (void)
+{
+	int size, i = 0;
+	char *s = (char *) CFG_LOAD_ADDR;
+	char *c = s;
+	int namestart, nameend, valuestart, valueend;
+
+	NetLoop (BOOTP);
+	copy_filename (BootFile, CONFIG_DBOX2_ENV_READ_TFTP, sizeof (BootFile));
+	size = NetLoop (TFTP);
+
+	if (size <= 0) {
+		printf ("can't find boot.conf\n");
+		return ;
+	}
+	
+	while (1) {
+		if (i >= size)
+			break;
+		namestart = i;
+		while (i < size && *c != '\n' && *c != '=') { i++; c++; }
+		nameend = i;
+		if (i >= size)
+			break;
+		i++; c++;
+		valuestart = i;
+		while (i < size && *c != '\n') { i++; c++; };
+		valueend = i;
+		i++; c++;
+		s[nameend] = '\0';
+		s[valueend] = '\0';
+
+		if (!strcmp (&s[namestart], "bootcmd"))
+			setenv ("bootcmd", &s[valuestart]);
+		else if (!strcmp (&s[namestart], "console"))
+			setenv ("console", &s[valuestart]);
+		else if (!strcmp (&s[namestart], "lcd_contrast"))
+			setenv ("lcd_contrast", &s[valuestart]);
+		else if (!strcmp (&s[namestart], "lcd_inverse"))
+			setenv ("lcd_inverse", &s[valuestart]);
+		else
+			printf ("env: can't set \"%s\"\n", &s[namestart]);
+	}
+}
+
+#endif /* CONFIG_DBOX2_ENV_READ_*    */
+#endif /* CONFIG_DBOX2_ENV_READ      */
 
 /* ------------------------------------------------------------------------- */
 
