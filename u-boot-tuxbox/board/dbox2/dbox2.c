@@ -176,13 +176,6 @@ void load_env_fs (void)
 			setenv ("lcd_contrast", &s[valuestart]); 
 		else if (!strcmp (&s[namestart], "lcd_inverse")) 
 			setenv ("lcd_inverse", &s[valuestart]); 
-/*		else if (!strcmp (&s[namestart], "mhz")) {
-			printf("clock should be: %s MHz\n",&s[valuestart]);
-			if (strlen(&s[valuestart]) == 2) 
-				dbox2_set_clk(&s[valuestart]);
-			else printf("using default clock\n");
-		}
-*/
 		else
 			printf ("env: can't set \"%s\"\n", &s[namestart]);
 	}
