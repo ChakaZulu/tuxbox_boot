@@ -73,8 +73,13 @@ int squashfs_read_super (struct part_info *info, squashfs_super_block *super, sq
 		ERROR ("non-native-endian squashfs is not supported\n");
 		return 0;
 	}
+	
 	if (super->s_magic!=SQUASHFS_MAGIC)
+	{
+		ERROR ("no squashfs_magic: %08x\n",super->s_magic);
 		return 0;
+	}
+	
 	if ((super->s_major!=SQUASHFS_MAJOR)||
 		(super->s_minor!=SQUASHFS_MINOR))
 	{
@@ -428,6 +433,22 @@ static unsigned int squashfs_lookup (struct part_info *info, char *entryname, ch
 				ERROR ("reading final block\n");
 				break;
 			}
+
+			/* FIXME: find out how squashfs handles this in the VFS code */
+			if (blocksize == SQUASHFS_METADATA_SIZE)
+			{ /* uhoh, we might have to cross a block boundary, better get the next block, too */
+				if (cur_ptr < sBlk.directory_table_start) 
+				{
+					blockbuffer = realloc(blockbuffer, 2 * SQUASHFS_METADATA_SIZE);
+					blocksize = read_block(info, cur_ptr, &cur_ptr, blockbuffer + SQUASHFS_METADATA_SIZE, &sBlk, NULL, 0, 0);
+					if (!blocksize)
+					{
+						ERROR ("reading overlong metablock\n");
+						break;
+					} 
+				}
+			}
+
 			/* check what kind of inode it is */
 			memcpy (&base, blockbuffer + cur_offset,sizeof (base));
 			if (flags&SQUASHFS_FLAGS_LS)
@@ -457,7 +478,7 @@ static unsigned int squashfs_lookup (struct part_info *info, char *entryname, ch
 				break;
 			} 
 			else 
-			{	/* SQUASHFS_FLAGS_LS */
+			{	/* SQUASHFS_FLAGS_LOAD */
 				switch (base.inode_type)
 				{
 				case SQUASHFS_FILE_TYPE:
