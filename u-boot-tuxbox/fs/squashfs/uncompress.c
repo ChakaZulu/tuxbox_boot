@@ -14,14 +14,21 @@
 #include <common.h>
 #include <malloc.h>
 #include <watchdog.h>
-#include <zlib.h>
 
 #if (CONFIG_FS & CFG_FS_SQUASHFS)
 
+#ifdef CONFIG_SQUASHFS_LZMA
+#include "LzmaDecode.h"
+#include "LzmaDecode.c"
+static CLzmaDecoderState state;
+#else
+#include <zlib.h>
 static z_stream stream;
+#endif
 
 #define ZALLOC_ALIGNMENT	16
 
+#ifndef CONFIG_SQUASHFS_LZMA
 static void *zalloc (void *x, unsigned items, unsigned size)
 {
 	void *p;
@@ -38,10 +45,23 @@ static void zfree (void *x, void *addr, unsigned nb)
 {
 	free (addr);
 }
+#endif
 
 int squashfs_uncompress_block (void *dst, int dstlen, void *src, int srclen)
 {
 	int err;
+#ifdef CONFIG_SQUASHFS_LZMA
+		SizeT InProcessed;
+		int bytes;
+		if((err = LzmaDecode(&state,
+				src, srclen, &InProcessed,
+				dst, dstlen, &bytes)) != LZMA_RESULT_OK) {
+			printf("lzma_fs returned unexpected result 0x%x\n", err);
+			return 0;
+		}
+		return bytes;
+#else
+
 	inflateReset (&stream);
 
 	stream.next_in = src;
@@ -55,10 +75,20 @@ int squashfs_uncompress_block (void *dst, int dstlen, void *src, int srclen)
 		return dstlen-stream.avail_out;
 	else
 		return 0;
+#endif
 }
 
 int squashfs_uncompress_init (void)
 {
+#ifdef CONFIG_SQUASHFS_LZMA
+	state.Properties.lc = 3/*CONFIG_SQUASHFS_LZMA_LC*/;
+	state.Properties.lp = 0/*CONFIG_SQUASHFS_LZMA_LP*/;
+	state.Properties.pb = 2/*CONFIG_SQUASHFS_LZMA_PB*/;
+	if(!(state.Probs = (CProb *) malloc(LzmaGetNumProbs(&state.Properties) * sizeof(CProb)))) {
+		printf("Failed to allocate lzma workspace\n");
+		return -1;
+	}
+#else
 	int err;
 
 	stream.zalloc = zalloc;
@@ -77,13 +107,17 @@ int squashfs_uncompress_init (void)
 		printf ("Error: inflateInit() returned %d\n", err);
 		return -1;
 	}
-
+#endif
 	return 0;
 }
 
 int squashfs_uncompress_exit (void)
 {
+#ifdef CONFIG_SQUASHFS_LZMA
+	free(state.Probs);
+#else
 	inflateEnd (&stream);
+#endif
 	return 0;
 }
 

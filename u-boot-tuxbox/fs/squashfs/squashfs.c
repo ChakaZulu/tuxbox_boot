@@ -42,6 +42,7 @@
 
 #include <linux/types.h>
 #include <squashfs/squashfs_fs.h>
+#include <squashfs/global.h>
 #include <zlib.h>
 #include <malloc.h>
 #include <cmd_fs.h>
@@ -492,10 +493,10 @@ static unsigned int squashfs_lookup (struct part_info *info, char *entryname, ch
 					squashfs_reg_inode_header dirreg;
 					memcpy (&dirreg,blockbuffer + cur_offset, sizeof(dirreg));
 					
-					blocks = dirreg.fragment == SQUASHFS_INVALID_BLK
+					blocks = dirreg.fragment == SQUASHFS_INVALID_FRAG
 									? (dirreg.file_size + sBlk.block_size - 1) >> sBlk.block_log
 									: dirreg.file_size >> sBlk.block_log;
-					frag_bytes = dirreg.fragment == SQUASHFS_INVALID_BLK ? 0 : dirreg.file_size % sBlk.block_size;
+					frag_bytes = dirreg.fragment == SQUASHFS_INVALID_FRAG ? 0 : dirreg.file_size % sBlk.block_size;
 
 					TRACE("regular file, size %d, blocks %d, start_block 0x%x\n", dirreg.file_size, blocks, dirreg.start_block);
 					
