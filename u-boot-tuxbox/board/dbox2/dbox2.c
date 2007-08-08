@@ -118,12 +118,6 @@ long int initdram (int board_type)
 	if ( memctl->memc_br2 & 0x1 )
 		size += ~(memctl->memc_or2 & 0xffff8000) + 1;
 
-#ifdef CONFIG_DBOX2_IDE
-	// set values for memcontroller for IDE interface  (will crash on boxes with external SDRAM)
-	memctl->memc_br2 = 0x02000001;
-	memctl->memc_or2 = 0xfe000966;
-#endif
-
 	return size;
 }
 
@@ -318,6 +312,8 @@ u8 *dhcp_vendorex_proc (u8 * popt)
 #ifdef CONFIG_DBOX2_CPLD_IDE
 static int cpld_avail = 0;
 
+static uint idebase = 0x02000000;
+
 
 /* a lot of this code is copied from the ide driver. 
    todo: maybe it is possible to use the same source file for this */
@@ -350,14 +346,12 @@ static int cpld_avail = 0;
 
 #define IMAP_ADDR CFG_IMMR
 
-#define idebase 0x02000000
-
 #define IDE_DELAY() udelay(50000)
 
 static void dboxide_problem(const char *msg)
 {
 	printk("dboxide: %s\n", msg);
-	printk("CPLD Status is %08x\n", CPLD_IN(CPLD_READ_CTRL));
+	printk("CPLD Status is 0x%08x\n", CPLD_IN(CPLD_READ_CTRL));
 }
 
 #define WAIT_FOR_FIFO_EMPTY() wait_for_fifo_empty()
@@ -386,20 +380,15 @@ static int activate_cs2(void)
 	volatile memctl8xx_t *memctl = &immap->im_memctl;
 	uint br2 = memctl->memc_br2;
 
+
 	if (br2 & 0x1) {
-		printk("dboxide: cs2 already activated\n");
+		printk("dboxide: memory-bank already in use\n");
 		return 0;
 	}
 
-	if (br2 != 0x02000080) {
-		printk("dboxide: cs2: unexpected value for br2: %08x\n", br2);
-		return 0;
-	}
-
-	br2 |= 0x1;
 
 	printk("dboxide: activating cs2\n");
-   
+	br2 |= 0x1;
 	memctl->memc_br2 = br2;
 
 	return 1;
@@ -412,14 +401,13 @@ static int deactivate_cs2(void)
 	memctl8xx_t *memctl = &immap->im_memctl;
 	uint br2 = memctl->memc_br2;
 
-	if (br2 != 0x02000081) {
-		printk("dboxide: cs2 configuration unexpected: %08x\n", br2);
+	if (!(br2 & 0x1)) {
+		printk("dboxide: cs2 already deactivated\n");
 		return 0;
 	}
 
-	br2 &= ~1;
-
 	printk("dboxide: deactivating cs2\n");
+	br2 &= ~1;
 	memctl->memc_br2 = br2;
 
 	return 1;
@@ -446,7 +434,7 @@ static int detect_cpld(void)
 		back = CPLD_IN(CPLD_READ_DATA);
 		if (check != back) {
 			printk
-			    ("dboxide: probing dbox2 IDE CPLD: walking bit test failed: %08x != %08x\n",
+			    ("dboxide: probing dbox2 IDE CPLD: walking bit test failed: 0x%08x != 0x%08x\n",
 			     check, back);
 			return 0;
 		}
@@ -457,7 +445,7 @@ static int detect_cpld(void)
 		back = CPLD_IN(CPLD_READ_DATA);
 		if (check != back) {
 			printk
-			    ("dboxide: probing dbox2 IDE CPLD: walking bit test failed: %08x != %08x\n",
+			    ("dboxide: probing dbox2 IDE CPLD: walking bit test failed: 0x%08x != 0x%08x\n",
 			     check, back);
 			return 0;
 		}
@@ -470,7 +458,7 @@ static int detect_cpld(void)
 	back = CPLD_IN(CPLD_READ_CTRL);
 	if ((back & check) != check) {
 		printk
-		    ("dboxide: probing dbox2 IDE CPLD: ctrl register not valid: %08x != %08x\n",
+		    ("dboxide: probing dbox2 IDE CPLD: ctrl register not valid: 0x%08x != 0x%08x\n",
 		     check, back & check);
 		return 0;
 	}
@@ -516,7 +504,7 @@ static int detect_cpld(void)
 	CPLD_OUT(CPLD_WRITE_FIFO, check);
 	back = CPLD_IN(CPLD_READ_FIFO);
 	if (back != check) {
-		printk("dboxide: final fifo clear did not work: %x!=%x\n", back,
+		printk("dboxide: final fifo clear did not work: 0x%08x != 0x%08x\n", back,
 		       check);
 		return 0;
 	}
@@ -545,9 +533,17 @@ static int detect_cpld(void)
 
 int ide_preinit(void)
 {
-  //printf ("Checking for IDE-CPLD\n");
-
   if (activate_cs2()==0) return 1;
+
+  unsigned long mem_addr = 0x02000000;
+  immap_t *immap = (immap_t *) IMAP_ADDR;
+  memctl8xx_t *memctl = &immap->im_memctl;
+  mem_addr = (memctl->memc_br2 & 0xFFFF8000);
+
+  if (mem_addr < 0x02000000)
+    printk("dboxide: Less than 32MByte of onboard-memory detected.\n         Upgrade is strongly recommend!\n");
+
+  idebase = (uint) mem_addr;
 
   if (detect_cpld() == 0) {
 		deactivate_cs2();
