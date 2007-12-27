@@ -63,7 +63,7 @@
 	"protect off 10020000 107fffff; "					\
         "setenv bootargs root=/dev/nfs rw nfsroot=$(rootpath) "			\
 	"ip=$(ipaddr):$(serverip):$(gatewayip):$(netmask):$(hostname)::off "	\
-	"console=$(console); "							\
+	"console=$(console),$(baudrate); "					\
 	"bootm"
 
 #define	CONFIG_EXTRA_ENV_SETTINGS 						\

@@ -59,7 +59,7 @@
 #undef	CONFIG_BOOTARGS
 
 #define	CONFIG_BOOTCOMMAND							\
-        "setenv bootargs console=$(console) root=/dev/nfs rw "			\
+        "setenv bootargs console=$(console),$(baudrate) root=/dev/nfs rw "	\
         "nfsroot=$(serverip):$(rootpath)/yaddroot/ "				\
 	"ip=$(ipaddr):$(serverip):$(gatewayip):$(netmask):$(hostname)::off; "	\
 	"tftp \"kernel-yadd\"; protect off 10020000 107fffff; bootm"

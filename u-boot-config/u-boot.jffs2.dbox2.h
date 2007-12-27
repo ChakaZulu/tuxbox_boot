@@ -60,7 +60,7 @@
 
 #define	CONFIG_BOOTCOMMAND \
 "protect off 10020000 107fffff; " \
-	"fsload; setenv bootargs root=/dev/mtdblock2 rw console=$(console); " \
+	"fsload; setenv bootargs root=/dev/mtdblock2 rw console=$(console),$(baudrate); " \
 	"bootm"
 
 #define	CONFIG_EXTRA_ENV_SETTINGS 						\

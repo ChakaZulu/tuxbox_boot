@@ -58,7 +58,7 @@
 
 #undef	CONFIG_BOOTARGS
 #define	CONFIG_BOOTCOMMAND							\
-	"setenv bootargs console=$(console) root=/dev/mtdblock2 rootfstype=squashfs; \
+	"setenv bootargs console=$(console),$(baudrate) root=/dev/mtdblock2 rootfstype=squashfs; \
 	    fsload; protect off 10020000 107fffff; bootm"
 
 #define	CONFIG_EXTRA_ENV_SETTINGS 						\

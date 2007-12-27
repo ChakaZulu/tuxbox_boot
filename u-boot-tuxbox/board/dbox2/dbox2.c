@@ -171,6 +171,8 @@ void load_env_fs (void)
 			setenv ("lcd_contrast", &s[valuestart]); 
 		else if (!strcmp (&s[namestart], "lcd_inverse")) 
 			setenv ("lcd_inverse", &s[valuestart]); 
+		else if (!strcmp (&s[namestart], "baudrate")) 
+			setenv ("baudrate_now", &s[valuestart]); 
 		else
 			printf ("env: can't set \"%s\"\n", &s[namestart]);
 	}
@@ -225,6 +227,8 @@ void load_env_net (void)
 			setenv ("lcd_contrast", &s[valuestart]);
 		else if (!strcmp (&s[namestart], "lcd_inverse"))
 			setenv ("lcd_inverse", &s[valuestart]);
+		else if (!strcmp (&s[namestart], "baudrate")) 
+			setenv ("baudrate_now", &s[valuestart]); 
 		else 
 			printf ("env: can't set \"%s\"\n", &s[namestart]);
 		
@@ -272,6 +276,8 @@ void load_env_net (void)
 			setenv ("lcd_contrast", &s[valuestart]);
 		else if (!strcmp (&s[namestart], "lcd_inverse"))
 			setenv ("lcd_inverse", &s[valuestart]);
+		else if (!strcmp (&s[namestart], "baudrate")) 
+			setenv ("baudrate_now", &s[valuestart]); 
 		else
 			printf ("env: can't set \"%s\"\n", &s[namestart]);
 	}
