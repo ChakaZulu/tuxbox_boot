@@ -137,15 +137,11 @@ int misc_init_r (void)
 /* ------------------------------------------------------------------------- */
 
 #ifdef CONFIG_DBOX2_ENV_READ
-#ifdef CONFIG_DBOX2_ENV_READ_FS
-void load_env_fs (void)
+void process_config(char *buf, int size)
 {
-	int size, i = 0;
-	char *s = (char *) CFG_LOAD_ADDR;
-	char *c = s;
+	int i = 0;
+	char *c = buf;
 	int namestart, nameend, valuestart, valueend;
-
-	size = fs_fsload ((unsigned long) s, CONFIG_DBOX2_ENV_READ_FS);
 
 	while (1) {
 		if (i >= size)
@@ -160,30 +156,39 @@ void load_env_fs (void)
 		while (i < size && *c != '\n') { i++; c++; };
 		valueend = i;
 		i++; c++;
-		s[nameend] = '\0';
-		s[valueend] = '\0';
+		buf[nameend] = '\0';
+		buf[valueend] = '\0';
 		
-		if (!strcmp (&s[namestart], "bootcmd"))
-			setenv ("bootcmd", &s[valuestart]);
-		else if (!strcmp (&s[namestart], "console"))
-			setenv ("console", &s[valuestart]);
-		else if (!strcmp (&s[namestart], "lcd_contrast")) 
-			setenv ("lcd_contrast", &s[valuestart]); 
-		else if (!strcmp (&s[namestart], "lcd_inverse")) 
-			setenv ("lcd_inverse", &s[valuestart]); 
-		else if (!strcmp (&s[namestart], "baudrate")) 
-			setenv ("baudrate_now", &s[valuestart]); 
+		printf ("env: found \"%s\"\n", &buf[namestart]);
+		if (!strcmp (&buf[namestart], "bootcmd"))
+			setenv ("bootcmd", &buf[valuestart]);
+		else if (!strcmp (&buf[namestart], "console"))
+			setenv ("console", &buf[valuestart]);
+		else if (!strcmp (&buf[namestart], "lcd_contrast")) 
+			setenv ("lcd_contrast", &buf[valuestart]); 
+		else if (!strcmp (&buf[namestart], "lcd_inverse")) 
+			setenv ("lcd_inverse", &buf[valuestart]); 
+		else if (!strcmp (&buf[namestart], "baudrate"))
+			setenv ("baudrate_now", &buf[valuestart]);
 		else
-			printf ("env: can't set \"%s\"\n", &s[namestart]);
+			printf ("env: can't set \"%s\"\n", &buf[namestart]);
 	}
+}
+
+#ifdef CONFIG_DBOX2_ENV_READ_FS
+void load_env_fs (void)
+{
+	int size;
+	char *s = (char *) CFG_LOAD_ADDR;
+
+	size = fs_fsload ((unsigned long) s, CONFIG_DBOX2_ENV_READ_FS);
+	process_config(s, size);
 }
 #elif defined CONFIG_DBOX2_ENV_READ_NFS
 void load_env_net (void)
 {
-	int size, i = 0;
+	int size;
 	char *s = (char *) CFG_LOAD_ADDR;
-	char *c = s;
-	int namestart, nameend, valuestart, valueend;
 	char *r;
 	char tmp[256];
 
@@ -203,45 +208,14 @@ void load_env_net (void)
 		return;
 	}
 
-	while (1) {
-		if (i >= size)
-			break;
-		namestart = i;
-		while (i < size && *c != '\n' && *c != '=') { i++; c++; }
-		nameend = i;
-		if (i >= size)
-			break;
-		i++; c++;
-		valuestart = i;
-		while (i < size && *c != '\n') { i++; c++; };
-		valueend = i;
-		i++; c++;
-                s[nameend] = '\0';
-		s[valueend] = '\0';
-
-		if (!strcmp (&s[namestart], "bootcmd"))
-			setenv ("bootcmd", &s[valuestart]);
-		else if (!strcmp (&s[namestart], "console"))
-			setenv ("console", &s[valuestart]);
-		else if (!strcmp (&s[namestart], "lcd_contrast"))
-			setenv ("lcd_contrast", &s[valuestart]);
-		else if (!strcmp (&s[namestart], "lcd_inverse"))
-			setenv ("lcd_inverse", &s[valuestart]);
-		else if (!strcmp (&s[namestart], "baudrate")) 
-			setenv ("baudrate_now", &s[valuestart]); 
-		else 
-			printf ("env: can't set \"%s\"\n", &s[namestart]);
-		
-	}
+	process_config(s, size);
 }
 
 #elif defined CONFIG_DBOX2_ENV_READ_TFTP
 void load_env_net (void)
 {
-	int size, i = 0;
+	int size;
 	char *s = (char *) CFG_LOAD_ADDR;
-	char *c = s;
-	int namestart, nameend, valuestart, valueend;
 
 	NetLoop (BOOTP);
 	copy_filename (BootFile, CONFIG_DBOX2_ENV_READ_TFTP, sizeof (BootFile));
@@ -252,35 +226,7 @@ void load_env_net (void)
 		return ;
 	}
 	
-	while (1) {
-		if (i >= size)
-			break;
-		namestart = i;
-		while (i < size && *c != '\n' && *c != '=') { i++; c++; }
-		nameend = i;
-		if (i >= size)
-			break;
-		i++; c++;
-		valuestart = i;
-		while (i < size && *c != '\n') { i++; c++; };
-		valueend = i;
-		i++; c++;
-		s[nameend] = '\0';
-		s[valueend] = '\0';
-
-		if (!strcmp (&s[namestart], "bootcmd"))
-			setenv ("bootcmd", &s[valuestart]);
-		else if (!strcmp (&s[namestart], "console"))
-			setenv ("console", &s[valuestart]);
-		else if (!strcmp (&s[namestart], "lcd_contrast"))
-			setenv ("lcd_contrast", &s[valuestart]);
-		else if (!strcmp (&s[namestart], "lcd_inverse"))
-			setenv ("lcd_inverse", &s[valuestart]);
-		else if (!strcmp (&s[namestart], "baudrate")) 
-			setenv ("baudrate_now", &s[valuestart]); 
-		else
-			printf ("env: can't set \"%s\"\n", &s[namestart]);
-	}
+	process_config(s, size);
 }
 
 #endif /* CONFIG_DBOX2_ENV_READ_*    */
