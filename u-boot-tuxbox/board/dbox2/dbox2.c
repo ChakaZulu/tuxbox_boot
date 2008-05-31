@@ -170,6 +170,8 @@ void process_config(char *buf, int size)
 			setenv ("lcd_inverse", &buf[valuestart]); 
 		else if (!strcmp (&buf[namestart], "baudrate"))
 			setenv ("baudrate_now", &buf[valuestart]);
+		else if (!strcmp (&buf[namestart], "dbox_duplex")) 
+			setenv ("dbox_duplex", &buf[valuestart]);
 		else
 			printf ("env: can't set \"%s\"\n", &buf[namestart]);
 	}
