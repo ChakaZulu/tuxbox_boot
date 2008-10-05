@@ -104,11 +104,14 @@ int checkboard (void)
 
 /* ------------------------------------------------------------------------- */
 
-long int initdram (int board_type)
+/* remove the following line for u-boot >= 1.3.3 */
+#define phys_size_t long int
+
+phys_size_t initdram (int board_type)
 {
 	volatile immap_t *immap = (immap_t *) CFG_IMMR;
 	volatile memctl8xx_t *memctl = &immap->im_memctl;
-	int size = 0;
+	phys_size_t size = 0;
 
 	if (mid == 1)
 		upmconfig (UPMB, (uint *) sdram_table_upmb_nokia, sizeof (sdram_table_upmb_nokia) / sizeof (uint));
@@ -159,7 +162,7 @@ void process_config(char *buf, int size)
 		buf[nameend] = '\0';
 		buf[valueend] = '\0';
 		
-		printf ("env: found \"%s\"\n", &buf[namestart]);
+		printf ("env: found \"%s\" with value %s\n", &buf[namestart], &buf[valuestart]);
 		if (!strcmp (&buf[namestart], "bootcmd"))
 			setenv ("bootcmd", &buf[valuestart]);
 		else if (!strcmp (&buf[namestart], "console"))
