@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *
- * $Id: lcd.c,v 1.3 2005/02/14 16:35:32 carjay Exp $
+ * $Id: lcd.c,v 1.4 2009/03/22 22:04:32 houdini Exp $
  */
 
 #include <common.h>
@@ -260,6 +260,7 @@ static void lcd_reset_init (void)
 	char *s;
 	int lcd_contrast = 15;
 	int lcd_inverse = 0;
+	int lcd_bias = 0;
 
 	if ((s = getenv("lcd_contrast")) != NULL)
 	{
@@ -268,6 +269,10 @@ static void lcd_reset_init (void)
 	if ((s = getenv("lcd_inverse")) != NULL)
 	{
 		lcd_inverse = (int)simple_strtoul(s,NULL,8);
+	}
+	if ((s = getenv("lcd_bias")) != NULL)
+	{
+		lcd_bias = (int)simple_strtoul(s,NULL,8);
 	}
 
 	lcd_send_cmd (LCD_CMD_RESET, 0);
@@ -282,7 +287,7 @@ static void lcd_reset_init (void)
 	switch (hwi[0])
 	{
 		case 2:
-			lcd_send_cmd (LCD_CMD_BIAS, 0);
+			lcd_send_cmd (LCD_CMD_BIAS, lcd_bias == 0 ? 0 : 1); // Philips: rev 2 LCDs need 1, rev 4 need 0
 			break;
 		default:
 			lcd_send_cmd (LCD_CMD_BIAS, 1);

@@ -162,7 +162,7 @@ void process_config(char *buf, int size)
 		buf[nameend] = '\0';
 		buf[valueend] = '\0';
 		
-		printf ("env: found \"%s\" with value %s\n", &buf[namestart], &buf[valuestart]);
+		printf ("env: found %s with value %s\n", &buf[namestart], &buf[valuestart]);
 		if (!strcmp (&buf[namestart], "bootcmd"))
 			setenv ("bootcmd", &buf[valuestart]);
 		else if (!strcmp (&buf[namestart], "console"))
@@ -171,6 +171,8 @@ void process_config(char *buf, int size)
 			setenv ("lcd_contrast", &buf[valuestart]); 
 		else if (!strcmp (&buf[namestart], "lcd_inverse")) 
 			setenv ("lcd_inverse", &buf[valuestart]); 
+		else if (!strcmp (&buf[namestart], "lcd_bias")) 
+			setenv ("lcd_bias", &buf[valuestart]); 
 		else if (!strcmp (&buf[namestart], "baudrate"))
 			setenv ("baudrate_now", &buf[valuestart]);
 		else if (!strcmp (&buf[namestart], "dbox_duplex")) 

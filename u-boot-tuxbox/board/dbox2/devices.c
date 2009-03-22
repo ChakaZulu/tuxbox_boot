@@ -57,15 +57,6 @@ int drv_dbox2_init (void)
 	device_register (&fbdev);
 #endif /* CONFIG_DBOX2_FB */
 
-#ifdef CONFIG_LCD_BOARD
-	lcd_init ();
-
-	strcpy (lcddev.name, "lcd");
-	lcddev.putc  = lcd_putc;
-	lcddev.puts  = lcd_puts;
-	device_register (&lcddev);
-#endif /* CONFIG_LCD_BOARD */
-
 	return 1;
 }
 
@@ -76,6 +67,15 @@ int last_stage_init (void)
 	load_env_net ();
 #endif
 	
+#ifdef CONFIG_LCD_BOARD
+	lcd_init ();
+
+	strcpy (lcddev.name, "lcd");
+	lcddev.putc  = lcd_putc;
+	lcddev.puts  = lcd_puts;
+	device_register (&lcddev);
+#endif /* CONFIG_LCD_BOARD */
+
 #ifdef CONFIG_DBOX2_LCD_LOGO
 	lcd_load ();
 #endif /* CONFIG_DBOX2_LCD_LOGO */
