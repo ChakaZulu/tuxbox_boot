@@ -1,0 +1,5 @@
+
+TEXT_BASE = 0xfffd0000
+
+PLATFORM_CPPFLAGS += -I$(TOPDIR)/board/$(VENDOR)
+
