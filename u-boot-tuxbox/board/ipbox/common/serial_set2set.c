@@ -145,7 +145,7 @@ int serial_set2set( int argc, char **argv )
 
 		keys[0] = key_release;
 		keys[1] = key_front_release;
-		keys[3] = key_null;
+		keys[2] = key_null;
 
 		front_waitkey( keys, 5 );
 	}
