@@ -156,7 +156,7 @@ ifelse(rootfstype,`jffs2',`#define       CFG_FS_PART0_SIZE       0x7c0000',
 #define CFG_MEMTEST_START	0x0400000	/* memtest works on	*/
 #define CFG_MEMTEST_END		0x1800000	/* 4 ... 24 MB in DRAM	*/
 
-#define	CFG_LOAD_ADDR		0x100000	/* default load address	*/
+#define	CFG_LOAD_ADDR		0x200000	/* default load address	*/
 
 #define	CFG_HZ			1000	/* decrementer freq: 1 ms ticks	*/
 
