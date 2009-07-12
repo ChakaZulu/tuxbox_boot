@@ -28,7 +28,7 @@ all:
 
 LIB	= lib$(BOARD).a
 
-OBJS	= $(BOARD).o devices.o flash.o lcd.o avia.o avs.o fb.o mpgstill.o saa7126.o
+OBJS	= $(BOARD).o devices.o flash.o lcd.o avia.o avs.o fb.o mpgstill.o saa7126.o fp_button.o
 
 $(LIB):	.depend $(OBJS)
 	$(AR) crv $@ $(OBJS)
