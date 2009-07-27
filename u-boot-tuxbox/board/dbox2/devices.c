@@ -22,14 +22,14 @@
  */
 
 #include <common.h>
-#include <devices.h>
+#include <stdio_dev.h>
 
 #if defined(CONFIG_DBOX2_ENV_READ_NFS) || defined(CONFIG_DBOX2_ENV_READ_TFTP)
 void load_env_net (void);
 #endif
 
 #ifdef CONFIG_DBOX2_FB
-static device_t fbdev;
+static struct stdio_dev fbdev;
 
 int fb_init (void);
 
@@ -41,7 +41,7 @@ int fb_load (void);
 #ifdef CONFIG_LCD_BOARD
 #include <lcd.h>
 
-static device_t lcddev;
+static struct stdio_dev lcddev;
 
 # ifdef CONFIG_DBOX2_LCD_LOGO
 int lcd_load (void);
@@ -54,7 +54,7 @@ int drv_dbox2_init (void)
 	fb_init ();
 
 	strcpy (fbdev.name, "fb");
-	device_register (&fbdev);
+	stdio_register (&fbdev);
 #endif /* CONFIG_DBOX2_FB */
 
 	return 1;
@@ -73,7 +73,7 @@ int last_stage_init (void)
 	strcpy (lcddev.name, "lcd");
 	lcddev.putc  = lcd_putc;
 	lcddev.puts  = lcd_puts;
-	device_register (&lcddev);
+	stdio_register (&lcddev);
 #endif /* CONFIG_LCD_BOARD */
 
 #ifdef CONFIG_DBOX2_LCD_LOGO

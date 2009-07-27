@@ -33,9 +33,9 @@
 #include <net.h>
 #endif /* CONFIG_DBOX2_ENV_READ */
 
-#if (CONFIG_COMMANDS & CFG_CMD_DHCP) && (CONFIG_BOOTP_MASK & CONFIG_BOOTP_VENDOREX)
+#if defined(CONFIG_CMD_DHCP) && defined(CONFIG_BOOTP_VENDOREX)
 #include <version.h>
-#endif /* CFG_CMD_DHCP && CONFIG_BOOTP_VENDOREX */
+#endif /* CONFIG_CMD_DHCP && CONFIG_BOOTP_VENDOREX */
 
 /* ------------------------------------------------------------------------- */
 
@@ -68,7 +68,7 @@ const uint sdram_table_upmb_nokia[] =
  */
 
 const char *id2name[] = { "EMPTY", "Nokia", "Philips", "Sagem" };
-static unsigned char *hwi = (unsigned char *) (CFG_FLASH_BASE + CFG_HWINFO_OFFSET);
+static unsigned char *hwi = (unsigned char *) (CONFIG_SYS_FLASH_BASE + CONFIG_SYS_HWINFO_OFFSET);
 unsigned char mid = 0;
 
 int checkboard (void)
@@ -83,9 +83,9 @@ int checkboard (void)
 		return -1;
 	}
 
-	ptr = (char *)(CFG_FLASH_BASE + 0x14000);
+	ptr = (char *)(CONFIG_SYS_FLASH_BASE + 0x14000);
 
-	while (ptr < (char *)(CFG_FLASH_BASE + 0x16000)) {
+	while (ptr < (char *)(CONFIG_SYS_FLASH_BASE + 0x16000)) {
 		if (!memcmp(ptr, "dbox2:", 6)) {
 			bmon_version = &ptr[8];
 			break;
@@ -105,11 +105,11 @@ int checkboard (void)
 /* ------------------------------------------------------------------------- */
 
 /* remove the following line for u-boot >= 1.3.3 */
-#define phys_size_t long int
+//#define phys_size_t long int
 
 phys_size_t initdram (int board_type)
 {
-	volatile immap_t *immap = (immap_t *) CFG_IMMR;
+	volatile immap_t *immap = (immap_t *) CONFIG_SYS_IMMR;
 	volatile memctl8xx_t *memctl = &immap->im_memctl;
 	phys_size_t size = 0;
 
@@ -129,10 +129,12 @@ phys_size_t initdram (int board_type)
 int misc_init_r (void)
 {
 	char tmp[32];
+	uchar enetaddr[6];
 
 	sprintf (tmp, "%02x:%02x:%02x:%02x:%02x:%02x",
 			hwi[3], hwi[4], hwi[5], hwi[6], hwi[7], hwi[8]);
-	setenv("ethaddr", tmp);
+	eth_parse_enetaddr(tmp, enetaddr);
+	eth_setenv_enetaddr("ethaddr", enetaddr);
 
 	return 0;
 }
@@ -186,7 +188,7 @@ void process_config(char *buf, int size)
 void load_env_fs (void)
 {
 	int size;
-	char *s = (char *) CFG_LOAD_ADDR;
+	char *s = (char *) CONFIG_SYS_LOAD_ADDR;
 
 	size = fs_fsload ((unsigned long) s, CONFIG_DBOX2_ENV_READ_FS);
 	process_config(s, size);
@@ -195,19 +197,14 @@ void load_env_fs (void)
 void load_env_net (void)
 {
 	int size;
-	char *s = (char *) CFG_LOAD_ADDR;
-	char *r;
-	char tmp[256];
+	char *s = (char *) CONFIG_SYS_LOAD_ADDR;
 
 	NetLoop (BOOTP);
-	if (getenv_r("rootpath", tmp, sizeof(tmp)) > 0) {
-		r = tmp;
-		strncat(r, CONFIG_DBOX2_ENV_READ_NFS, strlen(CONFIG_DBOX2_ENV_READ_NFS));
-	} else {
-		return;
-	}
-
-	copy_filename (BootFile, r, sizeof (BootFile));
+	netboot_update_env();
+	ip_to_string (NetServerIP, BootFile);
+	strncat(BootFile, ":", sizeof (BootFile));
+	strncat(BootFile, NetOurRootPath, sizeof (BootFile));
+	strncat(BootFile, CONFIG_DBOX2_ENV_READ_NFS, sizeof (BootFile));
 	size = NetLoop (NFS);
 
 	if (size <= 0) {
@@ -222,9 +219,10 @@ void load_env_net (void)
 void load_env_net (void)
 {
 	int size;
-	char *s = (char *) CFG_LOAD_ADDR;
+	char *s = (char *) CONFIG_SYS_LOAD_ADDR;
 
 	NetLoop (BOOTP);
+	netboot_update_env();
 	copy_filename (BootFile, CONFIG_DBOX2_ENV_READ_TFTP, sizeof (BootFile));
 	size = NetLoop (TFTP);
 
@@ -241,7 +239,7 @@ void load_env_net (void)
 
 /* ------------------------------------------------------------------------- */
 
-#if (CONFIG_COMMANDS & CFG_CMD_DHCP) && (CONFIG_BOOTP_MASK & CONFIG_BOOTP_VENDOREX)
+#if defined(CONFIG_CMD_DHCP) && defined(CONFIG_BOOTP_VENDOREX)
 u8 *dhcp_vendorex_prep (u8 *e)
 {
 	const char *part1 = "DBOX2, ";
@@ -264,7 +262,7 @@ u8 *dhcp_vendorex_proc (u8 * popt)
 {
 	return NULL;
 }
-#endif /* CFG_CMD_DHCP && CONFIG_BOOTP_VENDOREX */
+#endif /* CONFIG_CMD_DHCP && CONFIG_BOOTP_VENDOREX */
 
 /* ------------------------------------------------------------------------- */
 
@@ -303,7 +301,7 @@ static uint idebase = 0x02000000;
 
 #define printk printf
 
-#define IMAP_ADDR CFG_IMMR
+#define IMAP_ADDR CONFIG_SYS_IMMR
 
 #define IDE_DELAY() udelay(50000)
 

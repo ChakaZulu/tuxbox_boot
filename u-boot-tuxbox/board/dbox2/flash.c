@@ -27,7 +27,7 @@
 #include <mpc8xx.h>
 #include <flash.h>
 
-flash_info_t flash_info[CFG_MAX_FLASH_BANKS]; /* info for FLASH chips */
+flash_info_t flash_info[CONFIG_SYS_MAX_FLASH_BANKS]; /* info for FLASH chips */
 
 /*-----------------------------------------------------------------------
  * Functions
@@ -96,7 +96,7 @@ unsigned long flash_init (void)
 #else /* CONFIG_DBOX2_FLASH_FAKE */
 	unsigned long size;
 
-	for (i = 0; i < CFG_MAX_FLASH_BANKS; ++i)
+	for (i = 0; i < CONFIG_SYS_MAX_FLASH_BANKS; ++i)
 		flash_info[i].flash_id = FLASH_UNKNOWN;
 
 	flash_info[0].portwidth = FLASH_CFI_32BIT;
@@ -117,7 +117,7 @@ unsigned long flash_init (void)
 
 	flash_get_offsets (FLASH_BASE_PRELIM, &flash_info[0]);
 
-#ifdef CFG_FLASH_PROTECTION
+#ifdef CONFIG_SYS_FLASH_PROTECTION
 	flash_get_protect (&flash_info[0]);
 #endif
 
@@ -135,7 +135,7 @@ unsigned long flash_init (void)
 #ifndef CONFIG_DBOX2_FLASH_FAKE
 static ulong flash_get_size (vu_long *addr, flash_info_t *info)
 {
-	volatile immap_t *immap = (immap_t *) CFG_IMMR;
+	volatile immap_t *immap = (immap_t *) CONFIG_SYS_IMMR;
 	volatile memctl8xx_t *memctl = &immap->im_memctl;
 	ulong value;
 
@@ -258,7 +258,7 @@ static void flash_get_offsets (ulong base, flash_info_t *info)
 	}
 }
 
-#ifdef CFG_FLASH_PROTECTION
+#ifdef CONFIG_SYS_FLASH_PROTECTION
 static void flash_get_protect (flash_info_t *info)
 {
 	volatile unsigned long *addr;
@@ -290,7 +290,7 @@ static void flash_get_protect (flash_info_t *info)
 		}
 	}
 }
-#endif /* CFG_FLASH_PROTECTION */
+#endif /* CONFIG_SYS_FLASH_PROTECTION */
 #endif /* CONFIG_DBOX2_FLASH_FAKE */
 
 /*-----------------------------------------------------------------------
@@ -374,7 +374,7 @@ void flash_print_info  (flash_info_t *info)
 	printf ("\n  Size: %ld kB in %d Sectors\n",
 		info->size >> 10, info->sector_count);
 
-#ifdef CFG_FLASH_PROTECTION
+#ifdef CONFIG_SYS_FLASH_PROTECTION
 	flash_get_protect (&flash_info[0]);
 #endif
 
@@ -539,7 +539,7 @@ int flash_erase (flash_info_t *info, int s_first, int s_last)
 
 				while ((flash_get (info, addr, 0) & 0x00800080) != flash_mask (info, 0x00800080))
 				{
-					if ((now = get_timer (start)) > CFG_FLASH_ERASE_TOUT)
+					if ((now = get_timer (start)) > CONFIG_SYS_FLASH_ERASE_TOUT)
 					{
 						flash_put (info, addr, 0, 0x00FF00FF);
 						printf ("Timeout\n");
@@ -594,7 +594,7 @@ int flash_erase (flash_info_t *info, int s_first, int s_last)
 
 		while ((addr[0] & 0xFFFFFFFF) != 0xFFFFFFFF)
 		{
-			if ((now = get_timer (start)) > CFG_FLASH_ERASE_TOUT)
+			if ((now = get_timer (start)) > CONFIG_SYS_FLASH_ERASE_TOUT)
 			{
 				printf ("Timeout\n");
 				return 1;
@@ -733,7 +733,7 @@ static int write_word (flash_info_t *info, ulong dest, ulong data)
 		flash_put (info, addr, 0, 0x00700070);
 		start = get_timer (0);
 		while ((flash_get (info, faddr, 0) & 0x00800080) != flash_mask (info, 0x00800080))
-			if (get_timer (start) > CFG_FLASH_WRITE_TOUT)
+			if (get_timer (start) > CONFIG_SYS_FLASH_WRITE_TOUT)
 			{
 				flash_put (info, faddr, 0, 0x00FF00FF);
 				return 1;
@@ -746,7 +746,7 @@ static int write_word (flash_info_t *info, ulong dest, ulong data)
 		/* data polling for D7 */
 		start = get_timer (0);
 		while ((flash_get (info, addr, 0) & 0x00800080) != (data & flash_mask (info, 0x00800080)))
-			if (get_timer (start) > CFG_FLASH_WRITE_TOUT)
+			if (get_timer (start) > CONFIG_SYS_FLASH_WRITE_TOUT)
 				return 1;
 	}
 

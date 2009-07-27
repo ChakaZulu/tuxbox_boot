@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *
- * $Id: fb.c,v 1.2 2005/02/04 16:56:03 carjay Exp $
+ * $Id: fb.c,v 1.3 2009/07/27 14:39:01 rhabarber1848 Exp $
  */
 
 #include <common.h>
@@ -28,7 +28,7 @@
 #include <cmd_fs.h>
 #endif /* CONFIG_DBOX2_FB_LOGO_FS */
 
-#ifdef CONFIG_DBOX2_FB_LOGO_TFTP
+#if defined(CONFIG_DBOX2_FB_LOGO_TFTP) || defined(CONFIG_DBOX2_FB_LOGO_NFS)
 #include <net.h>
 #endif /* CONFIG_DBOX2_FB_LOGO_TFTP */
 
@@ -37,7 +37,7 @@ extern void avs_init (int);
 extern void avs_blank (int);
 extern void avia_init (int, unsigned char*);
 
-static unsigned char *hwi = (unsigned char *) (CFG_FLASH_BASE + CFG_HWINFO_OFFSET);
+static unsigned char *hwi = (unsigned char *) (CONFIG_SYS_FLASH_BASE + CONFIG_SYS_HWINFO_OFFSET);
 
 int fb_init (void)
 {
@@ -58,7 +58,7 @@ int fb_init (void)
 #ifdef CONFIG_DBOX2_FB_LOGO
 int fb_load (void)
 {
-	unsigned char *fb_logo = (unsigned char *) CFG_LOAD_ADDR;
+	unsigned char *fb_logo = (unsigned char *) CONFIG_SYS_LOAD_ADDR;
 	int size;
 
 # ifdef CONFIG_DBOX2_FB_LOGO_FS
@@ -76,18 +76,31 @@ int fb_load (void)
 	else
 		goto load_logo;
 # endif /* CONFIG_DBOX2_FB_LOGO_FS */
-# ifdef CONFIG_DBOX2_FB_LOGO_TFTP
+
+# if defined(CONFIG_DBOX2_FB_LOGO_TFTP) || defined(CONFIG_DBOX2_FB_LOGO_NFS)
 	NetLoop (BOOTP);
+	netboot_update_env();
+
+#ifdef CONFIG_DBOX2_FB_LOGO_TFTP
 	copy_filename (BootFile, CONFIG_DBOX2_FB_LOGO_TFTP, sizeof (BootFile));
 	size = NetLoop (TFTP);
-
+#elif defined(CONFIG_DBOX2_FB_LOGO_NFS)
+	ip_to_string (NetServerIP, BootFile);
+	strncat(BootFile, ":", sizeof (BootFile));
+	strncat(BootFile, NetOurRootPath, sizeof (BootFile));
+	strncat(BootFile, CONFIG_DBOX2_FB_LOGO_NFS, sizeof (BootFile));
+	size = NetLoop (NFS);
+#else
+	size = -1;
+#endif
 	if (size <= 0)
 	{
-		puts ("can't find logo\n");
+		puts ("can't find FB logo\n");
 		return 1;
 	}
 	else
 		goto load_logo;
+
 # endif /* CONFIG_DBOX2_FB_LOGO_TFTP */
 load_logo:
 	avia_init (hwi[0], fb_logo);

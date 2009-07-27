@@ -53,7 +53,7 @@ int squashfs_uncompress_block (void *dst, int dstlen, void *src, int srclen)
 #ifdef CONFIG_SQUASHFS_LZMA
 		SizeT InProcessed;
 		int bytes;
-		if((err = LzmaDecode(&state,
+		if((err = LzmaDecodeSq(&state,
 				src, srclen, &InProcessed,
 				dst, dstlen, &bytes)) != LZMA_RESULT_OK) {
 			printf("lzma_fs returned unexpected result 0x%x\n", err);

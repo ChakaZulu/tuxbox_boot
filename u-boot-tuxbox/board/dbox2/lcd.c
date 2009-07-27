@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *
- * $Id: lcd.c,v 1.4 2009/03/22 22:04:32 houdini Exp $
+ * $Id: lcd.c,v 1.5 2009/07/27 14:39:01 rhabarber1848 Exp $
  */
 
 #include <common.h>
@@ -31,7 +31,7 @@
 #include <cmd_fs.h>
 #endif /* CONFIG_DBOX2_LCD_LOGO_FS */
 
-#ifdef CONFIG_DBOX2_LCD_LOGO_TFTP
+#if defined(CONFIG_DBOX2_LCD_LOGO_TFTP) || defined (CONFIG_DBOX2_LCD_LOGO_NFS)
 #include <net.h>
 #endif /* CONFIG_DBOX2_LCD_LOGO_TFTP */
 
@@ -255,7 +255,7 @@ static void lcd_clear (void)
 
 static void lcd_reset_init (void)
 {
-	unsigned char *hwi = (unsigned char *) (CFG_FLASH_BASE + CFG_HWINFO_OFFSET);
+	unsigned char *hwi = (unsigned char *) (CONFIG_SYS_FLASH_BASE + CONFIG_SYS_HWINFO_OFFSET);
 
 	char *s;
 	int lcd_contrast = 15;
@@ -321,7 +321,7 @@ void lcd_status (int y, unsigned char percent)
 
 int lcd_init (void)
 {
-	volatile immap_t *immr = (immap_t *) CFG_IMMR;
+	volatile immap_t *immr = (immap_t *) CONFIG_SYS_IMMR;
 	iop = &immr->im_ioport;
 
 	lcd_reset_init ();
@@ -335,7 +335,7 @@ int lcd_init (void)
 #ifdef CONFIG_DBOX2_LCD_LOGO
 int lcd_load (void)
 {
-	unsigned char *lcd_logo = (unsigned char *) CFG_LOAD_ADDR;
+	unsigned char *lcd_logo = (unsigned char *) CONFIG_SYS_LOAD_ADDR;
 	int size;
 	int x, y, y2, pix;
 
@@ -354,14 +354,24 @@ int lcd_load (void)
 	else
 		goto load_logo;
 #endif /* CONFIG_DBOX2_LCD_LOGO_FS */
-#ifdef CONFIG_DBOX2_LCD_LOGO_TFTP
+#if defined(CONFIG_DBOX2_LCD_LOGO_TFTP) || defined (CONFIG_DBOX2_LCD_LOGO_NFS)
 	NetLoop (BOOTP);
+	netboot_update_env();
+#ifdef CONFIG_DBOX2_LCD_LOGO_TFTP
 	copy_filename (BootFile, CONFIG_DBOX2_LCD_LOGO_TFTP, sizeof (BootFile));
 	size = NetLoop (TFTP);
-
+#elif defined(CONFIG_DBOX2_LCD_LOGO_NFS)
+	ip_to_string (NetServerIP, BootFile);
+	strncat(BootFile, ":", sizeof (BootFile));
+	strncat(BootFile, NetOurRootPath, sizeof (BootFile));
+	strncat(BootFile, CONFIG_DBOX2_LCD_LOGO_NFS, sizeof (BootFile));
+	size = NetLoop (NFS);
+#else
+	size = -1;
+#endif
 	if (size <= 0)
 	{
-		printf ("can't find logo\n");
+		printf ("can't find LCD logo\n");
 		return 0;
 	}
 	else
@@ -484,7 +494,7 @@ void lcd_puts (const char *s)
 void lcd_printf (const char *fmt, ...)
 {
 	va_list args;
-	char buf[CFG_PBSIZE];
+	char buf[CONFIG_SYS_PBSIZE];
 
 	va_start (args, fmt);
 	vsprintf (buf, fmt, args);

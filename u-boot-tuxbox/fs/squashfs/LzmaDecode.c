@@ -117,7 +117,7 @@
 StopCompilingDueBUG
 #endif
 
-int LzmaDecodeProperties(CLzmaProperties *propsRes, const unsigned char *propsData, int size)
+int LzmaDecodePropertiesSq(CLzmaProperties *propsRes, const unsigned char *propsData, int size)
 {
   unsigned char prop0;
   if (size < LZMA_PROPERTIES_SIZE)
@@ -152,7 +152,7 @@ int LzmaDecodeProperties(CLzmaProperties *propsRes, const unsigned char *propsDa
 
 #define kLzmaStreamWasFinishedId (-1)
 
-int LzmaDecode(CLzmaDecoderState *vs,
+int LzmaDecodeSq(CLzmaDecoderState *vs,
     #ifdef _LZMA_IN_CB
     ILzmaInCallback *InCallback,
     #else
